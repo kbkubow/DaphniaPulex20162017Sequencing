@@ -45,4 +45,38 @@ Now let's open the file and take an intial loook at the SNPs.
     	ggplot(data=snps, aes(x=dp)) + geom_histogram()
 	ggplot(data=snps, aes(x=log10(dp))) + geom_histogram()
 ```
-![SNPsInitialReadDepthDistribution](SNPsInitialReadDepthDistribution.tiff?raw=true)
+![SNPsInitialReadDepthDistribution](/images/logo.png)
+
+Now let's filter out SNPs that occur in areas flagged as having too high or low read depth when mapping the D84A 10X Illumina short reads to the D84A reference genome. Will also filter out SNPs on the edges of runs of Ns and at the ends of scaffolds.
+```
+	NsChrRD <- fread("/mnt/spicy_3/Karen/RefGenome/Dovetail/HiCnew/NsandDepthandChrEnd.sorted.500merged.bed")
+	colnames(NsChrRD) <- c("chr", "start", "stop")
+	NsChrRD$count <- c(1:26531)
+
+	setkey(snps, chr, pos)
+	initialsnps <- snps$variant.ids
+
+	NsChrRDsnps <- foreach(i=NsChrRD$count, .combine="c")%do%{
+		
+	c=NsChrRD$chr[[i]]
+	s=NsChrRD$start[[i]]
+	p=NsChrRD$stop[[i]]
+		
+	temp <- snps[J(data.table(chr=c, pos=c(s:p), key="chr,pos")), nomatch=0]
+	temp$variant.ids
+		
+	}
+
+	save(NsChrRDsnps, file="NsChrRDsnps_20190418.Rdata")
+
+	seqSetFilter(genofile, variant.id=NsChrRDsnps) # 331,095
+		
+	NsChrRDsnpssnps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+		chr = seqGetData(genofile, "chromosome"),
+		pos = seqGetData(genofile, "position"),
+		dp = seqGetData(genofile, "annotation/info/DP"))
+
+	ggplot(data=NsChrRDsnpssnps, aes(x=dp)) + geom_histogram()		
+	ggplot(data=NsChrRDsnpssnps, aes(x=log10(dp))) + geom_histogram()		
+		
+	goodsnpsnotinNsChrRD <- setdiff(initialsnps, NsChrRDsnps)
