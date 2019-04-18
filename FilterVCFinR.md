@@ -21,7 +21,7 @@ First, I will convert the VCF into gds and seq.gds formats.
                                         method=c("biallelic.only"), snpfirstdim = FALSE)
         
                 seqVCF2GDS(vcf.fn, "/mnt/spicy_3/Karen/Sp2017/NewMapping/totalnewmapBfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-'''
+```
 Now let's open the file and take an intial loook at the SNPs.
 ```
 ### libraries
