@@ -1,4 +1,4 @@
-#Filtering my vcf.
+Filtering my vcf.
 First remove all snps within 10 basepairs of indels.
 ```
 #!/bin/bash
@@ -128,3 +128,4 @@ cd /scratch/kbb7sh/Daphnia/NewMapping/finalvcf
    -V totalnewmapBfiltsnps10bpindels_snps_filter_pass_lowGQmiss.vcf \
    --validationTypeToExclude ALL
 ```
+The final filtered VCF has 2,853,063 SNP variants. Next step will be to import the VCF into R and do further filtering.
