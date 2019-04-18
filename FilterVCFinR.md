@@ -92,6 +92,8 @@ Now let's filter out SNPs that occur in areas flagged as having too high or low 
 	ggplot(data=goodsnpsnotinNsChrRDtable, aes(x=dp)) + geom_histogram()
 	ggplot(data=goodsnpsnotinNsChrRDtable, aes(x=log10(dp))) + geom_histogram()
 
+	save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_20190418.Rdata")
+
 
 ```
 485,619 SNPs were removed based on this filtering. 2,367,443 SNPs remain. Here is the updated distribution of read depths.
