@@ -46,6 +46,7 @@ Now let's open the file and take an intial loook at the SNPs.
 	ggplot(data=snps, aes(x=log10(dp))) + geom_histogram()
 ```
 ![SNPsInitialReadDepthDistribution](SNPsInitialReadDepthDistribution.tiff)
+![SNPsInitialReadDepthDistributionLog10](SNPsInitialReadDepthDistributionLog10.tiff)
 
 Now let's filter out SNPs that occur in areas flagged as having too high or low read depth when mapping the D84A 10X Illumina short reads to the D84Aimages reference genome. Will also filter out SNPs on the edges of runs of Ns and at the ends of scaffolds.
 ```
