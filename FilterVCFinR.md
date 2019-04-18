@@ -70,7 +70,7 @@ Now let's filter out SNPs that occur in areas flagged as having too high or low 
 
 	save(NsChrRDsnps, file="NsChrRDsnps_20190418.Rdata")
 
-	seqSetFilter(genofile, variant.id=NsChrRDsnps) # 331,095
+	seqSetFilter(genofile, variant.id=NsChrRDsnps)
 		
 	NsChrRDsnpssnps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
 		chr = seqGetData(genofile, "chromosome"),
@@ -81,3 +81,17 @@ Now let's filter out SNPs that occur in areas flagged as having too high or low 
 	ggplot(data=NsChrRDsnpssnps, aes(x=log10(dp))) + geom_histogram()		
 		
 	goodsnpsnotinNsChrRD <- setdiff(initialsnps, NsChrRDsnps)
+	
+	seqSetFilter(genofile, variant.id=goodsnpsnotinNsChrRD)
+	
+	goodsnpsnotinNsChrRDtable <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+		chr = seqGetData(genofile, "chromosome"),
+		pos = seqGetData(genofile, "position"),
+		dp = seqGetData(genofile, "annotation/info/DP"))
+
+	ggplot(data=goodsnpsnotinNsChrRDtable, aes(x=dp)) + geom_histogram()
+	ggplot(data=goodsnpsnotinNsChrRDtable, aes(x=log10(dp))) + geom_histogram()
+
+
+```
+485,619 SNPs were removed based on this filtering. 2,367,443 SNPs remain.
