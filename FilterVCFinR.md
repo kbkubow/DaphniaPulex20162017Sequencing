@@ -94,4 +94,7 @@ Now let's filter out SNPs that occur in areas flagged as having too high or low 
 
 
 ```
-485,619 SNPs were removed based on this filtering. 2,367,443 SNPs remain.
+485,619 SNPs were removed based on this filtering. 2,367,443 SNPs remain. Here is the updated distribution of read depths.
+![SNPDistributionofReadDepthFilterforNsChrEnd](SNPDistributionofReadDepthFilterforNsChrEnd.tiff)
+![SNPDistributionofReadDepthFilterforNsChrEndLog10](SNPDistributionofReadDepthFilterforNsChrEndLog10.tiff)
+
