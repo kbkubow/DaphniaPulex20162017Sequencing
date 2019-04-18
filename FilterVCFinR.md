@@ -45,5 +45,4 @@ Now let's open the file and take an intial loook at the SNPs.
     	ggplot(data=snps, aes(x=dp)) + geom_histogram()
 	ggplot(data=snps, aes(x=log10(dp))) + geom_histogram()
 ```
-![SNPsInitialReadDepthDistribution]
-(SNPsInitialReadDepthDistribution.tiff)
+![SNPsInitialReadDepthDistribution](SNPsInitialReadDepthDistribution.tiff)
