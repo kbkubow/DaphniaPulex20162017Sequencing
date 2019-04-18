@@ -1,4 +1,5 @@
 Filtering my vcf.
+This is a redo of an earlier filtering, where I removed all snps within 25 basepairs of indels and set low read depth genotype calls to missing in addition to low genotype quality genotypes. I am now changing this to removing snps within 10 basepairs of indels, and only setting low quality genotype scores to missing.
 First remove all snps within 10 basepairs of indels.
 ```
 #!/bin/bash
