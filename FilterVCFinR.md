@@ -42,5 +42,8 @@ Now let's open the file and take an intial loook at the SNPs.
 					pos = seqGetData(genofile, "position"),
 					dp = seqGetData(genofile, "annotation/info/DP"))
 
-    ggplot(data=snps, aes(x=dp)) + geom_histogram()
-		ggplot(data=snps, aes(x=log10(dp))) + geom_histogram()
+    	ggplot(data=snps, aes(x=dp)) + geom_histogram()
+	ggplot(data=snps, aes(x=log10(dp))) + geom_histogram()
+```
+![SNPsInitialReadDepthDistribution]
+(SNPsInitialReadDepthDistribution.tiff)
