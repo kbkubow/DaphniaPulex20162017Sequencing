@@ -120,7 +120,7 @@
 
         ### re-rank SCs based on size in pond
 
-        ibs.long <- ibs.long[,c("cloneA", "cloneB", "SC.A", "SC.B", "distance")]
+        ibs.long <- ibs.long[,c("cloneA", "cloneB", "SC.A", "SC.B", "distance"), with=F]
                 ibs.long[,pondA := tstrsplit(cloneA, "_")[[3]]]
                 ibs.long[,pondB := tstrsplit(cloneB, "_")[[3]]]
 
@@ -162,8 +162,8 @@
 
     ### tack in buffer cloneIds for graphical purposes
         ibs.long <- rbind(ibs.long,
-                          data.table(scid.a=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "DCat", "W1")]$p$
-                                              paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$$
+                          data.table(scid.a=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "DCat", "W1")]$p,
+                                              paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$
                                      scid.b=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk", "DCat", "W1")]$p$
                                               paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$$
                           fill=T)
