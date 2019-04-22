@@ -81,7 +81,7 @@
                 }
                 sc.dt[,superClone.sizeRank := as.numeric(as.factor(rank(-superClone.size, ties="average")))]
 
-    ### There was a slight error in assigning letters to the superclones, Karen is adding in a line of code and editing one other line.
+    ### There was a slight error in assigning letters to the superclones, Karen is adding in a line of code and editing one other line. THIS IS NOT WORKING EITHER!!!!
                 sc.dt <- as.data.table(sc.dt %>% 
                         mutate(SCnum = group_indices_(sc.dt, .dots=c("superClone.sizeRank", "superClone.index"))))
 
