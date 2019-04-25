@@ -62,6 +62,8 @@ save(LDprunedSConceDNABINdnadist, file="LDprunedSConceDNABINdnadist_20190425.Rda
 LDprunedSConceDNABINdnadistnjs <- njs(LDprunedSConceDNABINdnadist)
 
 save(LDprunedSConceDNABINdnadistnjs, file="LDprunedSConceDNABINdnadistnjs_20190425.Rdata")
+
+plot(root(LDprunedSConceDNABINdnadistnjs, 38), type="fan")
 ```
 
 
