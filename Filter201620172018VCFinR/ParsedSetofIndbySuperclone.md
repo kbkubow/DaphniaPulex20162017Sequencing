@@ -65,4 +65,26 @@ Let's make a parsed set of individuals such that each superclone is only represe
 		
     subsetindtouse <- subsetindwithcountsc$clone
 
+```
+This results in a parsed set of 141 individuals. Now let's try choosing just one representative individual per superclone regardless of year, pond, etc.
+```
+		m_nouniqcountsc <- as.data.table(aggregate(count~SC, m_nouniqc, FUN=sum))
 
+		t.firstc <- m_nouniqc[match(unique(m_nouniqc$SC), m_nouniqc$SC),]
+		
+		t.firstsubc <- data.table(clone=t.firstc$clone, SC=t.firstc$SC, supercloneyearpond=t.firstc$supercloneyearpond)
+		
+		setkey(t.firstsubc, SC)
+		setkey(m_nouniqcountsc, SC)
+		
+		mnouniqc <- merge(t.firstsubc, m_nouniqcountsc)
+		
+		mnouniqBc <- data.table(clone=mnouniqc$clone, SC=mnouniqc$SC, supercloneyearpond=mnouniqc$supercloneyearpond, count=mnouniqc$count)
+		
+		m_uniqsubc <- data.table(clone=m_uniqc$clone, SC=m_uniqc$SC, supercloneyearpond=m_uniqc$supercloneyearpond, count=m_uniqc$count)
+		
+		subsetindwithcountsc <- rbind(mnouniqBc, m_uniqsubc)
+		subsetsingleindperSCwcount <- subsetindwithcountsc
+
+		save(subsetsingleindperSCwcount, file="subsetsingleindperSCwcount_20190425.Rdata")
+		
