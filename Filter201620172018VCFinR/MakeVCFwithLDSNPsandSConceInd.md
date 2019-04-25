@@ -1,3 +1,6 @@
+  Let's make a filtered VCF that contains LD pruned, filtered SNPs for individuals representing each SC only once.
+  ```
+  
   #Load libraries
   	library(gdsfmt) 
     library(SNPRelate)
