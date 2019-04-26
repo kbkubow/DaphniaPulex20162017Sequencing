@@ -53,4 +53,16 @@
 			
 	sample.ids <- seqGetData(genofile, "sample.id")
 
+#Make long format
 	mhetlong <- melt(mhet, measure.vars=sample.ids, variable.name="clone", value.name="dosage")
+	setkey(mhetlong, clone)
+	setkey(AandBnomaleSM, clone)
+	mmhetlong <- merge(AandBnomaleSM, mhetlong)
+	
+	df2 <- count(mmhetlong, c('variant.ids', 'SC', 'dosage'))
+	mmhetlong %>% group_by(variant.ids, SC, dosage) %>% mutate(count = n())
+
+#Make variables for homref, het, and homalt
+	mhetlong$homref <- ifelse(mhetlong$dosage=="2", 1, 0)
+	mhetlong$het <- ifelse(mhetlong$dosage=="1", 1, 0)
+	mhetlong$homalt <- ifelse(mhetlong$dosage=="0", 1, 0)
