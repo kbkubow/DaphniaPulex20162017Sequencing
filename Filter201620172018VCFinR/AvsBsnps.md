@@ -244,4 +244,114 @@ Let's try looking at these loci in individuals from D8 2018.
 	
 #Try chromosome painting at these SNPs?
 
+#Let's try looking at all individuals from D8 from all years
 	
+#Load libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(foreach)
+        library(SeqArray)
+        library(doMC)
+        registerDoMC(20)
+        library(ggplot2)
+        library(tidyverse)
+
+#Load genotype file
+        genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+        
+#Load sample file        
+        load("secondsampstokeep_20190422.Rdata")
+        
+#Load SNP file
+        load("ABhigh_20190426.Rdata")
+	ABhighids <- ABhigh$variant.ids
+
+#Load superclone assignment file
+        scs <- fread("Superclones20161718_20190423")
+
+#Pull out D8 individuals
+	temp <- unlist(strsplit(scs$clone, split="_"))
+	mat <- matrix(temp, ncol=4, byrow=TRUE)
+	matdat <- as.data.table(mat)
+	scs$population <- matdat$V3
+	scs$year <- matdat$V2
+	scs$season <- matdat$V1
+	scsD8 <- scs[population=="D8"]
+
+#Remove males and SM libraries
+	DnomaleSM <- scsD8[clone!="Lab_2019_D8_349Male" & clone!="May_2017_D8_770SM" &
+		clone!="Lab_2019_D8_222Male" & clone!="May_2017_D8_773SM" &
+		clone!="May_2017_D8_731SM"]
+	DnomaleSMids <- DnomaleSM$clone
+
+#Set sequence filters
+        seqSetFilter(genofile, sample.id=DnomaleSMids)
+	seqSetFilter(genofile, variant.id=ABhighids)
+
+### get residual heterozygosity
+		
+	het <- t(seqGetData(genofile, "$dosage"))
+	het <- as.data.table(het)
+			
+	colnames(het) <- c(seqGetData(genofile, "sample.id"))
+	het$variant.ids <- seqGetData(genofile, "variant.id")
+			
+	setkey(het, variant.ids)
+	setkey(snps, variant.ids)
+			
+	mhet <- merge(snps, het)
+			
+	sample.ids <- seqGetData(genofile, "sample.id")
+
+	mhetlong <- melt(mhet, measure.vars=sample.ids, variable.name="clone", value.name="dosage")
+
+			
+			
+	normdosagetable <- foreach(i=sample.ids, .combine="rbind")%do%{
+		
+	data.table(pos=mhet$pos, clone=c(i), normdosage=ifelse(mhet[[i]]==0 & mhet$April_2017_D8_103==0, 2,
+		ifelse(mhet[[i]]==2 & mhet$April_2017_D8_103==0, 0, mhet[[i]])))
+		
+		}
+
+
+	numclones <- data.table(clone=c(sample.ids), numclone=c(1:176))
+	
+	setkey(normdosagetable, clone)
+	setkey(numclones, clone)
+			
+	normdosagetablenum <- merge(normdosagetable, numclones)
+
+	numpos <- data.table(pos=c(mhet$pos), numpos=c(1:2544))
+	
+	setkey(normdosagetablenum, pos)
+	setkey(numpos, pos)
+			
+	normdosagetablenumpos <- merge(normdosagetablenum, numpos)
+
+### Adding in superclones
+			
+	superclone01 <- fread("Superclones20161718_20190423")
+
+	setkey(normdosagetablenumpos, clone)
+	setkey(superclone01, clone)
+		
+	msc <- merge(normdosagetablenumpos, superclone01)
+
+	msc$numclone <- factor(msc$numclone, levels = msc$numclone[order(msc$SC)])
+
+	msc[, normdosage:=as.factor(normdosage)]
+	
+	msc$SC <- ifelse(msc$clone=="May_2017_D8_731", "OO", msc$SC)
+	
+ 	temp <- unlist(strsplit(msc$clone, split="_"))
+	mat <- matrix(temp, ncol=4, byrow=TRUE)
+	matdat <- as.data.table(mat)
+	msc$population <- matdat$V3
+	msc$year <- matdat$V2
+	msc$season <- matdat$V1
+	msc$popyearsc <- paste(msc$population,"_",msc$year,"_",msc$SC,sep="")
+	msc$numclone <- factor(msc$numclone, levels = msc$numclone[order(msc$popyearsc)])
+
+	ggplot(data=msc, aes(x=numpos, y=numclone, color=normdosage)) + geom_point() + theme(text = element_text(size=7))
