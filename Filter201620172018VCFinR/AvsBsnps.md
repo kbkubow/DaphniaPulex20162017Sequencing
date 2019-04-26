@@ -15,3 +15,14 @@
         
 #Load sample file        
         load("secondsampstokeep_20190422.Rdata")
+        
+#Load SNP file
+        load("snpsetfilteredformissing_20190423.Rdata")
+
+#Load superclone assignment file
+        scs <- fread("Superclones20161718_20190423")
+        AandB <- scs[SC=="A" | SC=="B"]
+
+#Set sequence filters
+        seqSetFilter(genofile, sample.id=secondsampstokeep)
+	seqSetFilter(genofile, variant.id=snpsetfilteredformissing)
