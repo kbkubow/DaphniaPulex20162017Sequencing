@@ -151,7 +151,7 @@ Let's try looking at these loci in individuals from D8 2018.
 #Make long format
 	mhetlong <- melt(mhet, measure.vars=sample.ids, variable.name="clone", value.name="dosage")
 
-#Count instances of variant.ids/SC/dosage	
+ #Count instances of variant.ids/SC/dosage	
 	dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
 
 #Remove NAs
@@ -176,6 +176,72 @@ Let's try looking at these loci in individuals from D8 2018.
 	dosagebyclonedtw <- dcast(dosagebyclonedt, clone~dosage, value.var="N")
 	
 #Need to polarize by A/B
+	setkey(ABhigh, variant.ids)
+	setkey(mhetlong, variant.ids)
+	m <- merge(ABhigh, mhetlong)
+	mnoNA <- m[dosage!="NA"]
+	mnoNA[is.na(dos0_A),dos0_A:=0]
+	mnoNA[is.na(dos1_A),dos1_A:=0]
+	mnoNA[is.na(dos2_A),dos2_A:=0]
+	mnoNA[is.na(dos0_B),dos0_B:=0]
+	mnoNA[is.na(dos1_B),dos1_B:=0]
+	mnoNA[is.na(dos2_B),dos2_B:=0]
+	mnoNA$dosageAB <- ifelse(mnoNA$dos0_A>0 & mnoNA$dosage==0, 2, ifelse(mnoNA$dos0_A>0 & mnoNA$dosage==2, 0, mnoNA$dosage))
 	
+#Count instances of variant.ids/SC/dosage	
+	dosagecounts <- mnoNA[, .N, by=list(variant.ids, dosageAB)]
+
+#Remove NAs
+	dosagecounts <- dosagecounts[dosageAB!="NA"]
+	
+#Transform to wide format
+	doscountwide <- dcast(dosagecounts, variant.ids ~ dosageAB, value.var="N")
+	colnames(doscountwide) <- c("variant.ids", "dos0", "dos1", "dos2")
+	doscountwide[is.na(dos0),dos0:=0]
+	doscountwide[is.na(dos1),dos1:=0]
+	doscountwide[is.na(dos2),dos2:=0]
+	doscountwide$total <- doscountwide$dos0+doscountwide$dos1+doscountwide$dos2
+	doscountwide$numaltallele <- (doscountwide$dos0*2) + doscountwide$dos1
+	doscountwide$propalt <- doscountwide$numaltallele/(doscountwide$total*2)
+	doscountwide$foldpropalt <- ifelse(doscountwide$propalt > 0.5, 1-doscountwide$propalt, doscountwide$propalt)
+	
+	ggplot(doscountwide, aes(x=foldpropalt)) + geom_histogram() + xlim(0,0.5)
+
+#Maybe some but not all are F1 hybrids.
+	dosagebyclonedt <- as.data.table(table(mnoNA$clone, mnoNA$dosageAB))
+	colnames(dosagebyclonedt) <- c("clone", "dosage", "N")
+	dosagebyclonedtw <- dcast(dosagebyclonedt, clone~dosage, value.var="N")
+	colnames(dosagebyclonedtw) <- c("clone", "dos0", "dos1", "dos2")
+
+#Remove all individuals that are A
+	touse <- dosagebyclonedtw[dos2 < 2000]
+	setkey(touse, clone)
+	setkey(mnoNA, clone)
+	mnoNAnoA <- merge(touse, mnoNA)
+
+#Count instances of variant.ids/SC/dosage	
+	dosagecounts <- mnoNAnoA[, .N, by=list(variant.ids, dosageAB)]
+
+#Remove NAs
+	dosagecounts <- dosagecounts[dosageAB!="NA"]
+	
+#Transform to wide format
+	doscountwide <- dcast(dosagecounts, variant.ids ~ dosageAB, value.var="N")
+	colnames(doscountwide) <- c("variant.ids", "dos0", "dos1", "dos2")
+	doscountwide[is.na(dos0),dos0:=0]
+	doscountwide[is.na(dos1),dos1:=0]
+	doscountwide[is.na(dos2),dos2:=0]
+	doscountwide$total <- doscountwide$dos0+doscountwide$dos1+doscountwide$dos2
+	doscountwide$numaltallele <- (doscountwide$dos0*2) + doscountwide$dos1
+	doscountwide$propalt <- doscountwide$numaltallele/(doscountwide$total*2)
+	doscountwide$foldpropalt <- ifelse(doscountwide$propalt > 0.5, 1-doscountwide$propalt, doscountwide$propalt)
+	
+	ggplot(doscountwide, aes(x=foldpropalt)) + geom_histogram() + xlim(0,0.5)
+
+	March2018noAids <- touse$clone
+	
+	save(March2018noAids, file="March2018noAids_20190426.Rdata")
+	
+#Try chromosome painting at these SNPs?
 
 	
