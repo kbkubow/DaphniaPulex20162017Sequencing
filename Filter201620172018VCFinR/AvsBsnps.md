@@ -89,7 +89,93 @@
 	save(ABlow, file="ABlow_20190426.Rdata")
 	save(ABmod, file="ABmod_20190426.Rdata")
 	save(ABhigh, file="ABhigh_20190426.Rdata")
+
+```
+Let's try looking at these loci in individuals from D8 2018.
+```
+#Load libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(foreach)
+        library(SeqArray)
+        library(doMC)
+        registerDoMC(20)
+        library(ggplot2)
+        library(tidyverse)
+
+#Load genotype file
+        genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+        
+
+#Load sample file and SNP file       
+        load("secondsampstokeep_20190422.Rdata")
+	sampsdt <- as.data.table(secondsampstokeep)
+	load("ABhigh_20190426.Rdata")
 	
+#Pull out D8 2018 individuals
+	temp <- unlist(strsplit(sampsdt$secondsampstokeep, split="_"))
+	mat <- matrix(temp, ncol=4, byrow=TRUE)
+	matdat <- as.data.table(mat)
+	sampsdt$population <- matdat$V3
+	sampsdt$year <- matdat$V2
+	sampsdt$season <- matdat$V1
+	
+	D82018 <- sampsdt$secondsampstokeep[sampsdt$population=="D8" & sampsdt$year=="2018"]
+	
+	ABhighids <- ABhigh$variant.ids
+	
+#Set sequence filters
+        seqSetFilter(genofile, sample.id=D82018)
+	seqSetFilter(genofile, variant.id=ABhighids)
+
+#Extract genotypes
+	snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+		chr = seqGetData(genofile, "chromosome"),
+		pos = seqGetData(genofile, "position"),
+		dp = seqGetData(genofile, "annotation/info/DP"))
+
+	het <- t(seqGetData(genofile, "$dosage"))
+	het <- as.data.table(het)
+			
+	colnames(het) <- c(seqGetData(genofile, "sample.id"))
+	het$variant.ids <- seqGetData(genofile, "variant.id")
+			
+	setkey(het, variant.ids)
+	setkey(snps, variant.ids)
+			
+	mhet <- merge(snps, het)
+			
+	sample.ids <- seqGetData(genofile, "sample.id")
+	
+#Make long format
+	mhetlong <- melt(mhet, measure.vars=sample.ids, variable.name="clone", value.name="dosage")
+
+#Count instances of variant.ids/SC/dosage	
+	dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+#Remove NAs
+	dosagecounts <- dosagecounts[dosage!="NA"]
+	
+#Transform to wide format
+	doscountwide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+	colnames(doscountwide) <- c("variant.ids", "dos0", "dos1", "dos2")
+	doscountwide[is.na(dos0),dos0:=0]
+	doscountwide[is.na(dos1),dos1:=0]
+	doscountwide[is.na(dos2),dos2:=0]
+	doscountwide$total <- doscountwide$dos0+doscountwide$dos1+doscountwide$dos2
+	doscountwide$numaltallele <- (doscountwide$dos0*2) + doscountwide$dos1
+	doscountwide$propalt <- doscountwide$numaltallele/(doscountwide$total*2)
+	doscountwide$foldpropalt <- ifelse(doscountwide$propalt > 0.5, 1-doscountwide$propalt, doscountwide$propalt)
+	
+	ggplot(doscountwide, aes(x=foldpropalt)) + geom_histogram() + xlim(0,0.5)
+
+#Maybe some but not all are F1 hybrids.
+	dosagebyclonedt <- as.data.table(table(mhetlong$clone, mhetlong$dosage))
+	colnames(dosagebyclonedt) <- c("clone", "dosage", "N")
+	dosagebyclonedtw <- dcast(dosagebyclonedt, clone~dosage, value.var="N")
+	
+#Need to polarize by A/B
 	
 
 	
