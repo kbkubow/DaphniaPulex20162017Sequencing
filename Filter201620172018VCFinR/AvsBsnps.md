@@ -65,12 +65,15 @@
 #Remove NAs
 	dosagecounts <- dosagecounts[dosage!="NA"]
 	save(dosagecounts, file="dosagecounts_AB_20190426.Rdata")
+
+#Transform to wide format
 	doscountwide <- dcast(dosagecounts, variant.ids + SC ~ dosage, value.var="N")
 	colnames(doscountwide) <- c("variant.ids", "SC", "dos0", "dos1", "dos2")
 	yetwider <- dcast(doscountwide, variant.ids~SC, value.var=c("dos0", "dos1", "dos2"))
 	max(yetwider$dos0_A, na.rm=TRUE) #88
 	max(yetwider$dos0_B, na.rm=TRUE) #29
-	
+
+#Pull out SNPs that are fixed differences between A and B
 	A0B2low <- yetwider[dos0_A > 80 & dos2_B > 25] #6381 SNPs
 	A0B2mod <- yetwider[dos0_A > 85 & dos2_B > 26] #2515 SNPs
 	A0B2high <- yetwider[dos0_A > 86 & dos2_B > 27] #932 SNPs
@@ -82,6 +85,10 @@
 	ABlow <- rbind(A0B2low, A2B0low) #17642
 	ABmod <- rbind(A0B2mod, A2B0mod) #6875
 	ABhigh <- rbind(A0B2high, A2B0high) #2544
+	
+	save(ABlow, file="ABlow_20190426.Rdata")
+	save(ABmod, file="ABmod_20190426.Rdata")
+	save(ABhigh, file="ABhigh_20190426.Rdata")
 	
 	
 
