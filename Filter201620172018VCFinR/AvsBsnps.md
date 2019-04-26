@@ -59,10 +59,30 @@
 	setkey(AandBnomaleSM, clone)
 	mmhetlong <- merge(AandBnomaleSM, mhetlong)
 	
-	df2 <- count(mmhetlong, c('variant.ids', 'SC', 'dosage'))
-	mmhetlong %>% group_by(variant.ids, SC, dosage) %>% mutate(count = n())
+#Count instances of variant.ids/SC/dosage	
+	dosagecounts <- mmhetlong[, .N, by=list(variant.ids, SC, dosage)]
 
-#Make variables for homref, het, and homalt
-	mhetlong$homref <- ifelse(mhetlong$dosage=="2", 1, 0)
-	mhetlong$het <- ifelse(mhetlong$dosage=="1", 1, 0)
-	mhetlong$homalt <- ifelse(mhetlong$dosage=="0", 1, 0)
+#Remove NAs
+	dosagecounts <- dosagecounts[dosage!="NA"]
+	save(dosagecounts, file="dosagecounts_AB_20190426.Rdata")
+	doscountwide <- dcast(dosagecounts, variant.ids + SC ~ dosage, value.var="N")
+	colnames(doscountwide) <- c("variant.ids", "SC", "dos0", "dos1", "dos2")
+	yetwider <- dcast(doscountwide, variant.ids~SC, value.var=c("dos0", "dos1", "dos2"))
+	max(yetwider$dos0_A, na.rm=TRUE) #88
+	max(yetwider$dos0_B, na.rm=TRUE) #29
+	
+	A0B2low <- yetwider[dos0_A > 80 & dos2_B > 25] #6381 SNPs
+	A0B2mod <- yetwider[dos0_A > 85 & dos2_B > 26] #2515 SNPs
+	A0B2high <- yetwider[dos0_A > 86 & dos2_B > 27] #932 SNPs
+
+	A2B0low <- yetwider[dos2_A > 80 & dos0_B > 25] #11261 SNPs
+	A2B0mod <- yetwider[dos2_A > 85 & dos0_B > 26] #4360 SNPs
+	A2B0high <- yetwider[dos2_A > 86 & dos0_B > 27] #1612 SNPs
+	
+	ABlow <- rbind(A0B2low, A2B0low) #17642
+	ABmod <- rbind(A0B2mod, A2B0mod) #6875
+	ABhigh <- rbind(A0B2high, A2B0high) #2544
+	
+	
+
+	
