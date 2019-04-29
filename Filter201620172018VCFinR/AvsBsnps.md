@@ -242,6 +242,11 @@ Let's try looking at these loci in individuals from D8 2018.
 	
 	save(March2018noAids, file="March2018noAids_20190426.Rdata")
 	
+	March2018noAidsdt <- as.data.table(March2018noAids)
+	
+	write.table(March2018noAidsdt, file="March2018noAidsdt", sep="\t", row.names=FALSE, quote=FALSE, col.names=FALSE)
+
+	
 #Try chromosome painting at these SNPs?
 
 #Let's try looking at all individuals from D8 from all years
