@@ -1,4 +1,4 @@
-First make mpileup of the D8 moderate coverage, no SC a individuals, at the linkage pruned SNPs.
+Let's look at relatedness of the non superclone A March 2018 D8 clones using mapgd. We can use this to test the hypothesis that they are F1 hybrids of A and B, by first looking to see if they are full clones. So just running this analysis on the March2018 individuals for now. Can try adding in A and B later. First make mpileup of the D8 moderate coverage, no SC a individuals, at the linkage pruned SNPs.
 ```
 #!/bin/bash
 
@@ -24,4 +24,30 @@ module load samtools
 samtools mpileup -q 5 -Q 5 -b /scratch/kbb7sh/Daphnia/NewMapping/mpileups/March2018/March2018noAidsdt \
         -l ${chunk} -o ${chunk}.mpileup
 ```
-Call this script by sbatch mpileup.slurm LDprunedSNPs_20190429.bed.
+Call this script by sbatch mpileup.slurm LDprunedSNPs_20190429.bed. Next, generate a pro file.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 96:00:00
+#SBATCH --mem=64000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+chunk=$1
+
+echo starting chunk ${chunk}
+
+cd /scratch/kbb7sh/Daphnia/NewMapping/mpileups
+
+echo running mapgd
+
+module load singularity 
+
+# Run program
+
+singularity run ./../mapgd-srf_latest.sif proview -i ${chunk}.mpileup -H seq1.header > ${chunk}.pro;
+```
+Call this script by sbatch pro.slurm LDprunedSNPs_20190429.bed.
+
