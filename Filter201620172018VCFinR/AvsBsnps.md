@@ -294,6 +294,12 @@ Let's try looking at these loci in individuals from D8 2018.
         seqSetFilter(genofile, sample.id=DnomaleSMids)
 	seqSetFilter(genofile, variant.id=ABhighids)
 
+	snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+		chr = seqGetData(genofile, "chromosome"),
+		pos = seqGetData(genofile, "position"),
+		dp = seqGetData(genofile, "annotation/info/DP"))
+
+
 ### get residual heterozygosity
 		
 	het <- t(seqGetData(genofile, "$dosage"))
