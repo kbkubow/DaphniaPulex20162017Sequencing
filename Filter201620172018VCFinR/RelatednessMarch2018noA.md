@@ -78,6 +78,89 @@ module load singularity
 
 singularity run ./../mapgd-srf_latest.sif allele -i ${chunk}.pro -o ${chunk}.map;
 ```
-Call this script by sbatch map.slurm LDprunedSNPs_20190429.bed
+Call this script by sbatch map.slurm LDprunedSNPs_20190429.bed.
+Now filter the map file.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 72:00:00
+#SBATCH --mem=64000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+chunk=$1
+
+echo starting chunk ${chunk}
+
+cd /scratch/kbb7sh/Daphnia/NewMapping/mpileups/March2018
+
+echo running mapgd
+
+module load singularity 
+
+# Run program
+
+singularity run ./../mapgd-srf_latest.sif filter -i ${chunk}.map.map -p 22 -E 0.01 -c 5000 -C 8000 > ${chunk}.filter.map
+```
+Call this script by sbatch filter.slurm LDprunedSNPs_20190429.bed.
+Then create a genotype file.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 72:00:00
+#SBATCH --mem=64000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+chunk=$1
+
+echo starting chunk ${chunk}
+
+cd /scratch/kbb7sh/Daphnia/NewMapping/mpileups/March2018
+
+echo running mapgd
+
+module load singularity 
+
+# Run program
+
+singularity run ./../mapgd-srf_latest.sif genotype --map ${chunk}.filter.map --pro ${chunk}.pro -o ${chunk};
+```
+Call this script by sbatch geno.slurm LDprunedSNPs_20190429.bed.
+Now try running relatedness.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 72:00:00
+#SBATCH --mem=250000
+#SBATCH -p largemem
+#SBATCH -A berglandlab
+
+chunk=$1
+
+echo starting chunk ${chunk}
+
+cd /scratch/kbb7sh/Daphnia/NewMapping/mpileups/March2018
+
+echo running mapgd
+
+module load singularity 
+
+# Run program
+
+singularity run ./../mapgd-srf_latest.sif relatedness -l -i ${chunk}.gcf -o ${chunk}relate
+```
+Call this script by sbatch relate.slurm LDprunedSNPs_20190429.bed.
+
+
+
+
+
 
 
