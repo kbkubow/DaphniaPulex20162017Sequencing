@@ -299,21 +299,19 @@ Now let's try to figure out what Samples and SNPs should be dropped to minimize 
 
 	ggplot(data=genocounts, aes(x=numsitesgenotype)) + geom_histogram(binwidth=10000)
 
-	sampsbelow1375000 <- genocounts$sample.ids[genocounts$numsitesgenotype<1375000]
-	sampsabove1375000 <- genocounts$sample.ids[genocounts$numsitesgenotype>1375000]
+	sampsbelow1450000<- genocounts$sample.ids[genocounts$numsitesgenotype<1450000]
+	sampsabove1450000 <- genocounts$sample.ids[genocounts$numsitesgenotype>1450000]
 	
-	save(sampsbelow1375000, file="sampsbelow1375000_20190422.Rdata")
-	save(sampsabove1375000, file="sampsabove1375000_20190422.Rdata")
+	save(sampsbelow1450000, file="sampsbelow1450000wSimo_20190430.Rdata")
+	save(sampsabove1450000, file="sampsabove1450000wSimo_20190430.Rdata")
 	
 ```
-![InitialDistofGenoSitesAcrossInd](InitialDistofGenoSitesAcrossInd_20190422.tiff)
-
-For now I am dropping all individuals with sites genotyped below 1,375,000. This results in dropping 15 individuals. March20_2018_DBunk_39, March20_2018_D8_19, Fall_2016_D10_54, April_2017_DBunk_23, Spring_2017_DBunk_19, Spring_2016_D8_8.10, March20_2018_DBunk_21, March20_2018_D8_8, March20_2018_D8_3, Spring_2017_DBunk_27, March20_2018_D8_16, March20_2018_DBunk_1, March20_2018_DBunk_22, March20_2018_DBunk_37, and Spring_2017_DBunk_76.
+For now I am dropping all individuals with sites genotyped below 1,375,000. This results in dropping 17 individuals. March20_2018_DBunk_39, March20_2018_D8_19, Spring_2017_D8Simo_1, Fall_2016_D10_54, Spring_2017_DRampsSimo_3, April_2017_DBunk_23, Spring_2017_DBunk_19, Spring_2016_D8_8.10, March20_2018_DBunk_21, March20_2018_D8_8, March20_2018_D8_3, Spring_2017_DBunk_27, March20_2018_D8_16, March20_2018_DBunk_1, March20_2018_DBunk_22, March20_2018_DBunk_37, and Spring_2017_DBunk_76.
 
 ```
 # Removing all individuals with sites genotyped below 1,375,000 from the mhet file.
 
-	mhet[, (sampsbelow1375000) := NULL]
+	mhet[, (sampsbelow1450000) := NULL]
 
 ```
 Now lets look at the distribution of number of individuals genotyped per SNP.
@@ -321,34 +319,39 @@ Now lets look at the distribution of number of individuals genotyped per SNP.
 ```
 # Having done this, let's look at the distribution of number of individuals genotypes per SNP.
 
-	mhetlong <- melt(mhet, measure.vars=sampsabove1375000, variable.name="clone", value.name="dosage")
+	mhetlong <- melt(mhet, measure.vars=sampsabove1450000, variable.name="clone", value.name="dosage")
 
 	mhetlong.ag <- mhetlong[,list(numgeno = sum(dosage, na.rm=TRUE)), list(variant.ids) ]
 	
-	save(mhetlong.ag, file="mhetlong.ag_20190422.Rdata")
+	#save(mhetlong.ag, file="mhetlong.agwSimo_20190430.Rdata")
 
 	ggplot(data=mhetlong.ag, aes(x=numgeno)) + geom_histogram(binwidth=10)
 
 ```
-![DistofIndGenobySNPafterdroppingfirstset](DistofIndGenobySNPafterdroppingfirstset.tiff)
 
-For now I will drop SNPs that are genotyped in less than 350 individuals (350/410 = 85% individuals genotyped). This results in dropping 216,210 of 1,931,249 SNPs, with 1,715,039 SNPs remaining.
+For now I will drop SNPs that are genotyped in less than 350 individuals (353/415 = 85% individuals genotyped). This results in dropping 204,357 SNPs, with 1,804,302 SNPs remaining.
 ```
-	mhetlong.ag350snpsids <- mhetlong.ag$variant.ids[mhetlong.ag$numgeno>349]
+	mhetlong.ag353snpsids <- mhetlong.ag$variant.ids[mhetlong.ag$numgeno>353]
 	
-	mhetlong.ag350snpsidsdt <- data.table(variant.ids=mhetlong.ag350snpsids)
+	mhetlong.ag353snpsidsdt <- data.table(variant.ids=mhetlong.ag353snpsids)
+	
+	finalsnpstousewSimo <- mhetlong.ag353snpsidsdt
+	finalsnpstousewSimoids <- mhetlong.ag353snpsids
+	
+	save(finalsnpstousewSimo, file="finalsnpstousewSimo_20190430.Rdata")
+	save(finalsnpstousewSimoids, file="finalsnpstousewSimoids_20190430.Rdata")
 
-	mhet[, (sampsbelow1375000) := NULL]
+#	mhet[, (sampsbelow1375000) := NULL]
 
-	setkey(mhetlong.ag350snpsidsdt, variant.ids)
+	setkey(mhetlong.ag353snpsids, variant.ids)
 	setkey(mhet, variant.ids)
-	mmhet <- merge(mhetlong.ag350snpsidsdt, mhet)
+	mmhet <- merge(mhetlong.ag353snpsids, mhet)
 
-	seqSetFilter(genofile, sample.id=sampsabove1375000)
+	seqSetFilter(genofile, sample.id=sampsabove1450000)
 	
 	genocountsB <- as.data.table(colSums(Filter(is.numeric, mmhet), na.rm=TRUE))	
 
-	genocountsB <- genocountsB[4:413]
+	genocountsB <- genocountsB[4:418]
 
 	sample.ids <- seqGetData(genofile, "sample.id")
 
@@ -362,37 +365,19 @@ For now I will drop SNPs that are genotyped in less than 350 individuals (350/41
 	
 ```
 ![DistofNumSitesGenoPerIndAfter1stDrop](DistofNumSitesGenoPerIndAfter1stDrop.tiff)
-I am going to drop individuals that have fewer than 1370836 (80% of total) SNPs genotyped. This results in dropping 5 additional individuals: Spring_2016_D8_8.20, Spring_2017_DBunk_73SM, March20_2018_D8_5, March20_2018_D8_29, and May_2017_DBunk_509. This leave 405 individuals.
+I am going to drop individuals that have fewer than 1,443,442 (80% of total) SNPs genotyped. This results in dropping 5 additional individuals: Spring_2016_D8_8.20, Spring_2017_DBunk_73SM, March20_2018_D8_5, March20_2018_D8_29, and May_2017_DBunk_509. This leaves 410 individuals.
 
 ```
-	secondsampstodrop <- genocountsB$sample.ids[genocountsB$numsitesgenotype<1370836]
-	secondsampstokeep <- genocountsB$sample.ids[genocountsB$numsitesgenotype>1370836]
+	secondsampstodrop <- genocountsB$sample.ids[genocountsB$numsitesgenotype<1443442]
+	secondsampstokeep <- genocountsB$sample.ids[genocountsB$numsitesgenotype>1443442]
 	
-	save(secondsampstodrop, file="secondsampstodrop_20190422.Rdata")
-	save(secondsampstokeep, file="secondsampstokeep_20190422.Rdata")
+	save(secondsampstodrop, file="secondsampstodropwSimo_20190430.Rdata")
+	save(secondsampstokeep, file="secondsampstokeepwSimo_20190430.Rdata")
 
 	mmhet[, (secondsampstodrop) := NULL]
 	
-``` 
-Let's take another look at the distribution of individuals genotyped per SNP.
 ```
-	mmhetlong <- melt(mmhet, measure.vars=secondsampstokeep, variable.name="clone", value.name="dosage")
-
-	mmhetlong.ag <- mmhetlong[,list(numgeno = sum(dosage, na.rm=TRUE)), list(variant.ids) ]
-	
-	save(mmhetlong.ag, file="mmhetlong.ag_2nddrop_20190423.Rdata")
-
-	ggplot(data=mmhetlong.ag, aes(x=numgeno)) + geom_histogram(binwidth=5)
-
-```
-![DistofIndGenobySNPafterdroppingsecondset](DistofIndGenobySNPafterdroppingsecondset.tiff)
-
-Right now the minimum number of individuals genotyped per SNP is 345 out of 405, which is just about 85%. I am going to leave this as is for now. So let's save a final set of SNP ids. This is a set of 1,715,039 SNPs.
-```
-	snpsetfilteredformissing <- mmhetlong.ag$variant.ids
-
-	save(snpsetfilteredformissing, file="snpsetfilteredformissing_20190423.Rdata")
-```
+DID NOT GET PAST HERE
 Now let's LD prune these SNPs, then run IBS and do superclone identification. We know D. obtusa are in this data set. Let's leave them in for now, identify them in the IBS superclone analysis, and then we can remove them and see if that changes things.
 So first LD pruning.
 ```
