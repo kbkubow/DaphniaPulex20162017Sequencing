@@ -393,12 +393,12 @@ So first LD pruning.
         library(tidyverse)
 
 # Load genotyping and filtered snp file
-	genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+	genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
 
-	load("snpsetfilteredformissing_20190423.Rdata")
-	load("secondsampstokeep_20190422.Rdata")
+	load("finalsnpstousewSimoids_20190430.Rdata")
+	load("secondsampstokeepwSimo_20190430.Rdata")
 	
-	seqSetFilter(genofile, variant.id=snpsetfilteredformissing)
+	seqSetFilter(genofile, variant.id=finalsnpstousewSimoids)
 	seqSetFilter(genofile, sample.id=secondsampstokeep)
 
 
@@ -409,17 +409,17 @@ So first LD pruning.
 
 ### SNP pruning
 		set.seed(10000)
-		snpset01 <- snpgdsLDpruning(genofile, snp.id=snpsetfilteredformissing, sample.id=secondsampstokeep,
+		snpset01 <- snpgdsLDpruning(genofile, snp.id=finalsnpstousewSimoids, sample.id=secondsampstokeep,
 		autosome.only=FALSE, maf=maf,missing.rate=missing.rate, slide.max.bp=500, ld.threshold=0.1)
 
 		finalsetsnpset01 <-unlist(snpset01[c(1:62)])
 		finalsetsnpset01dt <- as.data.table(finalsetsnpset01)
 
-		save(finalsetsnpset01, file="finalsetsnpset01_20190423.Rdata")
-		save(finalsetsnpset01dt, file="finalsetsnpset01dt_20190423.Rdata")
+		save(finalsetsnpset01, file="finalsetsnpset01wSimo_20190430.Rdata")
+		save(finalsetsnpset01dt, file="finalsetsnpset01dtwSimo_20190430.Rdata")
 		
 ```
-LD pruning results in retention of 155,898 SNPs.
+LD pruning results in retention of 154,731 SNPs.
 		
 
 
