@@ -122,7 +122,6 @@ Now lets filter out snps based on overall read depth. Removing SNPs that are in 
 	
 ```
 This depth filtering resulted in a removal of 99,992 SNPs, such that 2,400,990 SNPs remain. Here is the distribution of read depth of the remaining SNPs.
-![ReadDepthDistribtionAfterDepthFiltering](ReadDepthDistributionsAfterDepthFiltering.tiff)
 
 Now let's filter SNPs that have high or low read depth for specific superclones.
 
@@ -284,7 +283,7 @@ Now let's try to figure out what Samples and SNPs should be dropped to minimize 
 
 	genocounts <- as.data.table(colSums(Filter(is.numeric, mhet), na.rm=TRUE))	
 
-	genocounts <- genocounts[4:428]
+	genocounts <- genocounts[4:435]
 
 	sample.ids <- seqGetData(genofile, "sample.id")
 
@@ -294,9 +293,9 @@ Now let's try to figure out what Samples and SNPs should be dropped to minimize 
 	
 	setkey(genocounts, numsitesgenotype)
 
-	save(genocounts, file="genocounts_20190422.Rdata")
+	save(genocounts, file="genocountswSimo_20190430.Rdata")
 
-# Let's look at the distribution of number of genotype sites across individuals
+# Let's look at the distribution of number of genotype sites across individuals. Haven't gone beyond this point. Both Simo are really low.
 
 	ggplot(data=genocounts, aes(x=numsitesgenotype)) + geom_histogram(binwidth=10000)
 
