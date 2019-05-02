@@ -286,3 +286,182 @@ Not sure this is working quite right. Now let's try just D10 and W individuals v
     doscountwidenoObtusa <- doscountwide[dos0 < 50000]
 ```
 Coming out similar, in that there is one clear outlier, March20_2018_DBunk_5, but others all look pretty similar.
+Let's try to look at if the same variants are popping up in each individual.
+```
+#Count instances of clone/dosage	
+	  dosagecountsids <- mmhetlong[, .N, by=list(variant.ids, dosage)]
+
+#Remove NAs
+	  dosagecountsids <- dosagecountsids[dosage!="NA"]
+
+#Transform to wide format
+	  doscountidwide <- dcast(dosagecountsids, variant.ids ~ dosage, value.var="N")
+	  colnames(doscountidwide) <- c("variant.ids", "dos0", "dos1", "dos2")
+    	  doscountidwide[is.na(dos0),dos0:=0]
+	  doscountidwide[is.na(dos1),dos1:=0]
+	  doscountidwide[is.na(dos2),dos2:=0]
+	  
+	  setkey(doscountidwide, variant.ids)
+	  setkey(snps, variant.ids)
+	  msnps <- merge(doscountidwide, snps)
+```
+Just doesn't seem to be really getting us anywhere. Will try one final approach, then letting this go for now.
+```
+ #Load libraries
+    library(gdsfmt) 
+    library(SNPRelate)
+    library(data.table)
+    library(ggplot2)
+    library(foreach)
+    library(lattice)
+    library(tidyr)
+    library(SeqArray)
+    library(tidyverse)
+
+#Open genotype file
+   	genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+#Load individual file
+    load("subsetsingleindperSCwcount_20190501.Rdata")
+    subsetsingleindperSCwcountids <- subsetsingleindperSCwcount$clone
+    temp <- unlist(strsplit(subsetsingleindperSCwcount$clone, split="_"))
+		mat <- matrix(temp, ncol=4, byrow=TRUE)
+		matdat <- as.data.table(mat)
+		subsetsingleindperSCwcount$population <- matdat$V3
+		subsetsingleindperSCwcount$year <- matdat$V2
+		subsetsingleindperSCwcount$season <- matdat$V1
+		subsetsingleindperSCwcount$season2 <- ifelse(subsetsingleindperSCwcount$season=="April", "Spring", subsetsingleindperSCwcount$season)
+    
+#Load LD pruned SNP set
+     load("finalsetsnpset01wSimo_20190430.Rdata")
+
+#Pull out D8, DBunk, and obtusa individuals, but not individuals that may show introgression
+     D8DBunk <- subsetsingleindperSCwcount[population=="DBunk" | population=="D8"]
+     D8DBunkids <- D8DBunk$clone
+     Obtusa <- c("April_2017_Dbarb_11", "March20_2018_DBunk_26", "March20_2018_DBunk_37", "March20_2018_DBunk_42",
+      "March20_2018_DBunk_10", "March20_2018_DBunk_18", "March20_2018_DBunk_21", "March20_2018_DBunk_22",
+      "March20_2018_DBunk_23", "March20_2018_DBunk_38", "March20_2018_DBunk_40", "March20_2018_DBunk_41",
+      "March20_2018_DBunk_43")
+     D8DBunkidsnoObtusaids <- setdiff(D8DBunkids, Obtusa)
+     Intro <- c("Spring_2017_DBunk_222", "Spring_2017_DBunk_73", "December17_2018_D8_1", "Spring_2017_DBunk_315",
+     "Spring 2017_DBunk_5", "Spring_2017_DBunk_125", "Spring_2017_DBunk_21", "Spring_2017_DBunk_233", 
+     "Spring_2017_DBunk_317", "Spring_2017_DBunk_242", "Spring_2017_DBunk_232", "Spring_2017_DBunk_9", 
+     "Spring_2017_DBunk_36", "Spring_2017_DBunk_3", "April_2017_DBunk_185")
+     D8DBunkidsnoObtusaidsnointro <- setdiff(D8DBunkidsnoObtusaids, Intro)
+     D8DBunkidsdt <- as.data.table(D8DBunkidsnoObtusaidsnointro)
+     colnames(D8DBunkidsdt) <- c("clone")
+     Obtusadt <- as.data.table(Obtusa)
+     colnames(Obtusadt) <- c("clone")
+     setkey(D8DBunkidsdt, clone)
+     setkey(subsetsingleindperSCwcount, clone)
+     mPulex <- merge(D8DBunkidsdt, subsetsingleindperSCwcount)
+     mPulex$species <- c("pulex")
+     setkey(Obtusadt, clone)
+     setkey(subsetsingleindperSCwcount, clone)
+     mObtusa <- merge(Obtusadt, subsetsingleindperSCwcount)
+     mObtusa$species <- c("obtusa")
+     D8DBunk <- rbind(mPulex, mObtusa)
+     D8DBunkids <- D8DBunk$clone
+# Set sequence filters
+    seqSetFilter(genofile, sample.id=D8DBunkids)
+    seqSetFilter(genofile, variant.id=finalsetsnpset01)
+    
+# Call genotypes
+    snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+		  chr = seqGetData(genofile, "chromosome"),
+		  pos = seqGetData(genofile, "position"),
+		  dp = seqGetData(genofile, "annotation/info/DP"))
+
+	  het <- t(seqGetData(genofile, "$dosage"))
+  	het <- as.data.table(het)
+			
+	  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+	  het$variant.ids <- seqGetData(genofile, "variant.id")
+			
+	  setkey(het, variant.ids)
+	  setkey(snps, variant.ids)
+			
+	  mhet <- merge(snps, het)
+
+	  sample.ids <- seqGetData(genofile, "sample.id")
+
+#Make long format
+	  mhetlong <- melt(mhet, measure.vars=sample.ids, variable.name="clone", value.name="dosage")
+	  setkey(mhetlong, clone)
+	  setkey(D8DBunk, clone)
+	  mmhetlong <- merge(D8DBunk, mhetlong)
+	
+#Count instances of variant.ids/SC/dosage	
+	dosagecounts <- mmhetlong[, .N, by=list(variant.ids, dosage, species)]
+
+#Remove NAs
+	dosagecounts <- dosagecounts[dosage!="NA"]
+
+#Transform to wide format
+	doscountwide <- dcast(dosagecounts, variant.ids + species ~ dosage, value.var="N")
+	colnames(doscountwide) <- c("variant.ids", "species", "dos0", "dos1", "dos2")
+  doscountwide[is.na(dos0),dos0:=0]
+	doscountwide[is.na(dos1),dos1:=0]
+	doscountwide[is.na(dos2),dos2:=0]
+	yetwider <- dcast(doscountwide, variant.ids~species, value.var=c("dos0", "dos1", "dos2"))
+  yetwider$obtusa_total <- yetwider$dos0_obtusa + yetwider$dos1_obtusa + yetwider$dos2_obtusa
+  yetwider$pulex_total <- yetwider$dos0_pulex + yetwider$dos1_pulex + yetwider$dos2_pulex
+  max(yetwider$obtusa_total, na.rm=TRUE) #7
+  max(yetwider$pulex_total, na.rm=TRUE) #108
+  yetwiderlowmiss <- yetwider[obtusa_total > 5 & pulex_total > 100]
+  yetwiderlowmiss$fixed <- ifelse(yetwiderlowmiss$dos0_obtusa/yetwiderlowmiss$obtusa_total==1 &
+    yetwiderlowmiss$dos2_pulex/yetwiderlowmiss$pulex_total>0.99, 1, 0)
+  ObtusaPulexfixedids <- yetwiderlowmiss$variant.ids[yetwiderlowmiss$fixed==1]
+  
+#Now pull out all DBunk and 2018 individuals
+  DBunk <- subsetsingleindperSCwcount[population=="DBunk" & year!="2018"]
+  all2018 <- subsetsingleindperSCwcount[year=="2018"]
+  DBunkand2018 <- rbind(DBunk, all2018)
+  DBunkand2018ids <- DBunkand2018$clone
+
+#Set sequence filters
+    seqSetFilter(genofile, sample.id=DBunkand2018ids)
+    seqSetFilter(genofile, variant.id=ObtusaPulexfixedids)
+
+# Call genotypes
+    snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+		  chr = seqGetData(genofile, "chromosome"),
+		  pos = seqGetData(genofile, "position"),
+		  dp = seqGetData(genofile, "annotation/info/DP"))
+
+	  het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+			
+	  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+	  het$variant.ids <- seqGetData(genofile, "variant.id")
+			
+	  setkey(het, variant.ids)
+	  setkey(snps, variant.ids)
+			
+	  mhet <- merge(snps, het)
+
+	  sample.ids <- seqGetData(genofile, "sample.id")
+
+#Make long format
+	  mhetlong <- melt(mhet, measure.vars=sample.ids, variable.name="clone", value.name="dosage")
+	  setkey(mhetlong, clone)
+	  setkey(DBunkand2018, clone)
+	  mmhetlong <- merge(DBunkand2018, mhetlong)
+
+#Count instances of clone/dosage	
+	  dosagecounts <- mmhetlong[, .N, by=list(clone, dosage)]
+
+#Remove NAs
+	  dosagecounts <- dosagecounts[dosage!="NA"]
+
+#Transform to wide format
+	  doscountwide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+	  colnames(doscountwide) <- c("clone", "dos0", "dos1", "dos2")
+    doscountwide[is.na(dos0),dos0:=0]
+	  doscountwide[is.na(dos1),dos1:=0]
+	  doscountwide[is.na(dos2),dos2:=0]
+
+# Forgot the obtusa individuals are still in here
+    doscountwidenoObtusa <- doscountwide[dos0 < 50000]
+```
+Really NOTHING jumping out.
