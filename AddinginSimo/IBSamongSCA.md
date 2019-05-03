@@ -95,7 +95,8 @@
         mscnoidentAs$popB <- matdat$V3
         mscnoidentAs$yearB <- matdat$V2
         mscnoidentAs$seasonB <- matdat$V1
-        temp <- unlist(strsplit(mscnoidentAs$cloneA, split="_"))
+        mscnoidentAs$cloneA <- as.character(mscnoidentAs$cloneA)
+	temp <- unlist(strsplit(mscnoidentAs$cloneA, split="_"))
         mat <- matrix(temp, ncol=4, byrow=TRUE)
         matdat <- as.data.table(mat)
         mscnoidentAs$popA <- matdat$V3
@@ -108,12 +109,11 @@
 #Remove single male libraries
         mscnoidentAsnomale <- mscnoidentAs[yearA!="2019" & yearB!="2019"]
         
-#Remove multiple comparisons among years
-        mscnoidentAsnomalesing <- mscnoidentAsnomale[yearA_yearB!="2017_2016" & yearA_yearB!="2018_2016" & yearA_yearB!="2018_2017"]
-       
-#Remove D8_770SM library, which seems to be an outlier
-        mscnoidentAsnomalesingno770SM <0 mscnoidentAsnomalesing[cloneA!="May_2017_D8_770SM" & cloneB!="May_2017_D8_770SM"]
-        
+#Consolidate year designations
+        mscnoidentAsnomale$yearA_yearB_B <- ifelse(mscnoidentAsnomale$yearA_yearB=="2017_2016", 
+	"2016_2017", ifelse(mscnoidentAsnomale$yearA_yearB=="2018_2017", "2017_2018", 
+	mscnoidentAsnomale$yearA_yearB))
+		        
 #Let's add in median read depths for each sample to see if that is causing some of the outliers
 #Set sequence filters
         seqSetFilter(genofile, sample.id=secondsampstokeep)
@@ -147,22 +147,86 @@
 # Add in read depth information to superclone A IBS data table
           colnames(readdepthrow.ag) <- c("cloneA", "medrdA")
           setkey(readdepthrow.ag, cloneA)
-          setkey(mscnoidentAsnomalesingno770SM, cloneA)
-          m <- merge(readdepthrow.ag, mscnoidentAsnomalesingno770SM)
+          setkey(mscnoidentAsnomale, cloneA)
+          m <- merge(readdepthrow.ag, mscnoidentAsnomale)
           colnames(readdepthrow.ag) <- c("cloneB", "medrdB")
           setkey(readdepthrow.ag, cloneB)
           setkey(m, cloneB)
           m2 <- merge(readdepthrow.ag, m)
           m2$avgrd <- (m2$medrdB+m2$medrdA)/2
- 
+
 #Look at the relationship between average read depth and distance
           ggplot(data=m2, aes(x=avgrd, y=distance)) + geom_point()
-          
+
+#Remove 2017_May_D8_770SM which seems to be an outlier
+	 m2no770SM <- m2[cloneA!="2017_May_D8_770SM" & cloneB!="2017_May_D8_770SM"]
+
 #There is a relationship. It seems like low read depth individuals are causing some of the IBS outliers.
-          ggplot(data=m2, aes(x=yearA_yearB, y=distance)) + geom_violin()
-          ggplot(data=m2[avgrd>15], aes(x=yearA_yearB, y=distance)) + geom_violin()
+          ggplot(data=m2, aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+          ggplot(data=m2[avgrd>15], aes(x=yearA_yearB_B, y=distance)) + geom_violin()
           
 #But perhaps individual median read depth is better to control for than average read depth
-          ggplot(data=m2[medrdA>9 & medrdB>9], aes(x=yearA_yearB, y=distance)) + geom_violin()
-          ggplot(data=m2[medrdA>14 & medrdB>14], aes(x=yearA_yearB, y=distance)) + geom_violin()
+          ggplot(data=m2[medrdA>8 & medrdB>8], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+          ggplot(data=m2[medrdA>9 & medrdB>9], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+          ggplot(data=m2[medrdA>14 & medrdB>14], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+
+
+###What happens if we look at superclone B as comparison? Don't have 2018, so not as useful. But let's just take a look.
+
+#Pull out just superclone A individuals
+        mscnoidentBs <- mscnoident[SCB=="B" & SCA=="B"]
         
+ #Adding pond, year, and season designations for clones A and B
+        mscnoidentBs$cloneB <- as.character(mscnoidentBs$cloneB)
+        temp <- unlist(strsplit(mscnoidentBs$cloneB, split="_"))
+        mat <- matrix(temp, ncol=4, byrow=TRUE)
+        matdat <- as.data.table(mat)
+        mscnoidentBs$popB <- matdat$V3
+        mscnoidentBs$yearB <- matdat$V2
+        mscnoidentBs$seasonB <- matdat$V1
+        mscnoidentBs$cloneA <- as.character(mscnoidentBs$cloneA)
+	temp <- unlist(strsplit(mscnoidentBs$cloneA, split="_"))
+        mat <- matrix(temp, ncol=4, byrow=TRUE)
+        matdat <- as.data.table(mat)
+        mscnoidentBs$popA <- matdat$V3
+        mscnoidentBs$yearA <- matdat$V2
+        mscnoidentBs$seasonA <- matdat$V1
+
+#Add a variable to pull out year combinations
+        mscnoidentBs$yearA_yearB <- paste(mscnoidentBs$yearA,mscnoidentBs$yearB, sep="_")
+
+#Remove single male libraries
+        mscnoidentBsnomales <- mscnoidentBs[yearA!="2019" & yearB!="2019"]
+        
+#Consolidate year designations
+        mscnoidentBsnomales$yearA_yearB_B <- ifelse(mscnoidentBsnomales$yearA_yearB=="2017_2016", 
+		"2016_2017", mscnoidentBsnomales$yearA_yearB)
+		        
+#Let's add in median read depths for each sample to see if that is causing some of the outliers
+
+# Add in read depth information to superclone A IBS data table
+          colnames(readdepthrow.ag) <- c("cloneA", "medrdA")
+          setkey(readdepthrow.ag, cloneA)
+          setkey(mscnoidentBsnomales, cloneA)
+          mB <- merge(readdepthrow.ag, mscnoidentBsnomales)
+          colnames(readdepthrow.ag) <- c("cloneB", "medrdB")
+          setkey(readdepthrow.ag, cloneB)
+          setkey(mB, cloneB)
+          m2B <- merge(readdepthrow.ag, mB)
+          m2B$avgrd <- (m2B$medrdB+m2B$medrdA)/2
+
+#Look at the relationship between average read depth and distance
+          ggplot(data=m2B, aes(x=avgrd, y=distance)) + geom_point()
+
+#Remove 2017_May_D8_773SM which seems to be an outlier
+	 m2Bno773SM <- m2B[cloneA!="May_2017_D8_773SM" & cloneB!="May_2017_D8_773SM"]
+
+#There is a relationship. It seems like low read depth individuals are causing some of the IBS outliers.
+          ggplot(data=m2B, aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+          ggplot(data=m2B[avgrd>15], aes(x=yearA_yearB_B, y=distance)) + geom_violin()
+          
+#But perhaps individual median read depth is better to control for than average read depth
+          ggplot(data=m2B[medrdA>8 & medrdB>8], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+          ggplot(data=m2B[medrdA>9 & medrdB>9], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+          ggplot(data=m2B[medrdA>14 & medrdB>14], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
+
