@@ -1,3 +1,4 @@
+```
 #Load libraries
         library(gdsfmt)
         library(SNPRelate)
@@ -230,3 +231,4 @@
           ggplot(data=m2B[medrdA>9 & medrdB>9], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
           ggplot(data=m2B[medrdA>14 & medrdB>14], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
 
+```
