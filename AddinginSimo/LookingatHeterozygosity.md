@@ -111,5 +111,17 @@
 	
 	save(m, file="hetandmedrdforSCA_20190506.Rdata")
 
-			
+# Now let's look at the distribution of heterozygosity among year/season
+
+	m$year_season <- paste(m$year, m$seasonB, sep="_")
+
+	ggplot(data=m, aes(x=year_season, y=prophet)) + geom_boxplot() + ylim(0.035, 0.05)
+	ggplot(data=m[medrd>9], aes(x=year_season, y=prophet)) + geom_boxplot() + ylim(0.035, 0.05)
+	ggplot(data=m[medrd>14], aes(x=year_season, y=prophet)) + geom_boxplot() + ylim(0.035, 0.05)
+	ggplot(data=m, aes(x=prophet)) + geom_histogram() + facet_wrap(~year_season) + xlim(0.035, 0.05)
+	ggplot(data=m[medrd>9], aes(x=prophet)) + geom_histogram() + facet_wrap(~year_season) + xlim(0.035, 0.05)
+	ggplot(data=m[medrd>14], aes(x=prophet)) + geom_histogram() + facet_wrap(~year_season) + xlim(0.035, 0.05)
+	ggplot(data=m[medrd>14], aes(x=prophet)) + geom_histogram() + facet_wrap(~year_season) + xlim(0.035, 0.05)
+	ggplot(data=m[medrd>19], aes(x=prophet)) + geom_histogram() + facet_wrap(~year_season) + xlim(0.035, 0.05)
+	ggplot(data=m, aes(x=medrd, y=prophet, color=year_season)) + geom_point()
 ```
