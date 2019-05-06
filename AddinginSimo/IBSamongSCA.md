@@ -171,7 +171,25 @@
           ggplot(data=m2[medrdA>9 & medrdB>9], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
           ggplot(data=m2[medrdA>14 & medrdB>14], aes(x=yearA_yearB_B, y=distance)) + geom_violin() + ylim(0.985,1)
 
+	m2$seasonA_B <- ifelse(m2$seasonA=="Spring" & m2$yearA=="2017", "April", m2$seasonA)
+	m2$seasonB_B <- ifelse(m2$seasonB=="Spring" & m2$yearB=="2017", "April", m2$seasonB)
+	m2$seasonA_yearA <- paste(m2$seasonA_B, m2$yearA, sep="_")
+	m2$seasonB_yearB <- paste(m2$seasonB_B, m2$yearB, sep="_")
+	m2$seasonyearcomp <- paste(m2$seasonA_yearA, m2$seasonB_yearB, sep="_")
 
+#Consolidate seasonyearcomp
+	m2$seasonyearcompB <- ifelse(m2$seasonyearcomp=="April_2017_Spring_2016", "Spring_2016_April_2017",
+		ifelse(m2$seasonyearcomp=="March20_2018_April_2017", "April_2017_March20_2018",
+		ifelse(m2$seasonyearcomp=="May_2017_April_2017", "April_2017_May_2017",
+		m2$seasonyearcomp)))
+	m2$seasonyearcompB <- factor(m2$seasonyearcompB, levels = m2$seasonyearcompB[order(m2$yearA, m2$yearB, m2$seasonA_B)])
+       
+        ggplot(data=m2, aes(x=seasonyearcompB, y=distance)) + geom_violin() + ylim(0.985,1)
+        ggplot(data=m2[medrdA>9 & medrdB>9], aes(x=seasonyearcompB, y=distance)) + geom_violin() + ylim(0.985,1)
+        ggplot(data=m2[medrdA>14 & medrdB>14], aes(x=seasonyearcompB, y=distance)) + geom_violin() + ylim(0.985,1)
+ 		
+	
+	
 ###What happens if we look at superclone B as comparison? Don't have 2018, so not as useful. But let's just take a look.
 
 #Pull out just superclone A individuals
