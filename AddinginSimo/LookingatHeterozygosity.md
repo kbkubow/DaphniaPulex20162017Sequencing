@@ -1,3 +1,4 @@
+```
 #Load libraries
         library(gdsfmt)
         library(SNPRelate)
@@ -63,3 +64,52 @@
 #Count instances of variant.ids/clone/dosage	
 	      genoclone <- mhetlong[, .N, by=list(clone, dosage)]
 
+#Remove NAs
+	genoclone <- genoclone[dosage!="NA"]
+
+#Transform to wide format
+	genoclonewide <- dcast(genoclone, clone ~ dosage, value.var="N")
+	colnames(genoclonewide) <- c("clone", "dos0", "dos1", "dos2")
+	genoclonewide$total <- genoclonewide$dos1 + genoclonewide$dos2 + genoclonewide$dos0
+	genoclonewide$prophet <- genoclonewide$dos1/genoclonewide$total
+	genoclonewide$hetoverhomalt <- genoclonewide$dos1/(genoclonewide$dos0+genoclonewide$dos1)
+
+#Add in median read depth
+
+          dp <- t(seqGetData(genofile, "annotation/format/DP")$data)
+          dp <- as.data.table(dp)
+          dp[,variant.ids:=snpsG$variant.ids]
+	  
+	  sampleids <- as.data.table(seqGetData(genofile, "sample.id"))
+	  variantidhead <- as.data.table("variant.ids")
+	  totalids <- rbind(sampleids, variantidhead)
+	  colnames(dp) <- c(totalids$V1)
+	
+	  setkey(dp, variant.ids)
+	  setkey(snpsG, variant.ids)
+	    
+	  m <- merge(snpsG, dp)
+	  
+	  readdepthrow <- melt(m, measure.vars=sampleids, variable.name="clone", value.name="dp")
+	  
+	  readdepthrow.ag <- readdepthrow[,list(medrd=as.double(median(dp1, na.rm=TRUE))), list(clone)]
+	  
+	  setkey(readdepthrow.ag, clone)
+	  setkey(genoclonewide, clone)
+	  m <- merge(readdepthrow.ag, genoclonewide)
+	  
+# Pull out year/season etc
+	
+	m$clone <- as.character(m$clone)
+        temp <- unlist(strsplit(m$clone, split="_"))
+        mat <- matrix(temp, ncol=4, byrow=TRUE)
+        matdat <- as.data.table(mat)
+        m$pop <- matdat$V3
+        m$year <- matdat$V2
+        m$season <- matdat$V1
+        m$seasonB <- ifelse(m$year=="2017" & m$season=="Spring", "April", m$season)
+	
+	save(m, file="hetandmedrdforSCA_20190506.Rdata")
+
+			
+```
