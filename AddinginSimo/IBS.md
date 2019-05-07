@@ -94,6 +94,137 @@ Let's try doing IBS and superclone assignment on the filtered, LD pruned dataset
         sc.dt[superClone.size==1, SC:="OO"]
         
         write.table(sc.dt, file="Superclones20161718updated_20190501", sep="\t", row.names=FALSE, quote=FALSE)
+        
+### remake ibs.long
+    ibs.mat.fig <- ibs.mat
+    ibs.long <- as.data.table(melt(ibs.mat.fig))
+    setnames(ibs.long, names(ibs.long), c("cloneA", "cloneB", "distance"))
+    ibs.long <- na.omit(ibs.long)
+
+### first, need to tack in SC identities
+    Obtusa <- c("April_2017_Dbarb_11", "March20_2018_DBunk_26", "March20_2018_DBunk_37", "March20_2018_DBunk_42",
+      "March20_2018_DBunk_10", "March20_2018_DBunk_18", "March20_2018_DBunk_21", "March20_2018_DBunk_22",
+      "March20_2018_DBunk_23", "March20_2018_DBunk_38", "March20_2018_DBunk_40", "March20_2018_DBunk_41",                          "March20_2018_DBunk_43")
+     
+    sc.dtids <- sc.dt$clone
+    idstouse <- setdiff(sc.dtids, Obtusa)
+    idstousedt <- data.table(clone=idstouse)
+    setkey(idstousedt, clone)
+    setkey(sc.dt, clone)
+    sc.dtnoOb <- merge(idstousedt, sc.dt)
+
+    setnames(ibs.long, "cloneA", "clone")
+    setkey(ibs.long, "clone")
+    setkey(sc.dtnoOb, "clone")
+    ibs.long <- merge(ibs.long, sc.dtnoOb)
+    setnames(ibs.long, "clone", "cloneA")
+    setnames(ibs.long, "SC", "SC.A")
+
+    setnames(ibs.long, "cloneB", "clone")
+    setkey(ibs.long, "clone")
+    setkey(sc.dtnoOb, "clone")
+    ibs.long <- merge(ibs.long, sc.dtnoOb)
+    setnames(ibs.long, "clone", "cloneB")
+    setnames(ibs.long, "SC", "SC.B")
+
+
+    ### re-rank SCs based on size in pond
+
+    ibs.long <- ibs.long[,c("cloneA", "cloneB", "SC.A", "SC.B", "distance"), with=F]
+            ibs.long[,pondA := tstrsplit(cloneA, "_")[[3]]]
+            ibs.long[,pondB := tstrsplit(cloneB, "_")[[3]]]
+
+
+            ibs.long.ag <- ibs.long[,list(pond.n = length(distance)), list(pondA, SC.A) ]
+            ibs.long.ag[,pond.sc.rank := ibs.long.ag[,list(pond.sc.rank = rank(-pond.n, ties="random")), list(pondA)]$pond.sc.rank]
+            ibs.long.ag[,pond.sc.rank := letters[pond.sc.rank]]
+
+            ### be lazy and write a loop
+                    ibs.long.2 <- foreach(i=1:dim(ibs.long.ag)[1], .combine="rbind")%do%{
+                                    temp <- ibs.long[pondA==ibs.long.ag$pondA[i] & SC.A==ibs.long.ag$SC.A[i]]
+                                    temp[,sc.a:=ibs.long.ag$pond.sc.rank[i]]
+                                    temp
+                    }
+
+                    ibs.long.3 <- foreach(i=1:dim(ibs.long.ag)[1], .combine="rbind")%do%{
+                                    temp <- ibs.long.2[pondB==ibs.long.ag$pondA[i] & SC.B==ibs.long.ag$SC.A[i]]
+                                    temp[,sc.b:=ibs.long.ag$pond.sc.rank[i]]
+                                    temp
+                    }
+
+                    ibs.long <- ibs.long.3
+
+    ### next, generate [s]uper[c]lone[i]ds for individual 'A' and 'B'
+
+    ibs.long[,scid.a := paste(SC.A, sprintf("%03d", as.numeric(as.factor(cloneA))), sep=".")]
+    ibs.long[,scid.b := paste(SC.B, sprintf("%03d", as.numeric(as.factor(cloneB))), sep=".")]
+
+### group on pond
+
+    ibs.long[,pondA := factor(pondA, levels=c("D10", "D8", "DBunk", "DCat", "DLily", "Dmud", "DOil", "Dcat", "Dramp", "W1", "W6"))]
+    ibs.long[,pondB := factor(pondB, levels=c("D10", "D8", "DBunk", "DCat", "DLily", "Dmud", "DOil", "Dcat", "Dramp", "W1", "W6"))]
+
+        ibs.long[,scid.a := paste(LETTERS[as.numeric(pondA)], scid.a, sep=".")]
+    ibs.long[,scid.b := paste(LETTERS[as.numeric(pondB)], scid.b, sep=".")]
+
+    ibs.long[,scid.a := as.factor(scid.a)]
+    ibs.long[,scid.b := as.factor(scid.b)]
+
+    ### tack in buffer cloneIds for graphical purposes
+        ibs.long <- rbind(ibs.long,
+                          data.table(scid.a=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk",
+                                "DCat", "W1")]$pondA)], min(ibs.long$SC.A), sep=".")), c("000"), sep="."),
+                                 paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk",
+                                 "Dramp", "W6")]$pondA)], max(ibs.long$SC.A), sep=".")), c("999"), sep=".")),
+                                     scid.b=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk",
+                                     "DCat", "W1")]$pondB)], min(ibs.long$SC.B), sep=".")), c("000"), sep="."),
+                                              paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk",
+                                              "Dramp", "W6")]$pondB)], max(ibs.long$SC.B), sep=".")), c("999"), sep="."))),
+                                                fill=T)
+         ibs.long[,scid.a := factor(scid.a, levels=sort(unique(as.character(scid.a))))]
+         ibs.long[,scid.b := factor(scid.b, levels=sort(unique(as.character(scid.b))))]
+
+    ### make lower triangle poofy-de-poof
+        ibs.long[,dist.noTri := distance]
+        ibs.long[as.numeric(scid.a)>as.numeric(scid.b), dist.noTri:=NA]
+
+
+    ### make pond bounding boxes
+        ibs.long.ag <- data.table(scid.a.min=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "DCat", "W1")]$pondA)], min(ibs.long$SC.A, na.rm=T), sep=".")), c("000"), sep="."),
+                                  scid.a.max=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$pondA)], max(ibs.long$SC.A, na.rm=T), sep=".")), c("999"), sep="."),
+                                  scid.b.min=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk", "DCat", "W1")]$pondB)], min(ibs.long$SC.B, na.rm=T), sep=".")), c("000"), sep="."),
+                                  scid.b.max=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$pondB)], max(ibs.long$SC.B, na.rm=T), sep=".")), c("999"), sep="."))
+
+        ibs.long.ag[,scid.a.min := as.numeric(factor(scid.a.min, levels=sort(unique(as.character(ibs.long$scid.a)))))]
+        ibs.long.ag[,scid.a.max := as.numeric(factor(scid.a.max, levels=sort(unique(as.character(ibs.long$scid.a)))))]
+        ibs.long.ag[,scid.b.min := as.numeric(factor(scid.b.min, levels=sort(unique(as.character(ibs.long$scid.b)))))]
+        ibs.long.ag[,scid.b.max := as.numeric(factor(scid.b.max, levels=sort(unique(as.character(ibs.long$scid.b)))))]
+
+
+    ### plot it
+        h.just <- .25
+        v.just <- .25
+        l.size <- 1.5
+       ggplot(data=ibs.long, aes(scid.a, scid.b, fill=distance)) +
+        geom_raster() +
+        scale_fill_viridis(option="D") +
+        geom_rect(xmin=ibs.long.ag$scid.a.min[1]-2*h.just, xmax=ibs.long.ag$scid.a.max[1]+h.just,
+                  ymin=ibs.long.ag$scid.b.min[1]-2*v.just, ymax=ibs.long.ag$scid.b.max[1]+v.just,
+                  fill=NA, color="red", size=l.size) +
+        geom_rect(xmin=ibs.long.ag$scid.a.min[2]-2*h.just, xmax=ibs.long.ag$scid.a.max[2]+h.just,
+                  ymin=ibs.long.ag$scid.b.min[2]-2*v.just, ymax=ibs.long.ag$scid.b.max[2]+v.just,
+                  fill=NA, color="red", size=l.size) +
+        geom_rect(xmin=ibs.long.ag$scid.a.min[3]-2*h.just, xmax=ibs.long.ag$scid.a.max[3]+h.just,
+                  ymin=ibs.long.ag$scid.b.min[3]-2*v.just, ymax=ibs.long.ag$scid.b.max[3]+v.just,
+                  fill=NA, color="red", size=l.size) +
+        geom_rect(xmin=ibs.long.ag$scid.a.min[4]-2*h.just, xmax=ibs.long.ag$scid.a.max[4]+h.just,
+                  ymin=ibs.long.ag$scid.b.min[4]-2*v.just, ymax=ibs.long.ag$scid.b.max[4]+v.just,
+                  fill=NA, color="red", size=l.size) +
+        geom_rect(xmin=ibs.long.ag$scid.a.min[5]-2*h.just, xmax=ibs.long.ag$scid.a.max[5]+h.just,
+                  ymin=ibs.long.ag$scid.b.min[5]-2*v.just, ymax=ibs.long.ag$scid.b.max[5]+v.just,
+                  fill=NA, color="red", size=l.size)
+
+
 ```
 Should also have a superclone file for all individuals, including low coverage, except for two individuals that basically failed.
 ```
