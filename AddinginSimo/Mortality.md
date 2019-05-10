@@ -94,9 +94,56 @@ This is split between individuals that arrived in April, and those at the beginn
 	
 	scssub <- data.table(SC=scs$SC, population=scs$population)
 	scssubuniq <- unique(scssub)
-	setkey(scssubuniq, SC)
-	setkey(propmort, SC)
-	mpropmort <- merge(propmort, scssubuniq)
+	scssubuniqnoOO <- scssubuniq[SC!="OO"]
+	propmortnoOO <- propmort[SC!="OO"]
+	setkey(scssubuniqnoOO, SC)
+	setkey(propmortnoOO, SC)
+	mpropmort <- merge(propmortnoOO, scssubuniqnoOO)
+	mpropmort$notuse <- ifelse(mpropmort$SC=="A" & mpropmort$population=="DBunk", 0, ifelse(
+		mpropmort$SC=="B" & mpropmort$population=="Dmud", 0, ifelse(mpropmort$SC=="AD", 0, 1)))
 	ggplot(data=mpropmort, aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line()
-	ggplot(data=mpropmort[propmort$Dead+propmort$Alive > 4], aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line() + facet_wrap(~population)
+	ggplot(data=mpropmort[Dead+Alive > 4 & notuse==1], aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line() + facet_wrap(~population)
+	ggplot(data=mpropmort[notuse==1], aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line() + facet_wrap(~population)
 	
+	library(lme4)
+	mpropmort$total <- mpropmort$Dead+mpropmort$Alive
+	mpropmort5 <- mpropmort[total > 4]
+	mpropmort5D8 <- mpropmort5[population=="D8"]
+	mpropmort5DBunk <- mpropmort5[population=="DBunk" & notuse==1]
+	test <- glm(PropAlive~SC+Days+SC*Days, data=mpropmort5, family="binomial", weights=mpropmort5$total)
+	test <- glm(PropAlive~SC+DaysB+SC*DaysB, data=mpropmort5D8, family="binomial", weights=mpropmort5D8$total)
+	test <- glm(PropAlive~SC+Days+SC*Days, data=mpropmort5D8, family="binomial", weights=mpropmort5D8$total)
+	test <- glm(PropAlive~SC*DaysB, data=mpropmort5D8, family="binomial", weights=mpropmort5D8$total)
+
+	mpropmort5D8330 <- mpropmort5D8[Days=="330"]
+	test330 <- glm(PropAlive~SC, data=mpropmort5D8330, family="binomial", weights=mpropmort5D8330$total)
+	summary(test330)
+	mpropmort5D8300 <- mpropmort5D8[Days=="300"]
+	test300 <- glm(PropAlive~SC, data=mpropmort5D8300, family="binomial", weights=mpropmort5D8300$total)
+	summary(test300)
+	mpropmort5D8190 <- mpropmort5D8[Days=="190"]
+	test190 <- glm(PropAlive~SC, data=mpropmort5D8190, family="binomial", weights=mpropmort5D8190$total)
+	summary(test190)
+	mpropmort5D8160 <- mpropmort5D8[Days=="160"]
+	test160 <- glm(PropAlive~SC, data=mpropmort5D8160, family="binomial", weights=mpropmort5D8160$total)
+	summary(test160)
+	mpropmort5D8130 <- mpropmort5D8[Days=="130"]
+	test130 <- glm(PropAlive~SC, data=mpropmort5D8130, family="binomial", weights=mpropmort5D8130$total)
+	summary(test130)
+
+
+	mpropmort5DBunk330 <- mpropmort5DBunk[Days=="330"]
+	test330Bunk <- glm(PropAlive~SC, data=mpropmort5DBunk330, family="binomial", weights=mpropmort5DBunk330$total)
+	summary(test330Bunk)
+	mpropmort5DBunk300 <- mpropmort5DBunk[Days=="300"]
+	test300Bunk <- glm(PropAlive~SC, data=mpropmort5DBunk300, family="binomial", weights=mpropmort5DBunk300$total)
+	summary(test300Bunk)
+	mpropmort5DBunk190 <- mpropmort5DBunk[Days=="190"]
+	test190Bunk <- glm(PropAlive~SC, data=mpropmort5DBunk190, family="binomial", weights=mpropmort5DBunk190$total)
+	summary(test190Bunk)
+
+
+	m$DayMortB <- m$DayMort
+	m[is.na(DayMortB),DayMortB:=350]
+	mtouse <- m[SC=="A" | SC=="B" | SC=="K" | SC=="D" | SC=="E" | SC=="F" | SC=="J" | SC=="K"]
+	survdiff(DayMortB~SC, mtouse)
