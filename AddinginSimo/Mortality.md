@@ -64,3 +64,39 @@ This is split between individuals that arrived in April, and those at the beginn
         colnames(tmp160wide) <- c("SC", "Dead", "Alive")
         tmp160wide$PropAlive <- tmp160wide$Alive/(tmp160wide$Alive+tmp160wide$Dead)
         tmp160wide$Days <- c("160")
+
+       	tmp190 <- as.data.table(table(m$SC, m$alive190))
+        colnames(tmp190) <- c("SC", "Alive", "N")
+        tmp190wide <- dcast(tmp190, SC ~ Alive, value.var="N")
+        colnames(tmp190wide) <- c("SC", "Dead", "Alive")
+        tmp190wide$PropAlive <- tmp190wide$Alive/(tmp190wide$Alive+tmp190wide$Dead)
+        tmp190wide$Days <- c("190")
+
+       	tmp300 <- as.data.table(table(m$SC, m$alive300))
+        colnames(tmp300) <- c("SC", "Alive", "N")
+        tmp300wide <- dcast(tmp300, SC ~ Alive, value.var="N")
+        colnames(tmp300wide) <- c("SC", "Dead", "Alive")
+        tmp300wide$PropAlive <- tmp300wide$Alive/(tmp300wide$Alive+tmp300wide$Dead)
+        tmp300wide$Days <- c("300")
+
+       	tmp330 <- as.data.table(table(m$SC, m$alive330))
+        colnames(tmp330) <- c("SC", "Alive", "N")
+        tmp330wide <- dcast(tmp330, SC ~ Alive, value.var="N")
+        colnames(tmp330wide) <- c("SC", "Dead", "Alive")
+        tmp330wide$PropAlive <- tmp330wide$Alive/(tmp330wide$Alive+tmp330wide$Dead)
+        tmp330wide$Days <- c("330")
+
+	propmort <- rbind(tmp130wide, tmp160wide, tmp190wide, tmp300wide, tmp330wide)
+	propmort$DaysB <- as.integer(propmort$Days)
+
+	ggplot(data=propmort, aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line()
+	ggplot(data=propmort[propmort$Dead+propmort$Alive > 4], aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line()
+	
+	scssub <- data.table(SC=scs$SC, population=scs$population)
+	scssubuniq <- unique(scssub)
+	setkey(scssubuniq, SC)
+	setkey(propmort, SC)
+	mpropmort <- merge(propmort, scssubuniq)
+	ggplot(data=mpropmort, aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line()
+	ggplot(data=mpropmort[propmort$Dead+propmort$Alive > 4], aes(x=DaysB, y=PropAlive, group=SC, color=SC)) + geom_line() + facet_wrap(~population)
+	
