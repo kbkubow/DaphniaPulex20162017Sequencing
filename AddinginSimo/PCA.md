@@ -136,8 +136,8 @@ Let's try running the PCA on just the D8 and surround ponds (drop W1, W6, and D1
 		tab$population <- matdat$V3
 		tab$year <- matdat$V2
 		tab$season <- matdat$V1
-		tab$popseason <- paste(tab$population,"_",tab$season, sep="")
-		tab$season2 <- ifelse(tab$season=="April", "Spring", tab$season)
+		tab$season2 <- ifelse(tab$season=="Spring" & tab$year=="2017", "April", tab$season)
+		tab$popseason <- paste(tab$population,"_",tab$season2, sep="")
 		tab$seasonyear <- paste(tab$year,"_",tab$season2, sep="")
 
 		tab <- as.data.table(tab)
