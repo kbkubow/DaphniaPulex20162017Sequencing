@@ -51,6 +51,9 @@ This is split between individuals that arrived in April, and those at the beginn
         m$alive330day <- ifelse(m$DayMort<330, 0, 1)
         m[is.na(alive330day),alive330day:=1]
         
+	subm300 <- data.table(clone=m$clone, SC=m$SC, alive300=m$alive300day)
+	write.table(subm300, file="subm300_2019513", sep="\t", row.names=FALSE, quote=FALSE)
+	
         tmp130 <- as.data.table(table(m$SC, m$alive130))
         colnames(tmp130) <- c("SC", "Alive", "N")
         tmp130wide <- dcast(tmp130, SC ~ Alive, value.var="N")
