@@ -64,7 +64,7 @@ Using the parsed set of individuals and LD pruned filtered SNPs, let's try doing
  
  		ggplot(data=mtab[EV1 < 0.2 & EV2 < 0.2], aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
     
-    ONLY MADE IT THIS FAR
+
 
     
 ```
@@ -73,7 +73,7 @@ See clear difference between the D. obtusa and D. pulex individuals. Apparently 
 Let's try running the PCA again removing all D. obtusa individuals.
 ```
    #Remove all D. obtusa individuals
-    noobstusa <- mtab$clone[mtab$EV1<0.4]
+    noobstusa <- mtab$clone[mtab$EV1<0.3]
     
    #Rerun PCA
     		pca <- snpgdsPCA(genofile, snp.id=finalsetsnpset01, sample.id=noobstusa, autosome.only=FALSE, maf=maf, 
@@ -147,6 +147,7 @@ Let's try running the PCA on just the D8 and surround ponds (drop W1, W6, and D1
 	
 		ggplot(data=mtab, aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
 		ggplot(data=mtab[population=="D8"], aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
+		ggplot(data=mtab[population=="D8" | population=="DBunk"], aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
 
 ```
 ![PCAnoObtusaW1W6D10](PCAnoObtusaW1W6D10.tiff)
