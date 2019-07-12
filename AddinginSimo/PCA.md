@@ -148,7 +148,8 @@ Let's try running the PCA on just the D8 and surround ponds (drop W1, W6, and D1
 		ggplot(data=mtab, aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
 		ggplot(data=mtab[population=="D8"], aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
 		ggplot(data=mtab[population=="D8" | population=="DBunk"], aes(x=EV1, y=EV2, color=popseason)) + geom_point(aes(size=count))
-
+		ggplot(data=mtab[year!="2012" & year!="2016" &population=="D8"], aes(x=EV1, y=EV2, color=year)) + geom_point(aes(size=count)) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black"))
+		
 ```
 ![PCAnoObtusaW1W6D10](PCAnoObtusaW1W6D10.tiff)
 ![PCAnoObtusaW1W6D10graphonlyD8](PCAnoObtusaW1W6D10graphonlyD8.tiff)
