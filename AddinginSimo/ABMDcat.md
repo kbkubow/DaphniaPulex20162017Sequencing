@@ -147,9 +147,19 @@
 	save(mmmcon, file="mmmcon_20190723.Rdata")
 
 
-	setkey(magBsub, variant.ids)
-	setkey(snpsG, variant.ids)
-	consensusAcalls <- merge(magBsub, snpsG)
+	scst <- data.table(sc=c("Acondosage", "Bcondosage", "Mcondosage", "Ocondosage"))
+		
+	scsfull <- foreach(x=(1:4), .combine="rbind")%do%{
+		
+		SCA <- scst$sc[x]
+		data.table(SCA=c(SCA), SCB=scst$sc)
+		
+		}
+	
+	scsfullnoident <- scsfull[SCA!=SCB]
+	
+	save(scsfullnoident, file="scsfullnoident_20190723.Rdata")
+
 
 
 
