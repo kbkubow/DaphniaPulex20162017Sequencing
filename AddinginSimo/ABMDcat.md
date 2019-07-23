@@ -145,6 +145,16 @@
         mmmcon <- merge(mmcon, genoclonewidesubO)
        
 	save(mmmcon, file="mmmcon_20190723.Rdata")
+	
+	setkey(mmmcon, variant.id)
+
+        snps <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+		      chr = seqGetData(genofile, "chromosome"),
+		      pos = seqGetData(genofile, "position"),
+		      dp = seqGetData(genofile, "annotation/info/DP"))
+	setkey(snps, variant.id)
+	
+	mconsnp <- merge(snps, mmmcon)
 
 
 	scst <- data.table(sc=c("Acondosage", "Bcondosage", "Mcondosage", "Ocondosage"))
@@ -182,6 +192,19 @@
 			scaff50000$stop[x], (temp$startpos + 50000))
 		temp
 		}
+
+	windowstotestB <- foreach(x=1:13, .combine="rbind")%do%{
+		c=scaff50000$chr[x]
+		temp <- mconsnp[chr==c]
+		l=dim(temp)[1]
+		temp$count <- c(1:l)
+		temp <- data.table(chr=c(c), 
+			start=(windows <- seq(0, scaff50000$stop[x], 5000)))
+		temp$stop <- ifelse(temp$startpos + 50000 > scaff50000$stop[x], 
+			scaff50000$stop[x], (temp$startpos + 50000))
+		temp
+		}
+
 
 
 ```
