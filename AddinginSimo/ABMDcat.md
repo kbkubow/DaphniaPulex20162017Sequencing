@@ -144,6 +144,7 @@
         setkey(mmcon, variant,id)
         mmmcon <- merge(mmcon, genoclonewidesubO)
        
+	save(mmmcon, file="mmmcon_20190723.Rdata")
 
 
 	setkey(magBsub, variant.ids)
