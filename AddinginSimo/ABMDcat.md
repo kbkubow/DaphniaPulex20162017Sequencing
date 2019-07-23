@@ -161,6 +161,27 @@
 	save(scsfullnoident, file="scsfullnoident_20190723.Rdata")
 
 
+# Load scaffold file
+
+	scaff <- fread("/mnt/spicy_3/Karen/20162017FinalMapping/refgenome/D84Agoodscaffstouse1start.bed")
+	colnames(scaff) <- c("chr", "start", "stop")
+	scaff50000 <- scaff[stop>49000]
+	
+	windowstotest <- foreach(x=1:13, .combine="rbind")%do%{
+		temp <- data.table(chr=c(scaff50000$chr[x]), 
+			startpos=(windows <- seq(0, scaff50000$stop[x], 2500)))
+		temp$stop <- ifelse(temp$startpos + 25000 > scaff50000$stop[x], 
+			scaff50000$stop[x], (temp$startpos + 25000))
+		temp
+		}
+
+	windowstotestB <- foreach(x=1:13, .combine="rbind")%do%{
+		temp <- data.table(chr=c(scaff50000$chr[x]), 
+			startpos=(windows <- seq(0, scaff50000$stop[x], 5000)))
+		temp$stop <- ifelse(temp$startpos + 50000 > scaff50000$stop[x], 
+			scaff50000$stop[x], (temp$startpos + 50000))
+		temp
+		}
 
 
 ```
