@@ -1,3 +1,4 @@
+'''
 #Load libraries
         library(gdsfmt)
         library(SNPRelate)
@@ -39,3 +40,4 @@
 # Reset sequence filter
 
         seqSetFilter(genofile, sample.id=scsAnomaleSMids)
+'''
