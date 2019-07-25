@@ -156,6 +156,7 @@
 	
 	mconsnp <- merge(snps, mmmcon)
 
+mconsnp$mp <- ifelse(mconsnp$Acondosage==mconsnp$Mcondosage & mconsnp$Bcondosage==mconsnp$Ocondosage & mconsnp$Acondosage!=mconsnp$Bcondosage & mconsnp$Mcondosage!=mconsnp$Ocondosage, 1, 0)
 
 	scst <- data.table(sc=c("Acondosage", "Bcondosage", "Mcondosage", "Ocondosage"))
 		
