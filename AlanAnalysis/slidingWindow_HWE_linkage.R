@@ -76,14 +76,127 @@
 ### save
   save(clones, clones.af, snp.dt, sc, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
 
-### load
-  load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
-  genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
+######## pick up here #######
+  ### libraries
+    library(SeqArray)
+    library(SNPRelate)
+    library(data.table)
+    library(foreach)
+    library(doMC)
+    registerDoMC(20)
+    library(SeqVarTools)
+    library(ggtern)
+    library(viridis)
 
-  setkey(clones.af, id)
-  setkey(snp.dt, id)
+  ### load
+    load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
+    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
 
-  clones.af <- merge(clones.af, snp.dt)[af>.01 & af<.99]
+    setkey(clones.af, id)
+    setkey(snp.dt, id)
+
+    clones.af <- merge(clones.af, snp.dt)[af>.01 & af<.99]
+
+  ### generate HWE & F across the genome
+    seqResetFilter(genofile)
+    seqSetFilter(genofile, sample.id=clones$clone, variant.id=clones.af$id)
+
+    hwe <- as.data.table(hwe(genofile))
+    setkey(hwe, variant.id)
+
+    hwe[,fAA:=nAA/(nAA+nAa+naa)]
+    hwe[,fAa:=nAa/(nAA+nAa+naa)]
+    hwe[,faa:=naa/(nAA+nAa+naa)]
+
+    hwe <- merge(hwe, snp.dt, by.x="variant.id", by.y="id")
+
+  ### DeFinetti diagraim
+
+    hwe.ag <- hwe[p<.99, list(n=length(p)), list(fAA=round(fAA, 3), fAa=round(fAa, 3), faa=round(faa, 3))]
+
+    ggplot() +
+    geom_point(data=hwe.ag[order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
+    coord_tern(expand=T) + scale_color_viridis() + scale_fill_viridis() +
+    limit_tern(T = 1.05, L = 1.05, R = 1.05)
+
+  ### is there heterogeneity among chromosomes? YES.
+    ideal <- hwe.ag[which.max(hwe.ag$n)]$fAA
+    buffer <- .025
+    hwe[,odd:="auto"]
+    #hwe[round(fAA, 3)==.75 & round(fAa, 3)==.25 & round(faa, 3)==0, odd:="ZW"]
+    hwe[fAA>=(ideal-buffer) & fAA<=(ideal+buffer) & fAa>=(1-ideal-buffer) & fAa<=(1-ideal+buffer) & faa<=buffer, odd:="ZW"]
+
+    chisq.test(table(hwe$chr, hwe$odd))
+
+    hwe.tab <- hwe[,list(n.ZW=sum(odd=="ZW"), n.auto=sum(odd=="auto")), list(chr)]
+    hwe.tab[,exp.n.ZW:=mean(hwe$odd=="ZW") * (n.ZW+n.auto)]
+    hwe.tab[,en:=(n.ZW - exp.n.ZW)/exp.n.ZW]
+    hwe.tab
+
+  ### sliding window
+    window.bp <- 100000
+    step.bp <- window.bp/10
+    setkey(hwe, chr)
+
+    wins <- foreach(chr.i=unique(hwe$chr), .combine="rbind")%do%{
+      data.table(start=seq(from=min(hwe[J(chr.i)]$pos),
+                                   to=max(hwe[J(chr.i)]$pos) - window.bp,
+                                   by=step.bp),
+                         stop=seq(from=min(hwe[J(chr.i)]$pos),
+                                  to=max(hwe[J(chr.i)]$pos) - window.bp,
+                                  by=step.bp)+window.bp,
+                          chr=chr.i)
+    }
+
+    setkey(hwe, chr, pos)
+    base.rate <- mean(hwe$odd=="ZW")
+
+    o <- foreach(i=1:dim(wins)[1])%dopar%{
+
+      print(paste(i, dim(wins)[1], sep=" / "))
+
+      temp <- hwe[J(data.table(chr=wins[i]$chr, pos=c(wins[i]$start:wins[i]$stop))), nomatch=0]
+
+      data.table(i=i, ch=wins[i]$chr, min.pos=wins[i]$start, max.pos=wins[i]$stop,
+                 r=mean(temp$odd=="ZW"),
+                 n=length(temp$odd))
+
+    }
+    o <- rbindlist(o)
+    o[,en := (r-base.rate)/base.rate]
+    o[,en := log2(r/base.rate)]
+
+    ggplot(data=o[n>50], aes(x=i, y=2^en, color=ch)) + geom_point()
+
+    ### what is the peak region?
+      ggplot(data=hwe[J(data.table(chr=o[n>50][which.max(en)]$ch ,
+                                   pos=o[n>50][which.max(en)]$min.pos:o[n>50][which.max(en)]$max.pos)), nomatch=0],
+              aes(x=fAA, y=fAa, z=faa)) + coord_tern() + geom_point()
+
+
+
+
+    hwe <- hwe[p<.99]
+
+    ggplot() +
+    geom_point(data=hwe[p>1e-4][order(f)], aes(x=fAA, y=fAa, z=faa, color=f), size=1.5) +
+    geom_point(data=hwe[p<1e-3][f>0], aes(x=fAA, y=fAa, z=faa), color="yellow", size=.05) +
+    geom_point(data=hwe[p<1e-3][f<0], aes(x=fAA, y=fAa, z=faa), color="red", size=.05) +
+    coord_tern() +
+    limit_tern(T = 0.7, L = 0.7, R = 0.7)
+
+
+
+
+
+
+Tlim=c(-10, 110), Llim=c(-.1, 1.1)*100, Rlim=c(-.1, 1.1)*100
+
+    setkey(hwe, id)
+    setkey(snp.dt, id)
+    hwe <- merge(hwe, snp.dt, by.x="variant.id", by.y="id")
+
+
 
 ### sliding window
   setkey(clones.af, chr)
@@ -167,15 +280,6 @@
 
 
 
-
-
-
-### generate HWE & F across the genome
-  seqResetFilter(genofile)
-  seqSetFilter(genofile, sample.id=clones$clone, variant.id=clones.af$id)
-
-  hwe <- as.data.table(hwe(genofile))
-  setkey(hwe, variant.id)
 
 #### SW averages
 
