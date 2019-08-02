@@ -17,7 +17,6 @@
       return(sc.samp[pond%in%use.pond])
     }
 
-
 ### make SeqArray object
   #seqVCF2GDS(vcf.fn="/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.vcf",
   #           out.fn="/mnt/spicy_3/AlanDaphnia/vcf/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
@@ -63,18 +62,8 @@
     ### final SNP filter
       snp.dt[,final.use := use & use.chr]
 
-### get allele frequencies for DBunk, downsampled to one per superclone
-  clones <- subsampClone(sc.dt=sc, use.pond="DBunk")
-
-  seqSetFilter(genofile,
-               sample.id=clones[year==2017]$clone,
-               variant.id=snp.dt[(final.use)]$id)
-
-  clones.af <- data.table(id=seqGetData(genofile, "variant.id"),
-                          af=seqAlleleFreq(genofile, .progress=T, parallel=F))
-
 ### save
-  save(clones, clones.af, snp.dt, sc, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
+  save(snp.dt, sc, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
 
 ######## pick up here #######
   ### libraries
@@ -88,36 +77,110 @@
     library(ggtern)
     library(viridis)
 
-  ### load
+  ### funciton to radomly subset one clone per superclone
+    subsampClone <- function(sc.dt, n=1, use.pond="DBunk") {
+      sc.samp <- sc.dt[,list(clone=sample(clone, size=n)), list(sc.uniq)]
+      sc.samp[,pond:=tstrsplit(clone, "_")[[3]]]
+      sc.samp[,year:=tstrsplit(clone, "_")[[2]]]
+      return(sc.samp[pond%in%use.pond])
+    }
+
+  ### load precomuted file
     load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
+    sc[,year:=tstrsplit(clone, "_")[[2]]]
+
+  ### open GDS object
     genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
 
-    setkey(clones.af, id)
-    setkey(snp.dt, id)
+  ### downsampled to one per superclone, get allele frequencies
 
-    clones.af <- merge(clones.af, snp.dt)[af>.01 & af<.99]
+    clones.l <-  foreach(pond=c("DBunk", "D8"))%dopar%{
+        foreach(year.i=list("2017", c("2017", "2018")))%dopar%{
+
+          print(paste(pond, paste(year.i, collapse="."), sep=" / "))
+
+          clones <- subsampClone(sc.dt=sc[year%in%year.i], use.pond=pond)
+
+          seqSetFilter(genofile,
+                       sample.id=clones$clone,
+                       variant.id=snp.dt[(final.use)]$id)
+
+          clones.af <- data.table(id=seqGetData(genofile, "variant.id"),
+                                  af=seqAlleleFreq(genofile, .progress=T, parallel=F))
+
+          setkey(clones.af, id)
+          setkey(snp.dt, id)
+
+          clones.af <- merge(clones.af, snp.dt)[af>1/length(seqGetData(genofile, "sample.id")) &
+                                                af<1-1/length(seqGetData(genofile, "sample.id"))]
+
+
+          o <-  list()
+          o$pond <- pond
+          o$year <-  year.i
+          o$clones <- clones
+          o$clones.af  <- clones.af
+
+          return(o)
+        }
+    }
+    #save(clones.l, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/clones_l.D8.DBunk.Rdata")
 
   ### generate HWE & F across the genome
-    seqResetFilter(genofile)
-    seqSetFilter(genofile, sample.id=clones$clone, variant.id=clones.af$id)
+    hwe.stat <- foreach(pond.i=1:length(clones.l),  .combine="rbind")%dopar%{
+      foreach(year.i=1:length(clones.l[[pond.i]]),  .combine="rbind")%dopar%{
+        print(paste(clones.l[[pond.i]][[year.i]]$pond,
+                    paste(clones.l[[pond.i]][[year.i]]$year, collapse="."),
+                    sep=" / "))
 
-    hwe <- as.data.table(hwe(genofile))
-    setkey(hwe, variant.id)
+        seqResetFilter(genofile)
+        seqSetFilter(genofile,
+                     sample.id=clones.l[[pond.i]][[year.i]]$clones$clone,
+                     variant.id=clones.l[[pond.i]][[year.i]]$clones.af$id)
 
-    hwe[,fAA:=nAA/(nAA+nAa+naa)]
-    hwe[,fAa:=nAa/(nAA+nAa+naa)]
-    hwe[,faa:=naa/(nAA+nAa+naa)]
+        hwe <- as.data.table(hwe(genofile))
+        setkey(hwe, variant.id)
 
-    hwe <- merge(hwe, snp.dt, by.x="variant.id", by.y="id")
+        hwe[,fAA:=nAA/(nAA+nAa+naa)]
+        hwe[,fAa:=nAa/(nAA+nAa+naa)]
+        hwe[,faa:=naa/(nAA+nAa+naa)]
+
+        hwe <- merge(hwe, snp.dt, by.x="variant.id", by.y="id")
+        hwe[,pond:=clones.l[[pond.i]][[year.i]]$pond]
+        hwe[,year:=paste(clones.l[[pond.i]][[year.i]]$year, collapse=".")]
+
+        return(hwe)
+      }
+    }
+
+
+    ggplot(data=hwe.stat, aes(p)) +
+    geom_histogram() +
+    facet_grid(year~pond)
 
   ### DeFinetti diagraim
+    hwe.ag <- hwe.stat[p<.95 & ((pond=="D8") | (pond=="DBunk" & year=="2017")),
+                              list(n=length(p)),
+                              list(fAA=round(fAA, 3), fAa=round(fAa, 3), faa=round(faa, 3),
+                                   pond, year)]
 
-    hwe.ag <- hwe[p<.99, list(n=length(p)), list(fAA=round(fAA, 3), fAa=round(fAa, 3), faa=round(faa, 3))]
+    table(hwe.ag$pond, hwe.ag$year)
+    hwe.ag[,py:=paste(pond, year, sep=".")]
 
-    ggplot() +
-    geom_point(data=hwe.ag[order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
-    coord_tern(expand=T) + scale_color_viridis() + scale_fill_viridis() +
-    limit_tern(T = 1.05, L = 1.05, R = 1.05)
+    py.1 <- ggplot() +
+            geom_point(data=hwe.ag[py=="D8.2017.2018"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
+            coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+            scale_color_viridis() + scale_fill_viridis()
+
+    py.2 <- ggplot() +
+            geom_point(data=hwe.ag[py=="DBunk.2017"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
+            coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+            scale_color_viridis() + scale_fill_viridis()
+
+    plot_grid(py.1, py.2, labels=c("D8 / 2017.2018", "DBunk / 2017"))
+
+
+
 
   ### is there heterogeneity among chromosomes? YES.
     ideal <- hwe.ag[which.max(hwe.ag$n)]$fAA
@@ -132,6 +195,7 @@
     hwe.tab[,exp.n.ZW:=mean(hwe$odd=="ZW") * (n.ZW+n.auto)]
     hwe.tab[,en:=(n.ZW - exp.n.ZW)/exp.n.ZW]
     hwe.tab
+
 
   ### sliding window
     window.bp <- 100000
