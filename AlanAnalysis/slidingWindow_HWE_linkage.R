@@ -23,8 +23,8 @@
 
 ### load data
   ### filtered SNPs
-    #load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata")
-    load("/mnt/spicy_3/Karen/201620172018FinalMapping/snpsetfilteredformissing_20190423.Rdata")
+    #load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with D
+    load("/mnt/spicy_3/Karen/201620172018FinalMapping/snpsetfilteredformissing_20190423.Rdata") ### this goes with A
     use <- data.table(id=snpsetfilteredformissing, use=T)
     setkey(use, id)
 
@@ -159,7 +159,7 @@
     facet_grid(year~pond)
 
   ### DeFinetti diagraim
-    hwe.ag <- hwe.stat[p<.95 & ((pond=="D8") | (pond=="DBunk" & year=="2017")),
+    hwe.ag <- hwe.stat[p<.95,
                               list(n=length(p)),
                               list(fAA=round(fAA, 3), fAa=round(fAa, 3), faa=round(faa, 3),
                                    pond, year)]
@@ -176,6 +176,12 @@
             geom_point(data=hwe.ag[py=="DBunk.2017"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
             coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
             scale_color_viridis() + scale_fill_viridis()
+
+            ggplot() +
+            geom_point(data=hwe.ag[py=="DBunk.2017.2018"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
+            coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+            scale_color_viridis() + scale_fill_viridis()
+
 
     plot_grid(py.1, py.2, labels=c("D8 / 2017.2018", "DBunk / 2017"))
 
