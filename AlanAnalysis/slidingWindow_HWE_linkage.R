@@ -27,15 +27,15 @@
     #load("/mnt/spicy_3/Karen/201620172018FinalMapping/snpsetfilteredformissing_20190423.Rdata") ### this goes with A
     #use <- data.table(id=snpsetfilteredformissing, use=T)
 
-    load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with version D; use this
+    #load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with version D; use this
     use <- data.table(id=finalsnpstousewSimoids, use=T)
 
     setkey(use, id)
 
   ### superclones
-    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190501")
+    sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190501")
     #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190802.csv")
-    sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718updated_20190802.csv")
+    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718updated_20190802.csv")
     sc[,pond := tstrsplit(clone, "_")[[3]]]
     sc[,sc.uniq := SC]
     sc[SC=="OO", sc.uniq:=paste(SC, SCnum, sep=".")]
@@ -45,7 +45,8 @@
     #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
     #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
     #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
 
   ### make SNP table
     ### import and merge with filtering file
@@ -193,55 +194,96 @@
     plot_grid(py.1, py.2, labels=c("D8 / 2017.2018", "DBunk / 2017"))
 
 
-
-
   ### is there heterogeneity among chromosomes? YES.
-    ideal <- hwe.ag[which.max(hwe.ag$n)]$fAA
-    buffer <- .025
-    hwe[,odd:="auto"]
-    #hwe[round(fAA, 3)==.75 & round(fAa, 3)==.25 & round(faa, 3)==0, odd:="ZW"]
-    hwe[fAA>=(ideal-buffer) & fAA<=(ideal+buffer) & fAa>=(1-ideal-buffer) & fAa<=(1-ideal+buffer) & faa<=buffer, odd:="ZW"]
+    hwe.stat[,py:=paste(pond, year, sep=".")]
 
-    chisq.test(table(hwe$chr, hwe$odd))
+    hwe.stat[,odd:=NA]
 
-    hwe.tab <- hwe[,list(n.ZW=sum(odd=="ZW"), n.auto=sum(odd=="auto")), list(chr)]
-    hwe.tab[,exp.n.ZW:=mean(hwe$odd=="ZW") * (n.ZW+n.auto)]
-    hwe.tab[,en:=(n.ZW - exp.n.ZW)/exp.n.ZW]
-    hwe.tab
+    for(py.i in c("DBunk.2017", "D8.2017.2018")) {
+      print(py.i)
+      ideal <- hwe.ag[py==py.i][which.max(n)]$fAA
+      buffer <- 0.05
 
+      hwe.stat[py==py.i, odd:=F]
+      hwe.stat[py==py.i & fAA>=(ideal-buffer) & fAA<=(ideal+buffer) & fAa>=(1-ideal-buffer) & fAa<=(1-ideal+buffer) & faa<=buffer, odd:=T]
+    }
+
+    chisq.test(table(hwe.stat[py=="DBunk.2017"]$chr, hwe.stat[py=="DBunk.2017"]$odd))
+    chisq.test(table(hwe.stat[py=="D8.2017.2018"]$chr, hwe.stat[py=="D8.2017.2018"]$odd))
+
+
+    hwe.chr <- foreach(py.i=c("DBunk.2017", "D8.2017.2018"), .combine="rbind")%do%{
+      temp <- hwe.stat[py==py.i,list(n.ZW=sum(odd==T), n.auto=sum(odd==F)), list(chr, py)]
+      temp[,exp.n.ZW:=mean(hwe.stat[py==py.i]$odd==T) * (n.ZW+n.auto)]
+      temp[,en:=(n.ZW - exp.n.ZW)/exp.n.ZW]
+      temp
+    }
+
+    plot(hwe.chr[py=="DBunk.2017"]$en ~ hwe.chr[py=="D8.2017.2018"]$en)
 
   ### sliding window
-    window.bp <- 100000
-    step.bp <- window.bp/10
-    setkey(hwe, chr)
+    hwe.stat <- na.omit(hwe.stat)
 
-    wins <- foreach(chr.i=unique(hwe$chr), .combine="rbind")%do%{
-      data.table(start=seq(from=min(hwe[J(chr.i)]$pos),
-                                   to=max(hwe[J(chr.i)]$pos) - window.bp,
+    window.bp <- 100000
+    step.bp <- window.bp/20
+    setkey(hwe.stat, chr)
+
+    wins <- foreach(chr.i=unique(hwe.stat$chr), .combine="rbind")%do%{
+      data.table(start=seq(from=min(hwe.stat[J(chr.i)]$pos),
+                                   to=max(hwe.stat[J(chr.i)]$pos) - window.bp,
                                    by=step.bp),
-                         stop=seq(from=min(hwe[J(chr.i)]$pos),
-                                  to=max(hwe[J(chr.i)]$pos) - window.bp,
+                         stop=seq(from=min(hwe.stat[J(chr.i)]$pos),
+                                  to=max(hwe.stat[J(chr.i)]$pos) - window.bp,
                                   by=step.bp)+window.bp,
                           chr=chr.i)
     }
 
-    setkey(hwe, chr, pos)
-    base.rate <- mean(hwe$odd=="ZW")
+    setkey(hwe.stat, chr, pos)
 
     o <- foreach(i=1:dim(wins)[1])%dopar%{
 
       print(paste(i, dim(wins)[1], sep=" / "))
 
-      temp <- hwe[J(data.table(chr=wins[i]$chr, pos=c(wins[i]$start:wins[i]$stop))), nomatch=0]
+      temp <- hwe.stat[J(data.table(chr=wins[i]$chr, pos=c(wins[i]$start:wins[i]$stop))), nomatch=0]
 
-      data.table(i=i, ch=wins[i]$chr, min.pos=wins[i]$start, max.pos=wins[i]$stop,
-                 r=mean(temp$odd=="ZW"),
-                 n=length(temp$odd))
-
+      temp[,list(rate=mean(odd==T), n=length(odd),
+                 i=i, ch=wins[i]$chr, min.pos=wins[i]$start, max.pos=wins[i]$stop),
+             py]
     }
+
     o <- rbindlist(o)
-    o[,en := (r-base.rate)/base.rate]
-    o[,en := log2(r/base.rate)]
+
+    o.br <- hwe.stat[,list(base.rate=mean(odd==T)), list(py)]
+    setkey(o, py)
+    setkey(o.br, py)
+    o <- merge(o, o.br)
+    o[,en := log2(rate/base.rate)]
+  #  o[,en := (rate-base.rate)/base.rate]
+
+    ow <- dcast(o, i~py, value.var="en")
+    plot(I(2^(D8.2017.2018))~I(2^(DBunk.2017)), ow)
+    abline(0,1)
+
+    ow.fet <- foreach(i=seq(from=1, to=5, by=.05), .combine="rbind", .errorhandling="remove")%dopar%{
+        foreach(j=seq(from=1, to=5, by=.05), .combine="rbind", .errorhandling="remove")%do%{
+          print(paste(i, j, sep=" . "))
+          fet <- fisher.test(ow$DBunk.2017>i, ow$D8.2017.2018>j)
+          data.table(i=i, j=j, or=fet$estimate, p=fet$p.value)
+        }
+    }
+    ggplot(data=ow.fet[or>0], aes(x=i, y=j, fill=log2(or))) + geom_tile() + scale_color_viridis() + scale_fill_viridis()
+
+    plot(o[py=="DBunk.2017"]$rate ~ o[py=="D8.2017.2018"]$rate)
+
+
+    base.rate <- mean(hwe$odd=="ZW")
+
+
+
+
+
+
+
 
     ggplot(data=o[n>50], aes(x=i, y=2^en, color=ch)) + geom_point()
 
