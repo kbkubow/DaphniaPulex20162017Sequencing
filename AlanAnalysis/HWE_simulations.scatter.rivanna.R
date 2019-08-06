@@ -9,7 +9,7 @@
     library(data.table)
     library(foreach)
     #library(doMC)
-    registerDoMC(20)
+    #registerDoMC(20)
     library(SeqVarTools)
     #library(ggtern)
     #library(viridis)
