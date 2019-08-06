@@ -8,7 +8,7 @@
     library(SeqArray)
     library(data.table)
     library(foreach)
-    library(doMC)
+    #library(doMC)
     registerDoMC(20)
     library(SeqVarTools)
     #library(ggtern)
