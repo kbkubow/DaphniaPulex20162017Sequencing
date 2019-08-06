@@ -175,4 +175,5 @@
         return(hwe)
       }
     }
-    
+
+    save(hwe.stat, file="/scratch/aob2x/daphnia_hwe_sims/hwe_stat.Rdata")
