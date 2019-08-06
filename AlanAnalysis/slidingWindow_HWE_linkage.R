@@ -27,15 +27,16 @@
     #load("/mnt/spicy_3/Karen/201620172018FinalMapping/snpsetfilteredformissing_20190423.Rdata") ### this goes with A
     #use <- data.table(id=snpsetfilteredformissing, use=T)
 
-    #load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with version D; use this
+    load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with version D; use this
     use <- data.table(id=finalsnpstousewSimoids, use=T)
 
     setkey(use, id)
 
   ### superclones
-    sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190501")
+    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190501")
     #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190802.csv")
     #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718updated_20190802.csv")
+    sc <- fread("/mnt/spicy_3/AlanDaphnia/vcf/Superclones20161718updated_20190802.csv")
     sc[,pond := tstrsplit(clone, "_")[[3]]]
     sc[,sc.uniq := SC]
     sc[SC=="OO", sc.uniq:=paste(SC, SCnum, sep=".")]
@@ -46,10 +47,11 @@
     #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
     #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
     #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
 
   ### make SNP table
     ### import and merge with filtering file
+      seqSetFilter(genofile, sample.id=sc[Species=="Pulex"]$clone)
       snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
                            pos=seqGetData(genofile, "position"),
                            id=seqGetData(genofile, "variant.id"))
@@ -74,6 +76,8 @@
   save(snp.dt, sc, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
 
 ######## pick up here #######
+### gets ported to Rivanna under file name: HWE_simulations_rivanna.R
+
   ### libraries
     library(SeqArray)
     library(SNPRelate)
@@ -98,16 +102,20 @@
     sc[,year:=tstrsplit(clone, "_")[[2]]]
 
   ### open GDS object
-    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
+    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
+    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
 
   ### downsampled to one per superclone, get allele frequencies
 
-    clones.l <-  foreach(pond=c("DBunk", "D8"))%dopar%{
-        foreach(year.i=list("2017", c("2017", "2018")))%dopar%{
+    table(sc$pond, sc$year, sc$Species)
+    #unique(sc[Species=="Pulex"][!grepl("W", pond)]$pond)
 
-          print(paste(pond, paste(year.i, collapse="."), sep=" / "))
+    clones.l <-  foreach(pond=list("D8", "DBunk", c("D8", "DBunk")))%dopar%{
+        foreach(year.i=list(2017, c(2016, 2017, 2018, 2019)))%dopar%{
 
-          clones <- subsampClone(sc.dt=sc[year%in%year.i], use.pond=pond)
+          print(paste(paste(pond, collapse="."), paste(year.i, collapse="."), sep=" / "))
+
+          clones <- subsampClone(sc.dt=sc[Species=="Pulex"][year%in%year.i], use.pond=pond)
 
           seqSetFilter(genofile,
                        sample.id=clones$clone,
@@ -119,8 +127,8 @@
           setkey(clones.af, id)
           setkey(snp.dt, id)
 
-          clones.af <- merge(clones.af, snp.dt)[af>1/length(seqGetData(genofile, "sample.id")) &
-                                                af<1-1/length(seqGetData(genofile, "sample.id"))]
+          clones.af <- merge(clones.af, snp.dt)[af>0 & af<1] #[af>1/length(seqGetData(genofile, "sample.id")) &
+                                                             #af<1-1/length(seqGetData(genofile, "sample.id"))]
 
 
           o <-  list()
@@ -137,7 +145,7 @@
   ### generate HWE & F across the genome
     hwe.stat <- foreach(pond.i=1:length(clones.l),  .combine="rbind")%dopar%{
       foreach(year.i=1:length(clones.l[[pond.i]]),  .combine="rbind")%dopar%{
-        print(paste(clones.l[[pond.i]][[year.i]]$pond,
+        print(paste(paste(clones.l[[pond.i]][[year.i]]$pond, collapse="."),
                     paste(clones.l[[pond.i]][[year.i]]$year, collapse="."),
                     sep=" / "))
 
@@ -154,29 +162,139 @@
         hwe[,faa:=naa/(nAA+nAa+naa)]
 
         hwe <- merge(hwe, snp.dt, by.x="variant.id", by.y="id")
-        hwe[,pond:=clones.l[[pond.i]][[year.i]]$pond]
+        hwe[,pond:=paste(clones.l[[pond.i]][[year.i]]$pond, collapse=".")]
         hwe[,year:=paste(clones.l[[pond.i]][[year.i]]$year, collapse=".")]
 
         return(hwe)
       }
     }
 
+  ### generate expected distribution of HWE
+      ### expected frequencies
+        hwe.stat[,efAA:=afreq^2]
+        hwe.stat[,efAa:=2*afreq*(1-afreq)]
+        hwe.stat[,efaa:=(1-afreq)^2]
 
-    ggplot(data=hwe.stat, aes(p)) +
-    geom_histogram() +
-    facet_grid(year~pond)
+        hwe.stat[,n:=nAA + nAa + naa]
 
-  ### DeFinetti diagraim
-    hwe.ag <- hwe.stat[p<.95,
-                              list(n=length(p)),
-                              list(fAA=round(fAA, 3), fAa=round(fAa, 3), faa=round(faa, 3),
-                                   pond, year)]
+      ### simulation function
+        setkey(hwe.stat, n)
+        u <- unique(hwe.stat$n)
+
+        simGeno <- function(n.sim=1, sigdig=2, mac=4) {
+          ##  sigdig <- 2 ### for rounding of genotype frequencies
+          ##  mac <- 4 ### minor allele count
+
+          sim.o <- foreach(s=1:n.sim)%do%{
+
+            ### generate random call
+             hwe.stat.r <- foreach(i=u)%dopar%{
+
+               print(paste(s, which(i==u), length(u), sep=" / "))
+
+               probs <- as.matrix(hwe.stat[J(i),c("efAA", "efAa", "efaa"), with=F])
+               tmp.out <- t(apply(Hmisc::rMultinom(probs, i), 1, function(x) as.numeric(table(factor(x, levels=c("efAA", "efAa", "efaa"))))))
+               tmp.out <- as.data.table(tmp.out)
+               setnames(tmp.out, names(tmp.out), c("rAA", "rAa", "raa"))
+
+               cbind(hwe.stat[J(i)], tmp.out)
+             }
+
+             hwe.stat.r <- rbindlist(hwe.stat.r)
+             hwe.stat.r[,frAA:=rAA/(n)]
+             hwe.stat.r[,frAa:=rAa/(n)]
+             hwe.stat.r[,fraa:=raa/(n)]
+
+           ### calculate normalized genotype density values
+
+
+             hwe.ag.obs <- hwe.stat.r[afreq>mac/n & afreq<(n-mac)/n,
+                                     list(n.obs=length(p), f.hat.obs=mean(f), n=mean(n), nAA=mean(nAA), nAa=mean(nAa), vAa=var(nAa)),
+                                     list(fAA=round(fAA, sigdig), fAa=round(fAa, sigdig), faa=round(faa, sigdig),
+                                          pond, year)]
+
+             hwe.ag.sim <- hwe.stat.r[afreq>mac/n & afreq<(n-mac)/n,
+                                     list(n.sim=length(p), f.hat.sim=mean(f)),
+                                     list(fAA=round(frAA, sigdig), fAa=round(frAa, sigdig), faa=round(fraa, sigdig),
+                                         pond, year)]
+
+            setkey(hwe.ag.obs, fAA, fAa, faa, pond, year)
+            setkey(hwe.ag.sim, fAA, fAa, faa, pond, year)
+
+            hwe.ag.m <- merge(hwe.ag.obs, hwe.ag.sim)
+            hwe.ag.m[,en:=log2(n.obs/n.sim)]
+            hwe.ag.m[,diff:=n.obs - n.sim]
+
+            hwe.ag.m[,sim:=s]
+
+            hwe.ag.m
+          }
+          sim.o <- rbindlist(sim.o)
+          sim.o
+        }
+
+      ### simulate
+        hwe.ag.m <- simGeno(n.sim=100)
+        hwe.ag.m[,py:=paste(pond, year, sep=".")]
+        save(hwe.ag.m, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/hwe_ag_m.Rdata")
+
+        hwe.ag.m.ag <- hwe.ag.m[,list(diff.mu=mean(diff), diff.sd=sd(diff), n.obs=mean(n.obs), n.sim=mean(n.sim)), list(fAA, fAa, faa, py)]
+
+  ### DeFinetti enrichment diagraim
+
+      ggplot() +
+      geom_point(data=hwe.ag.m.ag[py=="D8.2016.2017.2018.2019"][order(diff.mu, decreasing=F)][diff.mu!=0],
+                  aes(x=fAA, y=fAa, z=faa, color=sign(diff.mu)*(abs(diff.sd))), size=.85) +
+      coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+      scale_color_viridis() + scale_fill_viridis()
+
+      ggplot() +
+      geom_point(data=hwe.ag.m.ag[py=="D8.DBunk.2017"][order(diff.mu, decreasing=F)][diff.mu!=0],
+                  aes(x=fAA, y=fAa, z=faa, color=sign(diff.mu)*(abs(diff.mu))), size=.85) +
+      coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+      scale_color_viridis() + scale_fill_viridis()
+
+
+
+
+
+
+      sum(hwe.ag.m.ag[py=="D8.2016.2017.2018.2019"]$diff.mu) / sum(hwe.ag.m.ag[py=="D8.2016.2017.2018.2019"]$n.obs)
+
+      hist(hwe.ag.m.ag[py=="D8.2016.2017.2018.2019"]$diff.mu)
+
+
+
+    tmp <- hwe.ag.m[py=="D8.2016.2017.2018.2019"]
+    tmp[which.max(diff)]
+
+    ggplot() +
+    geom_point(data=hwe.ag.m[py=="D8.2016.2017.2018.2019"][order(diff, decreasing=F)][diff!=0],
+                aes(x=fAA, y=fAa, z=faa, color=n.obs)) +
+    coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+    scale_color_viridis() + scale_fill_viridis()
+
+
+
+
+    ggplot() +
+    geom_point(data=hwe.ag.m[py=="D8.DBunk.2016.2017.2018.2019"][order(diff, decreasing=F)][diff!=0],
+                aes(x=fAA, y=fAa, z=faa, color=sign(diff)*(abs(diff)))) +
+    coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
+    scale_color_viridis() + scale_fill_viridis()
+
+
+
+    tmp <- hwe.ag.m[py=="D8.2016.2017.2018.2019"]
+
+
+
 
     table(hwe.ag$pond, hwe.ag$year)
     hwe.ag[,py:=paste(pond, year, sep=".")]
 
     py.1 <- ggplot() +
-            geom_point(data=hwe.ag[py=="D8.2017.2018"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
+            geom_point(data=hwe.ag[py=="D8.2016.2017.2018.2019"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
             coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
             scale_color_viridis() + scale_fill_viridis()
 
@@ -186,7 +304,7 @@
             scale_color_viridis() + scale_fill_viridis()
 
             ggplot() +
-            geom_point(data=hwe.ag[py=="DBunk.2017.2018"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
+            geom_point(data=hwe.ag[py=="D8.DBunk.2016.2017.2018.2019"][order(n, decreasing=F)], aes(x=fAA, y=fAa, z=faa, color=(n))) +
             coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
             scale_color_viridis() + scale_fill_viridis()
 
@@ -201,8 +319,8 @@
 
     for(py.i in c("DBunk.2017", "D8.2017.2018")) {
       print(py.i)
-      ideal <- hwe.ag[py==py.i][which.max(n)]$fAA
-      buffer <- 0.05
+      ideal <- hwe.ag[py==py.i][fAA!=0.5][which.max(n)]$fAA
+      buffer <- 0.025
 
       hwe.stat[py==py.i, odd:=F]
       hwe.stat[py==py.i & fAA>=(ideal-buffer) & fAA<=(ideal+buffer) & fAa>=(1-ideal-buffer) & fAa<=(1-ideal+buffer) & faa<=buffer, odd:=T]
@@ -260,32 +378,30 @@
     o[,en := log2(rate/base.rate)]
   #  o[,en := (rate-base.rate)/base.rate]
 
-    ow <- dcast(o, i~py, value.var="en")
+    ow <- dcast(o[n>50], i~py, value.var="en")
     plot(I(2^(D8.2017.2018))~I(2^(DBunk.2017)), ow)
     abline(0,1)
 
-    ow.fet <- foreach(i=seq(from=1, to=5, by=.05), .combine="rbind", .errorhandling="remove")%dopar%{
-        foreach(j=seq(from=1, to=5, by=.05), .combine="rbind", .errorhandling="remove")%do%{
-          print(paste(i, j, sep=" . "))
-          fet <- fisher.test(ow$DBunk.2017>i, ow$D8.2017.2018>j)
-          data.table(i=i, j=j, or=fet$estimate, p=fet$p.value)
-        }
+    ow.fet <- foreach(i=seq(from=1, to=10, by=.5), .combine="rbind", .errorhandling="remove")%dopar%{
+      foreach(j=seq(from=1, to=10, by=.5), .combine="rbind", .errorhandling="remove")%do%{
+
+        print(paste(i, i, sep=" . "))
+        fet <- fisher.test(2^ow$DBunk.2017>i, 2^ow$D8.2017.2018>j)
+        data.table(i=i, j=j, or=fet$estimate, p=fet$p.value)
+      }
     }
-    ggplot(data=ow.fet[or>0], aes(x=i, y=j, fill=log2(or))) + geom_tile() + scale_color_viridis() + scale_fill_viridis()
-
-    plot(o[py=="DBunk.2017"]$rate ~ o[py=="D8.2017.2018"]$rate)
+    ggplot(data=ow.fet, aes(x=i, y=j, fill=(or))) + geom_tile() + scale_color_viridis() + scale_fill_viridis()
 
 
-    base.rate <- mean(hwe$odd=="ZW")
-
-
+    ggplot(data=o[n>50], aes(x=i, y=rate, color=ch)) + facet_grid(py~.) +
+    geom_vline(xintercept=ow[2^D8.2017.2018>10 & 2^DBunk.2017>10]$i) +
+    geom_point()
 
 
 
 
 
 
-    ggplot(data=o[n>50], aes(x=i, y=2^en, color=ch)) + geom_point()
 
     ### what is the peak region?
       ggplot(data=hwe[J(data.table(chr=o[n>50][which.max(en)]$ch ,
