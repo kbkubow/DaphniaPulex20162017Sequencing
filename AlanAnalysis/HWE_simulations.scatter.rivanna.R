@@ -169,4 +169,5 @@
       ### simulate
         hwe.ag.m <- simGeno(n.sim=1, args=args.vec)
         hwe.ag.m[,py:=paste(pond, year, sep=".")]
-        save(hwe.ag.m, file=paste("/scratch/aob2x/daphnia_hwe_sims/hwe_sim", args.vec, ".Rdata", sep=""))
+        write.csv(hwe.ag.m, quote=F, row.names=F,
+                  file=paste("/scratch/aob2x/daphnia_hwe_sims/hwe_sim", args.vec, ".csv", sep=""))

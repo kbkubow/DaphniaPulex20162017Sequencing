@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sbatch --array=0-501 \
-/scratch/aob2x/daphnia_hwe_sims/HW_simulations.scatter.rivanna.slurm
+sbatch --array=0-1 \
+/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/HWE_simulations.scatter.rivanna.slurm
