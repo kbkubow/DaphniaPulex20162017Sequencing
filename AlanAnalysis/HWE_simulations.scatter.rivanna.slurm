@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1 # one core
 #SBATCH -N 1 # on one node
 #SBATCH -t 0-00:90 # Running time of 30 minutes
-#SBATCH --mem 8 # Memory request of 8 GB
+#SBATCH --mem 8G # Memory request of 8 GB
 #SBATCH -o /scratch/aob2x/diapause_gwas/slurmOut/HWE_simulations.scatter.rivanna_%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/diapause_gwas/slurmOut/HWE_simulations.scatter.rivanna%A_%a.err # Standard error
 #SBATCH -p standard
