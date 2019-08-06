@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# slurm_stouffers.slurm
+# 
 #
 #SBATCH -J hwe_simulations # A single job name for the array
 #SBATCH --ntasks-per-node=1 # one core
