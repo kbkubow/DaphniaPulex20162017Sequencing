@@ -13,6 +13,6 @@
 
 
 ### run command
-module load R/3.5.1
+module load gcc R/3.5.1
 echo Rscript /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/HWE_simulations.scatter.rivanna.R "$SLURM_ARRAY_TASK_ID"
 Rscript /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/HWE_simulations.scatter.rivanna.R "$SLURM_ARRAY_TASK_ID"
