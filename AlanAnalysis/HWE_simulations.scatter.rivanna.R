@@ -120,7 +120,7 @@
           sim.o <- foreach(s=1:n.sim)%do%{
 
             ### generate random call
-             hwe.stat.r <- foreach(i=u)%dopar%{
+             hwe.stat.r <- foreach(i=u)%do%{
 
                print(paste(s, which(i==u), length(u), sep=" / "))
 
