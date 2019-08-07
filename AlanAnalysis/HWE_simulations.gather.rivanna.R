@@ -1,21 +1,37 @@
+### libraries
+  library(data.table)
+  library(foreach)
+  library(ggplot2)
+  library(ggtern)
+  library(viridis)
 
-    hwe.ag.m.ag <- hwe.ag.m[,list(diff.mu=mean(diff), diff.sd=sd(diff), n.obs=mean(n.obs), n.sim=mean(n.sim)), list(fAA, fAa, faa, py)]
+### load output data from HWE_simulations.scatter.rivanna.R
+  fl <- system("ls /scratch/aob2x/daphnia_hwe_sims/hweSimOut/*.csv", inter=T)
 
-### DeFinetti enrichment diagraim
+  hwe.ag.m <- foreach(i=fl)%do%{
+    print(i)
+    fread(i)
+  }
+  hwe.ag.m <- rbindlist(hwe.ag.m)
 
-  ggplot() +
-  geom_point(data=hwe.ag.m.ag[py=="D8.2016.2017.2018.2019"][order(diff.mu, decreasing=F)][diff.mu!=0],
-              aes(x=fAA, y=fAa, z=faa, color=sign(diff.mu)*(abs(diff.sd))), size=.85) +
-  coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
-  scale_color_viridis() + scale_fill_viridis()
+  hwe.ag.m.ag <- hwe.ag.m[,list(diff.mu=mean(diff), diff.sd=sd(diff), n.obs=mean(n.obs), n.sim=mean(n.sim)),
+                           list(fAA, fAa, faa, py)]
 
-  ggplot() +
-  geom_point(data=hwe.ag.m.ag[py=="D8.DBunk.2017"][order(diff.mu, decreasing=F)][diff.mu!=0],
-              aes(x=fAA, y=fAa, z=faa, color=sign(diff.mu)*(abs(diff.mu))), size=.85) +
-  coord_tern(expand=T) + limit_tern(T = 1.05, L = 1.05, R = 1.05) +
-  scale_color_viridis() + scale_fill_viridis()
+  save(hwe.ag.m.ag, hwe.ag.m, file="/nv/vol186/bergland-lab/Daphnia_HWE/hwe.ag.m.ag")
 
 
+
+
+
+
+
+
+
+
+
+
+
+### OLD & DEFUNCT?  
 
 
 
