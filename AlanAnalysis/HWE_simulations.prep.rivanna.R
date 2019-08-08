@@ -113,7 +113,6 @@
     genofile <- seqOpen("/scratch/aob2x/daphnia_hwe_sims/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
 
   ### downsampled to one per superclone, get allele frequencies
-
     table(sc$pond, sc$year, sc$Species)
     #unique(sc[Species=="Pulex"][!grepl("W", pond)]$pond)
 
