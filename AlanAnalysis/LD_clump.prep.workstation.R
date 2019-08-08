@@ -24,47 +24,13 @@
 ### open genotype file
   genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
 
-### downsample to one clone per superclone
+### downsample function
   subsampClone <- function(sc.dt, n=1, use.pond="DBunk") {
     sc.samp <- sc.dt[,list(clone=sample(clone, size=n)), list(sc.uniq)]
     sc.samp[,pond:=tstrsplit(clone, "_")[[3]]]
     sc.samp[,year:=tstrsplit(clone, "_")[[2]]]
     return(sc.samp[pond%in%use.pond])
   }
-
-
-  clones.l <-  foreach(pond=list("D8", "DBunk", c("D8", "DBunk")))%dopar%{
-      foreach(year.i=list(2017, c(2016, 2017, 2018, 2019)))%dopar%{
-
-        print(paste(paste(pond, collapse="."), paste(year.i, collapse="."), sep=" / "))
-
-        clones <- subsampClone(sc.dt=sc[Species=="Pulex"][year%in%year.i], use.pond=pond)
-
-        seqSetFilter(genofile,
-                     sample.id=clones$clone,
-                     variant.id=snp.dt[(final.use)]$id)
-
-        clones.af <- data.table(id=seqGetData(genofile, "variant.id"),
-                                af=seqAlleleFreq(genofile, .progress=T, parallel=F))
-
-        setkey(clones.af, id)
-        setkey(snp.dt, id)
-
-        clones.af <- merge(clones.af, snp.dt)[af<0 & af<1] #[af<1/length(seqGetData(genofile, "sample.id")) &
-                                                           #af<1-1/length(seqGetData(genofile, "sample.id"))]
-
-
-        o <-  list()
-        o$pond <- pond
-        o$year <-  year.i
-        o$clones <- clones
-        o$clones.af  <- clones.af
-
-        return(o)
-      }
-  }
-  #save(clones.l, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/clones_l.D8.DBunk.Rdata")
-
 
 ### LD clumping
   ld.blocks <- foreach(py.list=list(list(c("D8"), c(2016, 2017, 2018, 2019)),
@@ -95,7 +61,7 @@
       hwe.stat[py==py.i, euclid.dist := (fAA - maxDiff$fAA)^2 + (fAa - maxDiff$fAa)^2 + (faa - maxDiff$faa)^2]
 
    ### fourth, write make fake bigsnpr file
-      seqSetFilter(genofile, variant.id=hwe.stat[euclid.dist<1e-3]$variant.id, sample.id=clones$clone)
+      seqSetFilter(genofile, variant.id=hwe.stat[euclid.dist<1e-4]$variant.id, sample.id=clones$clone)
 
       seqGDS2VCF(genofile, vcf.fn="/tmp/tmp.vcf", info.var=character(0), fmt.var=character(0))
 
@@ -122,21 +88,32 @@
 
 
 ### test of overlap
-  A <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>200]$CHR,
-                                      start=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>200]$BP1,
-                                      end=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>200]$BP2),
+  A <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$CHR,
+                                      start=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$BP1,
+                                      end=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$BP2),
                            start.field="start", end.field="end")
 
-  B <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="DBunk.2016.2017.2018.2019"][KB>200]$CHR,
-                                     start=ld.blocks[py=="DBunk.2016.2017.2018.2019"][KB>200]$BP1,
-                                     end=ld.blocks[py=="DBunk.2016.2017.2018.2019"][KB>200]$BP2),
+  B <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="DBunk.2016.2017.2018.2019"][KB>0]$CHR,
+                                     start=ld.blocks[py=="DBunk.2016.2017.2018.2019"][KB>0]$BP1,
+                                     end=ld.blocks[py=="DBunk.2016.2017.2018.2019"][KB>0]$BP2),
                           start.field="start", end.field="end")
 
   genome <- getGenomeAndMask(genome=snp.dt[(final.use), list(start=min(pos), end=max(pos)), list(chr)], mask=NA)
 
-  pt <- overlapPermTest(A=A, B=B, genome=genome$genome, ntimes=100, evaluation.function="meanDistance")
-
+  pt <- overlapPermTest(A=A, B=B, genome=genome$genome, ntimes=1000)
   plot(pt)
 
-  , ntimes=50, alternative="auto", randomize.function=randomizeRegions,
-  evaluate.function=numOverlaps, min.parallel=1000)
+### make plot
+  ol <- as.data.table(overlapRegions(A=A, B=B,  min.bases=50000))
+  setnames(ol, "chr", "seqnames")
+
+  ggplot() +
+  geom_segment(data=as.data.table(genome$genome),
+                aes(x=start, xend=end, y=1, yend=1)) +
+  facet_wrap(~seqnames, scales="free_x") +
+  geom_rect(data=ol,
+            aes(xmin=startA, xmax=endA, ymin=-1, ymax=4), fill = "grey") +
+  geom_segment(data=as.data.table(A),
+                aes(x=start, xend=end, y=2, yend=2), size=2, color="red") +
+  geom_segment(data=as.data.table(B),
+                aes(x=start, xend=end, y=3, yend=3), size=2, color="blue")
