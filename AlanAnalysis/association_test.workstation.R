@@ -52,19 +52,22 @@
   sub.pheno <- merge(pheno, clones)
 
   sub.pheno.ag <- sub.pheno[,list(nMale=mean(total_males, na.rm=T),
-                                  fracMale=mean(total_males/total_individuals),
+                                  fracMale=round(mean(total_males))/round(mean(total_individuals)),
+                                  n=round(mean(total_individuals)),
                                   epp=total_ephippia>0),
                               list(clone, pond=pond.x)]
 
 ### second, calculate Euclidian distance from point of highest difference based on the simulations
-  py.i <- "D8.2016.2017.2018.2019"
-  #py.i <- "DBunk.2017"
+  sites <- foreach(py.i = c("D8.2016.2017.2018.2019", "DBunk.2017"), .combine="rbind")%do%{
 
-  maxDiff <- hwe.ag.m.ag[py==py.i][which.max(diff.mu)]
-  hwe.stat[py==py.i, euclid.dist := (fAA - maxDiff$fAA)^2 + (fAa - maxDiff$fAa)^2 + (faa - maxDiff$faa)^2]
+    maxDiff <- hwe.ag.m.ag[py==py.i][which.max(diff.mu)]
+    hwe.stat[py==py.i, euclid.dist := (fAA - maxDiff$fAA)^2 + (fAa - maxDiff$fAa)^2 + (faa - maxDiff$faa)^2]
 
-### extract out SNPs
-  sites <- hwe.stat[py==py.i & euclid.dist<=1e-4]
+  ### extract out SNPs
+    hwe.stat[py==py.i & euclid.dist<=1e-4]
+  }
+  setkey(sites, chr, pos)
+  sites <- sites[!duplicated(sites)]
 
 ### get genotype data
   seqSetFilter(genofile, variant.id=sites$variant.id, sample.id=sub.pheno.ag$clone)
@@ -82,7 +85,7 @@
 
 
 ### merge with phenotype data forsimple test
-  gl.ag <- gl[,list(mu=mean(geno, na.rm=T)), list(clone)]
+  gl.ag <- gl[geno!=0,list(mu=mean(geno, na.rm=T)), list(clone)]
 
   setkey(gl.ag, clone)
   setkey(sub.pheno.ag, clone)
@@ -97,12 +100,13 @@
 
   setkey(mgl, variant.id)
   o <- foreach(i=unique(mgl$variant.id), .errorhandling="remove", .combine="rbind")%dopar%{
-    ### i <- 42664
+    ### i <- 1547618
     print(i)
     tmp <- mgl[J(i)]
 
       #t1 <- lm(nMale~geno, tmp[geno!=0][pond%in%c("D8", "DBunk")])
-      t1 <- glm(epp~geno, tmp[geno!=0][pond%in%c("D8", "DBunk")], family="binomial")
+      t1 <- glm(fracMale~geno, tmp[geno!=0][pond%in%c("D8", "DBunk")],
+            weights=tmp[geno!=0][pond%in%c("D8", "DBunk")]$n, family="binomial")
 
     data.table(variant.id=i, i=which(i==unique(mgl$variant.id)), p=summary(t1)$coef[2,4])
   }

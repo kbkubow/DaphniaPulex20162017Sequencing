@@ -33,6 +33,7 @@
   }
 
 ### LD clumping
+
   ld.blocks <- foreach(py.list=list(list(c("D8"), c(2016, 2017, 2018, 2019)),
                                     list(c("DBunk"), c(2016, 2017, 2018, 2019))))%do%{
     ### define py.i
@@ -61,6 +62,7 @@
       hwe.stat[py==py.i, euclid.dist := (fAA - maxDiff$fAA)^2 + (fAa - maxDiff$fAa)^2 + (faa - maxDiff$faa)^2]
 
    ### fourth, write make fake bigsnpr file
+      seqResetFilter(genofile)
       seqSetFilter(genofile, variant.id=hwe.stat[euclid.dist<1e-4]$variant.id, sample.id=clones$clone)
 
       seqGDS2VCF(genofile, vcf.fn="/tmp/tmp.vcf", info.var=character(0), fmt.var=character(0))
@@ -79,7 +81,7 @@
   ld.blocks <- rbindlist(ld.blocks)
 
 ### save
-  #save(ld.blocks, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/ldBlocks.Rdata")
+  save(ld.blocks, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/ldBlocks.Rdata")
 
 ### a little bit of summary statistics. Wohooo!
   ld.blocks[,list(chr=CHR[which.max(KB)], start=BP1[which.max(KB)], stop=BP2[which.max(KB)], n=NSNPS[which.max(KB)]), list(py)]
@@ -87,7 +89,7 @@
 
 
 
-### test of overlap
+### test of overlaping ranges
   A <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$CHR,
                                       start=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$BP1,
                                       end=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$BP2),
