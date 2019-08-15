@@ -62,7 +62,7 @@
       hwe.stat[py==py.i, euclid.dist := (fAA - maxDiff$fAA)^2 + (fAa - maxDiff$fAa)^2 + (faa - maxDiff$faa)^2]
 
    ### fourth, write make fake bigsnpr file
-      seqResetFilter(genofile)
+      seqResetFilter(f)
       seqSetFilter(genofile, variant.id=hwe.stat[euclid.dist<1e-4]$variant.id, sample.id=clones$clone)
 
       seqGDS2VCF(genofile, vcf.fn="/tmp/tmp.vcf", info.var=character(0), fmt.var=character(0))
