@@ -11,14 +11,14 @@
   library(doMC)
   registerDoMC(20)
 
-### load phenotype data
-  pheno <- fread("/mnt/spicy_3/AlanDaphnia/male_female_pheno/male_female_dorset.csv")
+  ### load phenotype data
+    pheno <- fread("/mnt/spicy_3/AlanDaphnia/male_female_pheno/male_female_dorset.csv")
 
-  pheno[,clone.id:=clone_ID]
-  pheno[,clone.id:=gsub("AD", "D", clone.id)]
-  pheno[,clone.id:=gsub("AW", "W", clone.id)]
+    pheno[,clone.id:=clone_ID]
+    pheno[,clone.id:=gsub("AD", "D", clone.id)]
+    pheno[,clone.id:=gsub("AW", "W", clone.id)]
 
-  pheno[,clone:=unlist(sapply(pheno$clone.id, function(x)  sc[grepl(x, clone)]$clone))]
+    pheno[,clone:=unlist(sapply(pheno$clone.id, function(x)  sc[grepl(x, clone)]$clone))]
 
 
 ### load HWE summary data (HWE_simulations.gather.rivanna.R makes this file)
