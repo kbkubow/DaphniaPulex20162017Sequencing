@@ -184,7 +184,7 @@
   library(ggplot2)
   library(viridis)
 
-### run
+### aggregate
   fl <- system("ls /mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/D*_*_*.csv", intern=T)
 
   D8.o <- foreach(i=fl[grepl("D8", fl)])%dopar%{
@@ -209,8 +209,59 @@
 
     dat.tab
   }
-  o <- rbindlist(D8.o)
-  save(o, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/D8_ag.Rdata")
+  D8.o <- rbindlist(D8.o)
+  save(D8.o, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/D8_ag.Rdata")
+
+
+  DBunk.o <- foreach(i=fl[grepl("DBunk", fl)])%dopar%{
+    print(paste(which(i==fl[grepl("DBunk", fl)]), " / ", length(fl[grepl("DBunk", fl)])))
+    #i <- "/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/D8_10_11.csv"
+    dat <- fread(i)
+
+    dat[,sc.f := LETTERS[as.numeric(as.factor(sc))]]
+
+    dat.tab <- dat[,list(n.SNPs=length(variant.id), KB=mean(KB, na.rm=T), chr=chr.x[1], BP1=BP1[1], BP2=BP2[1],
+              n.GT=c(sum(geno==0, na.rm=T), sum(geno==1, na.rm=T), sum(geno==2, na.rm=T)),
+              GT=c(0,1,2)),
+         list(block.id, zw, sc, sc.f)]
+
+    dat.tab.ag <- dat.tab[,list(n=sum(!is.na(KB)), KB=mean(KB, na.rm=T)), list(block.id)]
+
+    dat.tab <- dat.tab[block.id%in%dat.tab.ag[n==12]$block.id]
+    dat.tab[,pond:=tstrsplit(last(tstrsplit(i, "/")), "_")[[1]]]
+    dat.tab[,pair.i:=which(i==fl[grepl("DBunk", fl)])]
+
+    #plotGeno(dat.tab)
+
+    dat.tab
+  }
+  DBunk.o <- rbindlist(DBunk.o)
+  save(DBunk.o, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/DBunk_ag.Rdata")
+
+
+### process aggregates
+  load("DBunk_ag.Rdata")
+  D8.o <- DBunk.o
+  D8.o.ag <- D8.o[KB>20,list(het=n.GT[GT==1]/sum(n.GT, na.rm=T)), list(sc, pair.i, block.id, zw)]
+
+  D8.o.ag.ag <- D8.o.ag[,list(het.mu=mean(het, na.rm=T)), list(sc, block.id, zw)]
+
+  ### for sorting on SC
+    D8.o.ag.ag.ag <- D8.o.ag.ag[,list(n=sum(het.mu>.95, na.rm=T) - sum(het.mu<.05, na.rm=T),
+                                      meanHet=mean(het.mu, na.rm=T), meanHom=mean(het.mu<.05, na.rm=T)),
+                                  list(sc, zw)]
+
+
+    D8.o.ag.ag[,sc:=factor(sc, levels=D8.o.ag.ag.ag[(zw)][order(meanHet)]$sc)]
+
+  ### for sorting on block
+    D8.o.ag.ag.ag <- D8.o.ag.ag[,list(n=sum(het.mu>.95, na.rm=T),
+                                    meanHet=mean(het.mu, na.rm=T), meanHom=mean(het.mu<.05, na.rm=T)),
+                                list(block.id, zw)]
+    D8.o.ag.ag[,block.id:=factor(block.id, levels=D8.o.ag.ag.ag[(zw)][order(meanHet)]$block.id)]
+
+  ggplot(data=D8.o.ag.ag, aes(x=block.id, y=sc, fill=het.mu)) + geom_tile() + facet_wrap(~zw)
+
 
   load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/D8_ag.Rdata")
 
@@ -223,6 +274,68 @@
 
 
   ggplot(data=o.ag.w.ag, aes(x=fracHet_A, y=fracHet_B, size=n)) + geom_hex() + facet_grid(zw~.)
+
+
+
+#### quick association test on blocks
+
+  ### prepare pheno data
+    ### load SC data
+
+      load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
+      sc[,year:=tstrsplit(clone, "_")[[2]]]
+
+
+    ### load phenotype data
+      pheno <- fread("/mnt/spicy_3/AlanDaphnia/male_female_pheno/male_female_dorset.csv")
+
+      pheno[,clone.id:=clone_ID]
+      pheno[,clone.id:=gsub("AD", "D", clone.id)]
+      pheno[,clone.id:=gsub("AW", "W", clone.id)]
+
+      pheno[,clone:=unlist(sapply(pheno$clone.id, function(x)  sc[grepl(x, clone)]$clone))]
+
+
+      pheno <- merge(pheno, sc, by="clone")
+
+
+  load("/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/D8_ag.Rdata")
+  D8.o.ag <- D8.o[KB>20,list(het=n.GT[GT==1]/sum(n.GT, na.rm=T)), list(sc, pair.i, block.id, zw)]
+  D8.o.ag.ag <- D8.o.ag[,list(het.mu=mean(het, na.rm=T)), list(sc, block.id, zw)]
+  m <- merge(D8.o.ag.ag, pheno, by.x="sc", by.y="SC", allow.cartesian=T)
+  m.ag <- m[,list(frac=mean(total_males/total_individuals, na.rm=T), het=mean(het.mu)),
+             list(sc, block.id, zw)]
+
+
+  load("/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/DBunk_ag.Rdata")
+  DBunk.o.ag <- DBunk.o[KB>20,list(het=n.GT[GT==1]/sum(n.GT, na.rm=T)), list(sc, pair.i, block.id, zw)]
+  DBunk.o.ag <- DBunk.o[KB>20,list(het=n.GT[GT==1]/sum(n.GT, na.rm=T)), list(sc, pair.i, block.id, zw)]
+  DBunk.o.ag.ag <- DBunk.o.ag[,list(het.mu=mean(het, na.rm=T)), list(sc, block.id, zw)]
+  m <- merge(DBunk.o.ag.ag, pheno, by.x="sc", by.y="SC", allow.cartesian=T)
+  m.ag <- m[,list(frac=mean(total_males/total_individuals, na.rm=T), het=mean(het.mu)),
+             list(sc, block.id, zw)]
+
+
+  m.ag.ag <- m.ag[,list(cor=cor(frac, het, use="complete")), list(zw, block.id)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
