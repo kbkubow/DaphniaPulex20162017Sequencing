@@ -38,12 +38,36 @@
 
 ### ID sites
   #sites <- m[af.r.x==.5 & af.r.y==1]
-  sites <- m[af.r.x%in%c(0, .5, 1) & af.r.y%in%c(0, .5, 1)]
+  #sites <- m[af.r.x%in%c(0, .5, 1) & af.r.y%in%c(0, .5, 1)]
+  sites <- m[(af.r.x==1 & af.r.y==0) | (af.r.x==0 & af.r.y==1)]
 
-### get stats
+### set sites
   seqResetFilter(genofile)
   #seqSetFilter(genofile, variant.id=sites$id, sample.id=sc[SC!="A" & SC!="B" & pond%in%c("D8", "DBunk")]$clone)
-  seqSetFilter(genofile, variant.id=sites$id, sample.id=sc[SC!="A" & SC!="B" & pond%in%c("D8", "DBunk")]$clone)
+  seqSetFilter(genofile,
+               variant.id=sites$id,
+               sample.id=sc[year==2018][pond=="D8"][grepl("March", clone)]$clone)
+
+### get dosage
+  g <- seqGetData(genofile, "$dosage")
+  dimnames(g) <- list(sc[year==2018][pond=="D8"][grepl("March", clone)]$clone,
+                      sites$id)
+  ge <- as.data.table(expand.grid(g))
+  ge[,clone:=rep(sc[year==2018][pond=="D8"][grepl("March", clone)]$clone, each=length(sites$id))]
+  ge[,id:=rep(sites$id, length(sc[year==2018][pond=="D8"][grepl("March", clone)]$clone))]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   o <- as.data.table(hwe(genofile))
 
@@ -77,7 +101,7 @@
   mm.ag[,en:=log2(frac_both/exp)]
 
   ggplot(data=mm.ag[n>50], aes(y=frac_both, x=posBin)) + geom_point() + facet_wrap(~chr)
-  
+
   ggplot(data=mm.ag[n>50], aes(x=frac_zw_AB, y=frac_zw_pond, color=chr)) + geom_point()
 
   hist(m[zw_AB & zw_pond]$id, breaks=1000)
