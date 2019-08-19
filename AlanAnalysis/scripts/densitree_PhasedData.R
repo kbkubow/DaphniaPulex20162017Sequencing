@@ -79,6 +79,15 @@
   save(m, clones, file="~/njo.Rdata")
 
 ### plot
+  library(SeqArray)
+  library(data.table)
+  library(foreach)
+  library(phangorn)
+  library(doMC)
+  registerDoMC(20)
+
+
+
   load("njo.Rdata")
   clones.mat <- as.matrix(clones[,"pond", with=T])
   rownames(clones.mat) <- clones$clone
