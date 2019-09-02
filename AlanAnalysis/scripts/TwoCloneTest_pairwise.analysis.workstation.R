@@ -240,11 +240,24 @@
 
 
 ### process aggregates
-  load("DBunk_ag.Rdata")
-  D8.o <- DBunk.o
-  D8.o.ag <- D8.o[KB>20,list(het=n.GT[GT==1]/sum(n.GT, na.rm=T)), list(sc, pair.i, block.id, zw)]
+  load("D8_ag.Rdata")
+  #D8.o <- DBunk.o
+  D8.o.ag <- D8.o[KB>20,list(het.zw=n.GT[GT==1 & (zw)]/sum(n.GT[(zw)], na.rm=T),
+                             het.nzw=n.GT[GT==1 & !(zw)]/sum(n.GT[!(zw)], na.rm=T),
+                             het=n.GT[GT==1]/sum(n.GT, na.rm=T),
+                             n=sum(n.GT)),
+                        list(sc, pair.i, block.id)]
 
-  D8.o.ag.ag <- D8.o.ag[,list(het.mu=mean(het, na.rm=T)), list(sc, block.id, zw)]
+  D8.o.ag.ag <- D8.o.ag[,list(het.zw=mean(het.zw, na.rm=T),
+                              het.nzw=mean(het.nzw, na.rm=T),
+                              het=mean(het, na.rm=T),
+                              n=mean(n)),
+                         list(sc, block.id)]
+
+plot(het.zw~het, D8.o.ag.ag[sc=="A"])
+plot(het.zw~het, D8.o.ag.ag[sc=="B"])
+
+
 
   ### for sorting on SC
     D8.o.ag.ag.ag <- D8.o.ag.ag[,list(n=sum(het.mu>.95, na.rm=T) - sum(het.mu<.05, na.rm=T),
