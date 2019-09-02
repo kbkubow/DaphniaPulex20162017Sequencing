@@ -50,11 +50,32 @@
 
 ### get dosage
   g <- seqGetData(genofile, "$dosage")
-  dimnames(g) <- list(sc[year==2018][pond=="D8"][grepl("March", clone)]$clone,
-                      sites$id)
-  ge <- as.data.table(expand.grid(g))
-  ge[,clone:=rep(sc[year==2018][pond=="D8"][grepl("March", clone)]$clone, each=length(sites$id))]
-  ge[,id:=rep(sites$id, length(sc[year==2018][pond=="D8"][grepl("March", clone)]$clone))]
+
+  ge <- data.table(geno=expand.grid(g)[,1])
+  ge[,clone:=rep(seqGetData(genofile, "sample.id"), length(sites$id))]
+  ge[,id:=rep(sites$id, each=length(seqGetData(genofile, "sample.id")))]
+
+### aggregate
+  ge.ag <- ge[,list(mu=mean(geno, na.rm=T),
+                    n.aa=sum(geno==0, na.rm=T),
+                    n.Aa=sum(geno==1, na.rm=T),
+                    n.AA=sum(geno==2, na.rm=T),
+                    n=length(!is.na(geno))),
+              list(clone)]
+
+  ge.ag[,fracHet:=n.Aa/n]
+
+
+  setkey(ge.ag, clone)
+  setkey(sc, clone)
+  ge.ag <- merge(ge.ag, sc)
+
+      ggplot() +
+      geom_point(data=ge.ag,
+                  aes(x=n.AA, y=n.Aa, z=n.aa, color=as.factor(SC=="A"))) +
+      coord_tern(expand=T)
+
+### are any
 
 
 
@@ -62,9 +83,24 @@
 
 
 
+### huh?
+  seqResetFilter(genofile)
+  seqSetFilter(genofile, sample.id=c("March20_2018_D8_1", "March20_2018_D8_32", "May_2017_D8_515", "April_2017_D8_349"))
+
+  d <- as.data.table(t(seqGetData(genofile, "$dosage")))
+  setnames(d, names(d), seqGetData(genofile, "sample.id"))
+
+  ### contrast of
+  prop.table(table(d[,1]==d[,2]))
+
+  prop.table(table(d[,1]==d[,3]))
+  prop.table(table(d[,1]==d[,4]))
+
+  prop.table(table(d[,2]==d[,3]))
+  prop.table(table(d[,2]==d[,4]))
 
 
-
+  prop.table(table(d[,3]==d[,4]))
 
 
 

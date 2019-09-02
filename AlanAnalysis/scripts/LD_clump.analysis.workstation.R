@@ -87,7 +87,7 @@
   ld.blocks[,list(chr=CHR[which.max(KB)], start=BP1[which.max(KB)], stop=BP2[which.max(KB)], n=NSNPS[which.max(KB)]), list(py)]
   ld.blocks[,list(chr=CHR[which.max(NSNPS)], start=BP1[which.max(NSNPS)], stop=BP2[which.max(NSNPS)], n=NSNPS[which.max(NSNPS)]), list(py)]
 
-
+load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/ldBlocks.Rdata")
 
 ### test of overlaping ranges
   A <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$CHR,
@@ -109,7 +109,7 @@
   ol <- as.data.table(overlapRegions(A=A, B=B,  min.bases=50000))
   setnames(ol, "chr", "seqnames")
 
-  ggplot() +
+  p <- ggplot() +
   geom_segment(data=as.data.table(genome$genome),
                 aes(x=start, xend=end, y=1, yend=1)) +
   facet_wrap(~seqnames, scales="free_x") +
@@ -119,3 +119,9 @@
                 aes(x=start, xend=end, y=2, yend=2), size=2, color="red") +
   geom_segment(data=as.data.table(B),
                 aes(x=start, xend=end, y=3, yend=3), size=2, color="blue")
+
+
+  ggsave(p +
+  theme(axis.title=element_blank(),
+        axis.text=element_blank()),
+  file="~/overlap.pdf")
