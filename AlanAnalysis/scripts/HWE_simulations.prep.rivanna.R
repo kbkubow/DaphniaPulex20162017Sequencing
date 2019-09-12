@@ -1,79 +1,80 @@
-#### libraries
-#  library(SeqArray)
-#  #library(SNPRelate)
-#  library(data.table)
-#  library(foreach)
-#  #library(doMC)
-#  registerDoMC(20)
-#  library(SeqVarTools)
-#  #library(ggtern)
-#
-#### functions
-#  ### funciton to radomly subset one clone per superclone
-#    subsampClone <- function(sc.dt, n=1, use.pond="DBunk") {
-#      sc.samp <- sc.dt[,list(clone=sample(clone, size=n)), list(sc.uniq)]
-#      sc.samp[,pond:=tstrsplit(clone, "_")[[3]]]
-#      sc.samp[,year:=tstrsplit(clone, "_")[[2]]]
-#      return(sc.samp[pond%in%use.pond])
-#    }
-#
-#### make SeqArray object
-#  #seqVCF2GDS(vcf.fn="/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.vcf",
-#  #           out.fn="/mnt/spicy_3/AlanDaphnia/vcf/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
-#
-#### load data
-#  ### filtered SNPs
-#
-#    #load("/mnt/spicy_3/Karen/201620172018FinalMapping/snpsetfilteredformissing_20190423.Rdata") ### this goes with A
-#    #use <- data.table(id=snpsetfilteredformissing, use=T)
-#
-#    load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with version D; use this
-#    use <- data.table(id=finalsnpstousewSimoids, use=T)
-#
-#    setkey(use, id)
-#
-#  ### superclones
-#    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190501")
-#    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190802.csv")
-#    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718updated_20190802.csv")
-#    sc <- fread("/mnt/spicy_3/AlanDaphnia/vcf/Superclones20161718updated_20190802.csv")
-#    sc[,pond := tstrsplit(clone, "_")[[3]]]
-#    sc[,sc.uniq := SC]
-#    sc[SC=="OO", sc.uniq:=paste(SC, SCnum, sep=".")]
-#
-#  ### open GDS object
-#    #genofile <- snpgdsOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
-#    #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
-#    #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
-#    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-#    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-#    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-#
-#  ### make SNP table
-#    ### import and merge with filtering file
-#      seqSetFilter(genofile, sample.id=sc[Species=="Pulex"]$clone)
-#      snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
-#                           pos=seqGetData(genofile, "position"),
-#                           id=seqGetData(genofile, "variant.id"))
-#      setkey(snp.dt, id)
-#      snp.dt <- merge(snp.dt, use, all.x=T, all.y=T)
-#
-#    ### subset on the good chromosomes
-#      snp.dt.ag <- snp.dt[,list(nSNPs=length(pos)), list(chr)]
-#      snp.dt.ag[nSNPs>3000, use.chr:=T]
-#      snp.dt.ag[is.na(use.chr), use.chr:=F]
-#
-#      setkey(snp.dt.ag, chr)
-#      setkey(snp.dt, chr)
-#
-#      snp.dt <- merge(snp.dt, snp.dt.ag, all.x=T)
-#      snp.dt[is.na(use), use:=F]
-#
-#    ### final SNP filter
-#      snp.dt[,final.use := use & use.chr]
-#
-#### save
+### libraries
+  library(SeqArray)
+  #library(SNPRelate)
+  library(data.table)
+  library(foreach)
+  #library(doMC)
+  registerDoMC(20)
+  library(SeqVarTools)
+  #library(ggtern)
+
+### functions
+  ### funciton to radomly subset one clone per superclone
+    subsampClone <- function(sc.dt, n=1, use.pond="DBunk") {
+      sc.samp <- sc.dt[,list(clone=sample(clone, size=n)), list(sc.uniq)]
+      sc.samp[,pond:=tstrsplit(clone, "_")[[3]]]
+      sc.samp[,year:=tstrsplit(clone, "_")[[2]]]
+      return(sc.samp[pond%in%use.pond])
+    }
+
+### make SeqArray object
+  #seqVCF2GDS(vcf.fn="/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.vcf",
+  #           out.fn="/mnt/spicy_3/AlanDaphnia/vcf/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
+
+### load data
+  ### filtered SNPs
+
+    #load("/mnt/spicy_3/Karen/201620172018FinalMapping/snpsetfilteredformissing_20190423.Rdata") ### this goes with A
+    #use <- data.table(id=snpsetfilteredformissing, use=T)
+
+    load("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/finalsnpstousewSimoids_20190430.Rdata") ### this goes with version D; use this
+    use <- data.table(id=finalsnpstousewSimoids, use=T)
+
+    setkey(use, id)
+
+  ### superclones
+    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190501")
+    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718withlowcoverageindupdated_20190802.csv")
+    #sc <- fread("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/Superclones20161718updated_20190802.csv")
+    sc <- fread("/mnt/spicy_3/AlanDaphnia/vcf/Superclones20161718updated_20190802.csv")
+    sc[,pond := tstrsplit(clone, "_")[[3]]]
+    sc[,sc.uniq := SC]
+    sc[SC=="OO", sc.uniq:=paste(SC, SCnum, sep=".")]
+
+  ### open GDS object
+    #genofile <- snpgdsOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
+    #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
+    #genofile <- snpgdsOpen("/mnt/ssd/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.gds")
+    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+    #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/ForAlan/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+    genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+  ### make SNP table
+    ### import and merge with filtering file
+      seqSetFilter(genofile, sample.id=sc[Species=="Pulex"]$clone)
+      snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
+                           pos=seqGetData(genofile, "position"),
+                           id=seqGetData(genofile, "variant.id"))
+      setkey(snp.dt, id)
+      snp.dt <- merge(snp.dt, use, all.x=T, all.y=T)
+
+    ### subset on the good chromosomes
+      snp.dt.ag <- snp.dt[,list(nSNPs=length(pos)), list(chr)]
+      snp.dt.ag[nSNPs>3000, use.chr:=T]
+      snp.dt.ag[is.na(use.chr), use.chr:=F]
+
+      setkey(snp.dt.ag, chr)
+      setkey(snp.dt, chr)
+
+      snp.dt <- merge(snp.dt, snp.dt.ag, all.x=T)
+      snp.dt[is.na(use), use:=F]
+
+    ### final SNP filter
+      snp.dt[,final.use := use & use.chr]
+
+### save
   save(snp.dt, sc, file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
+
 
 ######## pick up here #######
 ### gets ported to Rivanna under file name: HWE_simulations_rivanna.R
