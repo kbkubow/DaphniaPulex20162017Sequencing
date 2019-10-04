@@ -1,0 +1,154 @@
+// set up a simple neutral simulation
+initialize() {
+
+	initializeMutationRate(1e-7);
+
+	// m1 mutation type: neutral
+	initializeMutationType("m1", 0.5, "f", 0.0);
+
+	// m2 mutation type: ZW-like neutral
+	initializeMutationType("m2", 0.5, "f", 0.0);
+
+	// g1 genomic element type: uses m1 for all mutations
+	initializeGenomicElementType("g1", m1, 1.0);
+
+	// uniform chromosome of length 100 bp with uniform recombination
+	initializeGenomicElement(g1, 0, 99);
+	initializeRecombinationRate(1e-8);
+
+	//initializeSex("A");
+
+}
+
+
+
+1 {
+	 // define subpops
+		 sim.addSubpop("p1", N);
+
+ 	 // Cloning initial  rate
+	 	 p1.setCloningRate(0.75);
+
+	 // Define ZW-like locus
+		target = sample(p1.genomes, asInteger(p1.individualCount * 0.5));
+		target.addNewDrawnMutation(m2, 10);
+
+	// assign sex based on locus m2
+		// 1 = NMP = ZW/A; 0 = MP = ZZ/B; 2 = WW = die shorly
+		//cat(p1.individuals.countOfMutationsOfType(m2));
+		p1.individuals.tag = asInteger(p1.individuals.countOfMutationsOfType(m2)) + 10;
+
+
+	// write header
+		//line = "pop\tgen\tn\t fracClonalFemale\tfracClonalMale\t  fZ\tnZZ\tnZW\tnWW";
+		line = paste(c("pop", "gen", "n",
+				"frac_Clonal_Female", "frac_Clonal_Male",
+				"frac_Sexual_Female", "frac_Sexual_Male",
+				"fZ",
+				"nZZ",
+				"nZW",
+				"nWW"), sep="\t");
+		writeFile("~/slim/Untitled.txt", line, append=F);
+
+  }
+
+
+
+modifyChild() {
+
+	// tag: 1X = clonally reproduced individual (10=clonal female; 11 = clonal male)
+	// tag: 2X = sexually reproduced individual (20 = sexually produced female; 21 = sexually produced male)
+
+	A_femaleRate = 0.99;
+	B_femaleRate = 0.85;
+
+	//if(sim.generation%20 >= 19 | sim.generation%20 == 0) {
+	//
+	//	A_femaleRate = 0.55;
+	//	B_femaleRate = 0.55;
+
+	//} else {
+
+		//A_femaleRate = 0.99;
+		//B_femaleRate = 0.99;
+	//}
+
+	parent1_sexType = parent1.tag%10; // 1 is female, 0 is male
+	parent2_sexType = parent2.tag%10;
+
+	child_genotype = childGenome1.countOfMutationsOfType(m2) + childGenome2.countOfMutationsOfType(m2); // 0=ZZ, 1=ZW, 2=WW
+
+	if(child_genotype == 2) { // WW individuals die
+		return F;
+	} else if(!isCloning & parent1_sexType==0 & parent2_sexType==0) { // NO male + male sex
+		return F;
+	} else if(!isCloning & parent1_sexType==1 & parent2_sexType==1) { // NO female + female sex
+		return F;
+	} else if(isCloning & parent1_sexType==0) { // NO male cloning
+		return F;
+	} else if(isCloning & parent1_sexType==1) { // female cloning with differential fraction of males and females
+
+		if(child_genotype == 1) {	// A - ZW
+
+			child.tag=rbinom(1, 1, A_femaleRate) + 10;
+			return T;
+
+		} else if(child_genotype == 0) { // B - ZZ
+
+			child.tag=rbinom(1, 1, B_femaleRate) + 10;
+			return T;
+
+		}
+
+	} else if(!isCloning & parent1_sexType+parent2_sexType==1) { // sexually produced offspring follow the same rules as above
+		if(child_genotype == 1) {	// A	- ZW
+
+			child.tag=rbinom(1, 1, A_femaleRate) + 20;
+
+			return T;
+		} else if(child_genotype == 0) { //B - ZZ
+
+			child.tag=rbinom(1, 1, B_femaleRate) + 20;
+			return T;
+
+		}
+
+	} else {
+		return F;
+	}
+}
+
+
+1: {
+
+
+	// population size modification
+
+		//if(sim.generation%20 == 0) {
+		//	newSize_pop1=500;
+
+		//} else if (sim.generation%20>0) {
+
+			//newSize_pop1=asInteger(p1.individualCount * 1.25);
+
+			//if(newSize_pop1>100000) newSize_pop1=100000;
+		//	newSize_pop1=50;
+	//	};
+
+	//	p1.setSubpopulationSize(newSize_pop1);
+
+
+	line = ("p1\t" + sim.generation + "\t" + p1.individualCount + "\t" +
+		 mean(p1.individuals.tag==11) + "\t" +
+		 mean(p1.individuals.tag==10) + "\t" +
+		 mean(p1.individuals.tag==21) + "\t" +
+		 mean(p1.individuals.tag==20) + "\t" +
+		 mean(p1.individuals.countOfMutationsOfType(m2)) + "\t" +
+		 sum(p1.individuals.countOfMutationsOfType(m2)==0) + "\t" +
+		 sum(p1.individuals.countOfMutationsOfType(m2)==1) + "\t" +
+		 sum(p1.individuals.countOfMutationsOfType(m2)==2) + "\t" +
+     N);
+	writeFile("~/slim/Untitled.txt", line, append=T);
+}
+
+100 { sim.simulationFinished(); }
