@@ -48,7 +48,8 @@ initialize() {
 				"nZZ",
 				"nZW",
 				"nWW"), sep="\t");
-		writeFile("~/slim/Untitled.txt", line, append=F);
+    fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim")
+    writeFile(fn, line, append=T);
 
   }
 
@@ -148,7 +149,9 @@ modifyChild() {
 		 sum(p1.individuals.countOfMutationsOfType(m2)==1) + "\t" +
 		 sum(p1.individuals.countOfMutationsOfType(m2)==2) + "\t" +
      N);
-	writeFile("~/slim/Untitled.txt", line, append=T);
+
+  fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim")
+	writeFile(fn, line, append=T);
 }
 
 100 { sim.simulationFinished(); }

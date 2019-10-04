@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+#
+#SBATCH -J singleLocus_model # A single job name for the array
+#SBATCH --ntasks-per-node=1 # one core
+#SBATCH -N 1 # on one node
+#SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH -t 0-00:5 # Running time of 90 minutes
+#SBATCH --mem 2G # Memory request of 8 GB
+#SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/singleLocus_model_slim_%A_%a.out # Standard output
+#SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/singleLocus_model_slim_%A_%a.err # Standard error
+#SBATCH -p standard
+#SBATCH --account berglandlab
+
+
+### run command
+module load gcc/7.1.0 slim
+
+SLURM_ARRAY_TASK_ID=5
+
+N=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f2 )
+
+slim -d N=500 /Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
