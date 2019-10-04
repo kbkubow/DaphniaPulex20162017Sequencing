@@ -1,7 +1,7 @@
 N = c(10000)  #population size
 CR = seq(from=.01, to=.99, by=.1) #cloning rate
-AFR = seq(from=.9, to=.99, by=.05) #A female rate
-BFR = seq(from=.5, to=.99, by=.05) #B female rate
+AFR = seq(from=.01, to=.99, by=.05) #A female rate
+BFR = seq(from=.01, to=.99, by=.05) #B female rate
 
 
 dt <- as.data.table(expand.grid(N, CR, AFR, BFR))
