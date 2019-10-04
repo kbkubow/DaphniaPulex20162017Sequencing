@@ -27,7 +27,7 @@ initialize() {
 		 sim.addSubpop("p1", N);
 
  	 // Cloning initial  rate
-	 	 p1.setCloningRate(0.75);
+	 	 p1.setCloningRate(CR);
 
 	 // Define ZW-like locus
 		target = sample(p1.genomes, asInteger(p1.individualCount * 0.5));
@@ -48,8 +48,9 @@ initialize() {
 				"nZZ",
 				"nZW",
 				"nWW",
-        "param_N"), sep="\t");
-    fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim");
+        "param_N", "param_CR", "param_AFR", "param_BFR"), sep="\t");
+
+    fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_" + N + "_" + CR + "_" + AFR + "_" + BFR + "_" + ".delim");
     writeFile(fn, line, append=T);
 
   }
@@ -61,8 +62,8 @@ modifyChild() {
 	// tag: 1X = clonally reproduced individual (10=clonal female; 11 = clonal male)
 	// tag: 2X = sexually reproduced individual (20 = sexually produced female; 21 = sexually produced male)
 
-	A_femaleRate = 0.99;
-	B_femaleRate = 0.85;
+	A_femaleRate = AFR;
+	B_femaleRate = BFR;
 
 	//if(sim.generation%20 >= 19 | sim.generation%20 == 0) {
 	//
@@ -149,10 +150,10 @@ modifyChild() {
 		 sum(p1.individuals.countOfMutationsOfType(m2)==0) + "\t" +
 		 sum(p1.individuals.countOfMutationsOfType(m2)==1) + "\t" +
 		 sum(p1.individuals.countOfMutationsOfType(m2)==2) + "\t" +
-     N);
+     N + "\t" + CR + "\t" + AFR + "\t" + "BFR");
 
-  fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim");
-	writeFile(fn, line, append=T);
+    fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_" + N + "_" + CR + "_" + AFR + "_" + BFR + "_" + ".delim");
+	  writeFile(fn, line, append=T);
 }
 
 100 { sim.simulationFinished(); }
