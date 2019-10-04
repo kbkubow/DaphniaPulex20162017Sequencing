@@ -48,7 +48,7 @@ initialize() {
 				"nZZ",
 				"nZW",
 				"nWW"), sep="\t");
-    fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim")
+    fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim");
     writeFile(fn, line, append=T);
 
   }
@@ -150,7 +150,7 @@ modifyChild() {
 		 sum(p1.individuals.countOfMutationsOfType(m2)==2) + "\t" +
      N);
 
-  fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim")
+  fn = ("/scratch/aob2x/daphnia_hwe_sims/slim_output/slim_N_" + N + ".delim");
 	writeFile(fn, line, append=T);
 }
 
