@@ -18,4 +18,4 @@ module load gcc/7.1.0 slim
 
 N=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f2 )
 
-slim -d N=500 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
+slim -d N=$N /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
