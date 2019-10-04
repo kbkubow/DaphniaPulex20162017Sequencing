@@ -1,9 +1,3 @@
-dt <- data.table(sim.generation = c(1:10000))
-dt[,n:=cos((sim.generation - 1) / 100) * 500 + 1000]
-
-plot(n~sim.
-generation, dt)
-
 
 library(ggplot2)
 library(data.table)

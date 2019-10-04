@@ -17,5 +17,8 @@
 module load gcc/7.1.0 slim
 
 N=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f2 )
+CR=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f3 )
+AFR=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f4 )
+BFR=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f5 )
 
-slim -d N=$N /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
+slim -d N=$N -d CR=$CR -d AFR=$AFR -d BFR=$BFR /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
