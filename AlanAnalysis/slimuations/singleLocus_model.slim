@@ -9,7 +9,11 @@ initialize() {
 	initializeGenomicElementType("g1", m1, 1.0);
 
 	initializeGenomicElement(g1, 0, 99);
-	initializeRecombinationRate(1e-8);
+
+	rates = c(1e-8, 0.5, 1e-9); 
+	ends = c(49, 50, 51); 
+
+	initializeRecombinationRate(rates, ends); 
 
 	defineConstant("simID", getSeed());
 
