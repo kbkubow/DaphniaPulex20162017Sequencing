@@ -5,8 +5,8 @@
 #SBATCH --ntasks-per-node=1 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 0-00:5 # Running time of 90 minutes
-#SBATCH --mem 2G # Memory request of 8 GB
+#SBATCH -t 0-00:15 # Running time of 15 minutes
+#SBATCH --mem 2G # Memory request of 2 GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/singleLocus_model_slim_%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/singleLocus_model_slim_%A_%a.err # Standard error
 #SBATCH -p standard
