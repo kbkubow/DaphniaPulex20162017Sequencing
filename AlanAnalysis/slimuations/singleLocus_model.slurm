@@ -21,4 +21,4 @@ CR=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAna
 AMR=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f4 )
 BMR=$( cat /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.paramList | grep "^$SLURM_ARRAY_TASK_ID," | cut -d',' -f5 )
 
-slim -d Ni=$N -d CRi=$CR -d AMRi=$AFR -d BMRi=$BFR /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
+slim -d Ni=$N -d CRi=$CR -d AMRi=$AMR -d BMRi=$BMR /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/slimuations/singleLocus_model.slim
