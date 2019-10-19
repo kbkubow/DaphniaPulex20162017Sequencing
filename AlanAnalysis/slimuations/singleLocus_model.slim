@@ -10,16 +10,20 @@ initialize() {
 
 	initializeGenomicElement(g1, 0, 99);
 
-	rates = c(1e-8, 0.5, 1e-8);
-	ends = c(49,50,99);
+	rates = c(1e-8, 0.5, 1e-9);
+
+	ends = c(49, 50, 99);
+
+
 	initializeRecombinationRate(rates, ends);
+
 
 	defineConstant("simID", getSeed());
 
 	//defineConstant("N", 5000);
-	//defineConstant("CR", 0.51);
-	//defineConstant("AMR", 0.05);
-	//defineConstant("BMR", 0.85);
+	//defineConstant("CR", 0.41);
+	//defineConstant("AMR", 0.15);
+	//defineConstant("BMR", 0.65);
 	//defineConstant("fn", "~/slim_out.delim");
 
 	defineConstant("N", Ni);
@@ -95,7 +99,7 @@ modifyChild() {
 				"nWW", "neut",
 				"simID", "N", "CR", "AMR", "BMR"), sep="\t");
 
-  writeFile(fn, line, append=F);
+  //writeFile(fn, line, append=F);
 }
 
 

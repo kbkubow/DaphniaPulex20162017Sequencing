@@ -69,11 +69,12 @@
 				"fZ",
 				"nZZ",
 				"nZW",
-				"nWW", "neut", "seed"))
+				"nWW", "neut",
+				"simID", "N", "CR", "AMR", "BMR"))
   dat[,fracA := (nZW / n)]
   dat[,fracB := (nZZ / n)]
   dat[,fZ:=(nZZ+.5*nZW)/n]
-  dat[,seedF:=as.numeric(as.factor(seed))]
+  dat[,seedF:=as.numeric(as.factor(simID))]
 
   ggplot() +
   geom_line(data=dat, aes(x=gen, y=neut, group=seedF), color="blue") +
