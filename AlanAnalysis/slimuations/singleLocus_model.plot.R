@@ -9,37 +9,54 @@
   library(viridis)
 
 ### load output data
-  fl <- system("ls /scratch/aob2x/daphnia_hwe_sims/slim_output/slim_*", intern=T)
+  fl <- paste("/scratch/aob2x/daphnia_hwe_sims/slim_output/", system("ls /scratch/aob2x/daphnia_hwe_sims/slim_output/", intern=T), sep="")
 
-  dt <- foreach(i=fl, .combine="rbind")%do%fread(i)
+  dt <- foreach(i=fl, .combine="rbind", .errorhandling="remove")%do%{
+    print(which(fl==i))
+    #if(which(fl==i)%%25==0) paste(print(which(fl==i), length(fl), sep=" / "))
+    fread(i)
+  }
 
   save(dt, file="~/dt.Rdata")
 
-  load("dt.Rdata")
-
+  load("~/dt.Rdata")
+  setnames(dt, names(dt), c("pop", "gen", "n",
+        "frac_Clonal_Female", "frac_Clonal_Male",
+        "frac_Sexual_Female", "frac_Sexual_Male",
+        "fZ",
+        "nZZ",
+        "nZW",
+        "nWW", "neut",
+        "simID", "N", "CR", "AMR", "BMR"))
     dt[,fZW := (nZW / n)]
     dt[,fZZ := (nZZ / n)]
-    dt[,fZ:= (nZZ+.5*nZW)/n]
+    #dt[,fZ:= (nZZ+.5*nZW)/n]
 
 ### some summaries
 
   dt.ag <- dt[gen>200, list(fZW=mean(fZW), fZZ=mean(fZZ), fZ=mean(fZ),
-                          CF=median(frac_Clonal_Female), CM=median(frac_Clonal_Male),
-                          SF=median(frac_Sexual_Female), SM=median(frac_Sexual_Male)),
-                    list(N=param_N, CR=param_CR, maleRate_ZW=(1 - param_AFR), maleRate_ZZ=(1-param_BFR))]
+                          CF=mean(frac_Clonal_Female), CM=mean(frac_Clonal_Male),
+                          SF=mean(frac_Sexual_Female), SM=mean(frac_Sexual_Male),
+                          neutFixation=any(neut==0 | neut==1),
+                          neutDelta=neut[gen==500] - neut[gen==201],
+                          fZdelta=fZ[gen==500] - fZ[gen==201]),
+                    list(N=N, CR=CR, maleRate_ZW=AMR, maleRate_ZZ=BMR)]
 
 
-  eq.freq.plot <- ggplot(data=dt.ag[CR<.05 | CR>.99 | CR==.51], aes(x=maleRate_ZW, y=maleRate_ZZ, fill=(CM+SM))) +
+  eq.freq.plot <- ggplot(data=dt.ag, aes(x=maleRate_ZW, y=maleRate_ZZ, fill=(CM+SM))) +
   geom_raster() + scale_fill_viridis(limits=c(0,1)) + facet_wrap(~CR) + geom_abline(intercept=0, slope=1)  +
-  geom_point(data= dt.ag[CR<.05 | CR>.99 | CR==.51][(1-maleRate_ZZ)==.86 & (1-maleRate_ZW)==.96], aes(x=maleRate_ZW, y=maleRate_ZZ), color="red") +
-  geom_point(data= dt.ag[CR<.05 | CR>.99 | CR==.51][fZZ>=(2*N-1)/(2*N) | fZZ<=(1/(2*N))], aes(x=maleRate_ZW, y=maleRate_ZZ), color="blue", size=.5)
+  geom_point(data= dt.ag[(1-maleRate_ZZ)==.86 & (1-maleRate_ZW)==.96], aes(x=maleRate_ZW, y=maleRate_ZZ), color="red") +
+  geom_point(data= dt.ag[fZZ>=(2*N-1)/(2*N) | fZZ<=(1/(2*N))], aes(x=maleRate_ZW, y=maleRate_ZZ), color="blue", size=.5)
 
   eq.freq.plot
 
 
 
-  ggplot(data=dt.ag, aes(x=maleRate_ZW, y=maleRate_ZZ, fill=(fracB))) +
-  geom_raster() + scale_fill_viridis(limits=c(0,1)) + facet_wrap(~CR) + geom_abline(intercept=0, slope=1)  +
+  ggplot(data=dt.ag[CR<.05 | CR>.99 | CR==.51], aes(x=maleRate_ZW, y=maleRate_ZZ, fill=(fZ))) +
+  geom_raster() + scale_fill_viridis(limits=c(0,1)) + facet_wrap(~CR) + geom_abline(intercept=0, slope=1)
+
+
+   +
   geom_point(data= dt.ag[(1-maleRate_ZZ)==.86 & (1-maleRate_ZW)==.96], aes(x=maleRate_ZW, y=maleRate_ZZ), color="red") +
   geom_point(data= dt.ag[fracA>=(2*N-1)/(2*N) | fracA<=(1/(2*N))], aes(x=maleRate_ZW, y=maleRate_ZZ), color="blue", size=.5)
 

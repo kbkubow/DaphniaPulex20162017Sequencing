@@ -13,10 +13,10 @@
     Y <- x[3]
     Z <- x[4]
 
-    W.prime <- c*mZZ*X
-    X.prime <- c*(1-mZZ)*X + 2*(1-c)*(W*X + X*Y/2 + Z*Y/3 + Z*W/2)
-    Y.prime <- c*(mZW)*Z
-    Z.prime <- c*(1-mZW)*Z + 2*(1-c)*(X*Y/2 + 2*Z*Y/3 + Z*W/2)
+    W.prime <- c*mZZ*X    ### Male ZZ
+    X.prime <- c*(1-mZZ)*X + 2*(1-c)*(W*X + X*Y/2 + Z*Y/3 + Z*W/2)    ### Female ZZ
+    Y.prime <- c*(mZW)*Z    ### Male ZW
+    Z.prime <- c*(1-mZW)*Z + 2*(1-c)*(X*Y/2 + 2*Z*Y/3 + Z*W/2)    ### Female ZW
 
     c(W.prime, X.prime, Y.prime, Z.prime)/(sum(c(W.prime, X.prime, Y.prime, Z.prime)))
   }
@@ -48,6 +48,24 @@
 
   loadSlim <- function(fn) {
     dat <- fread(fn)
+    setnames(dat, names(dat), c("pop", "gen", "n",
+          "frac_Clonal_Female", "frac_Clonal_Male",
+          "frac_Sexual_Female", "frac_Sexual_Male",
+          "fZ",
+          "nZZ",
+          "nZW",
+          "nWW", "neut",
+          "simID", "N", "CR", "AMR", "BMR"))
+    dat[,fracA := (nZW / n)]
+    dat[,fracB := (nZZ / n)]
+    dat[,fZ:=(nZZ+.5*nZW)/n]
+    dat[,seedF:=as.numeric(as.factor(simID))]
+    dat
+  }
+
+  loadSlim.obj <- function(fn) {
+    load(fn)
+    dat <- dt
     setnames(dat, names(dat), c("pop", "gen", "n",
           "frac_Clonal_Female", "frac_Clonal_Male",
           "frac_Sexual_Female", "frac_Sexual_Male",
@@ -105,7 +123,8 @@
 
 
 ### contrast simulation to analytical model
-  o <- slim_analytic(loadSlim("~/slim_out.delim"))
+  #o <- slim_analytic(loadSlim("~/slim_out.delim"))
+  o <- slim_analytic(loadSlim.obj("~/dt.Rdata"))
 
   o.ag.exp <-  o[seedF<0, list(fZ.exp=mean(fZ)),
                                     list(gen, CR, AMR, BMR)]
@@ -117,20 +136,26 @@
   setkey(o.ag.obs, gen, CR, AMR, BMR)
   o.ag <- merge(o.ag.exp, o.ag.obs)
 
+  o.ag.ag <- o.ag[gen>300, list(fZ.exp=mean(fZ.exp), fZ.obs=mean(fZ.obs)), list(CR, AMR, BMR)]
+
+  #o.ag.ag <- o.ag[gen>450, list(fZ.exp=mean(fZ.exp), fZ.delta=fZ.obs[-1] - fZ.obs[-length(fZ.obs)], fZ=fZ.obs[-length(fZ.obs)]), list(CR, AMR, BMR)]
+
 
   ind.plot <- ggplot() +
-  geom_line(data=o[gen>200], aes(x=gen, y=neut, group=seedF), color="blue") +
-  geom_line(data=o[seedF>0], aes(x=gen, y=fZ, group=seedF), color="red") +
-  geom_line(data=o[seedF<0], aes(x=gen, y=fZ, group=seedF), color="black") +
-  ylab("Frequency") + xlab("Generation")
+              geom_line(data=o[gen>200], aes(x=gen, y=neut, group=seedF), color="blue") +
+              geom_line(data=o[seedF>0], aes(x=gen, y=fZ, group=seedF), color="red") +
+              geom_line(data=o[seedF<0], aes(x=gen, y=fZ, group=seedF), color="black") +
+              ylab("Frequency") + xlab("Generation") + ylim(0,1)
 
 
-  ggplot(data=o.ag) +
-  geom_line(aes(x=gen, y=fZ.exp, group=paste(CR, AMR, BMR, sep="_")), color="red") +
-  geom_line(aes(x=gen, y=fZ.obs, group=paste(CR, AMR, BMR, sep="_")), color="blue") +
-  ylim(0,1)
+  mu.plot <- ggplot(data=o.ag) +
+            geom_line(aes(x=gen, y=fZ.exp, group=paste(CR, AMR, BMR, sep="_")), color="black") +
+            geom_line(aes(x=gen, y=fZ.obs, group=paste(CR, AMR, BMR, sep="_")), color="red") +
+            xlab("Generation") + ylab("") + ylim(0,1)
 
-
+  pw.plot <- ggplot(data=o.ag.ag, aes(x=fZ.exp, y=I(fZ.obs))) + geom_point() + geom_abline(slope=1, intercept=0)
+  #plot_grid(ind.plot, mu.plot)
+  pw.plot + geom_vline(xintercept=2/3)
 
 
 
