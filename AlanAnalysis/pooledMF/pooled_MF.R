@@ -51,7 +51,7 @@
   }
 
 ### save
-  write.csv(o, file=paste("/scratch/aob2x/daphnia_hwe_sims/mf/mf_glm_", jobId, ".csv"))
+  write.csv(o, file=paste("/scratch/aob2x/daphnia_hwe_sims/mf/mf_glm_", jobId, ".csv", sep=""), quote=F, row.names=F)
 
 
 
