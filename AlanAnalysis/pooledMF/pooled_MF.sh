@@ -5,8 +5,8 @@
 #SBATCH -N 1 # on one node
 #SBATCH -t 0:15:00 ### 6 hours
 #SBATCH --mem 1G
-#SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOutput/pooledMF.%A_%a.out # Standard output
-#SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOutput/pooledMF.%A_%a.err # Standard error
+#SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/pooledMF.%A_%a.out # Standard output
+#SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/pooledMF.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
