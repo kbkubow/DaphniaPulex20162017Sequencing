@@ -52,12 +52,3 @@
 
 ### save
   write.csv(o, file=paste("/scratch/aob2x/daphnia_hwe_sims/mf/mf_glm_", jobId, ".csv", sep=""), quote=F, row.names=F)
-
-
-
-### move to another place
-#  fl <- system("ls XYZ", intern=T)
-##  o <- foreach(fl.i=fl)%do%{
-###    fread(fl.i)
-# # }
-#  o <- rbindlist(o)
