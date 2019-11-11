@@ -12,6 +12,5 @@
 
 
 module load gcc/7.1.0  openmpi/3.1.4 R/3.6.1
-Rscript \
---args nJobs=1000 jobId=${SLURM_ARRAY_TASK_ID} \
-/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/pooled_MF.R
+Rscript /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/pooled_MF.R \
+1000  ${SLURM_ARRAY_TASK_ID}

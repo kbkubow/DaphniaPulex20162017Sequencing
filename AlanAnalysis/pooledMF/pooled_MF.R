@@ -4,14 +4,14 @@
   library(foreach)
 
 ### get job ID
-  cli <- commandArgs(trailingOnly = TRUE)
-  args <- strsplit(cli, "=", fixed = TRUE) ## args <- list(nJobs=1000, jobId=300)
+  args <- commandArgs(trailingOnly = TRUE)
 
-  print(args)
+  nJobs <- as.numeric(args[1])
+  jobId <- as.numeric(args[2])
+
+  print(nJobs)
+  prin(jobId)
   
-  nJobs <- as.numeric(args[[1]])
-  jobId <- as.numeric(args[[2]])
-
 #### load data
 #  load("/project/berglandlab/Karen/SingleMomsMales20182019/PooledMomsMales/totrdfilt.Rdata")
 #  totrdfilt[,effRD:=floor(RRD)]
