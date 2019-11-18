@@ -158,8 +158,8 @@
   pw.plot + geom_vline(xintercept=2/3)
 
 
-
-
+  o.ag.ag[,delta:=fZ.obs - fZ.exp]
+  summary(lm((delta)~CR*AMR*BMR , o.ag.ag))
 
 
 
