@@ -15,9 +15,11 @@ Analyses of Hardy-Weinberg deviations and attempt to cluster based on LD. They n
 > `TwoCloneTest_pairwise.analysis.workstation.R`
 > Even further generalization of A vs B test (and it's derivative, Alike-Blike); generalized a bit to work for D8 & DCat (or any two clones), different input SNP lists, and works along chromosomes as well as across genome.
 
-
 > `association_test.workstation.R`
 > What does the old phenotyping data look like? Look first at ZW-like SNPs in the
+
+> `malefemale.R`
+> sliding window KW-test analysis of site frequency specturm differences between male and female pools
 
 
 TO DO:
