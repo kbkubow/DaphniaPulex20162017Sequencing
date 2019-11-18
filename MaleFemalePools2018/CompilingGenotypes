@@ -1,0 +1,245 @@
+#Started out with 849,671 lines in the VCF file.
+bedtools intersect -a Pooled2018SNPonlyPCRdupremFilt.vcf -b RMoutHiCGMgoodscaff.bed -v -header > Pooled2018SNPonlyPCRdupremFiltRMrem.vcf
+#After removing SNPs in the RepeatMasker regions, VCF file has 669,027 lines. Meaning 180,644 SNPs were removed.
+#Next use indel file to make a bam file to remove SNPs within +/- 20 bp
+tail -n +25 Pooled2018IndelonlyPCRdupremFilt.vcf > indelint.bed
+awk '{print $1, "\t", $2}' indelint.bed > indelintB.bed
+awk '{print $1, "\t", $2, "\t", $2-20, "\t", $2+20}' indelintB.bed > indelintC.bed
+awk '{print $1, "\t", $3, "\t", $4}' indelintC.bed > indelrem.bed
+bedtools intersect -a Pooled2018SNPonlyPCRdupremFiltRMrem.vcf -b indelintD.bed -v -header > Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+#After removing SNPs near indels, VCF file has 498,017 lines. Meaning 171,010 additional SNPs were removed.
+#Next switch out sample names
+sed -i 's/Sample1/D8Male1/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample2/D8Male2/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample3/D8PE1/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample4/D8PE2/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample5/DBunkMale/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample6/DBunkPE1/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample7/DBunkPE2/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample8/DCatMale/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/Sample9/DCatPE1/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+sed -i 's/D8Male10/DCatPE2/g' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $10}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""D8Male1"}' > D8Male1long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $11}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""D8Male2"}' > D8Male2long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $12}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""D8PE1"}' > D8PE1long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $13}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""D8PE2"}' > D8PE2long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $14}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""DBunkMale"}' > DBunkMalelong
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $15}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""DBunkPE1"}' > DBunkPE1long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $16}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""DBunkPE2"}' > DBunkPE2long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $17}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""DCatMale"}' > DCatMalelong
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $18}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""DCatPE1"}' > DCatPE1long
+
+awk '!/^ *#/ { print; }' Pooled2018SNPonlyPCRdupremFiltRMremIndelrm.vcf | \
+awk '{print $1, $2, $4, $5, $19}' | awk -F: '{print $1, $5, $6}' | \
+awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t""DCatPE2"}' > DCatPE2long
+
+cat D8Male1long D8Male2long D8PE1long D8PE2long DBunkMalelong DBunkPE1long \
+DBunkPE2long DCatMalelong DCatPE1long DCatPE2long > totalADRDlong
+
+#!/usr/bin/env Rscript
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+### Read in file
+    geno <- fread("totalADRDlong")
+    colnames(geno) <- c("chr", "pos", "ref", "alt", "RD", "AD", "Sample")
+    geno$TD <- geno$RD+geno$AD
+    geno$propalt <- geno$AD/geno$TD
+    geno$pond <- ifelse(geno$Sample=="DBunkMale" | geno$Sample=="DBunkPE1" |
+      geno$Sample=="DBunkPE2", "DBunk", ifelse(geno$Sample=="DCatMale" |
+      geno$Sample=="DCatPE1" | geno$Sample=="DCatPE2", "DCat", "D8"))
+    geno$sex <- ifelse(geno$Sample=="D8Male1" | geno$Sample=="D8Male2" |
+      geno$Sample=="DBunkMale" | geno$Sample=="DCatMale", "male", "female")
+
+    ggplot(data=geno, aes(x=TD)) + geom_histogram() + facet_wrap(~Sample)
+    ggplot(data=geno[TD<800], aes(x=TD)) + geom_histogram() + facet_wrap(~Sample)
+    ggplot(data=geno[TD<800], aes(x=propalt)) + geom_histogram() + facet_wrap(~Sample, scales = "free_y")
+
+
+    genoDBunkPE1 <- geno[Sample=="DBunkPE1"]
+    ggplot(data=genoDBunkPE1, aes(x=propalt)) + geom_histogram()
+    genoDBunkMale <- geno[Sample=="DBunkMale"]
+    ggplot(data=genoDBunkMale, aes(x=propalt)) + geom_histogram()
+
+
+    genoD8Male1 <- geno[Sample=="D8Male1"]
+    colnames(genoD8Male1) <- c("chr", "pos", "ref", "alt", "D8Male1RD", "D8Male1AD", "D8Male1Sample", "D8Male1TD", "D8Male1propalt")
+    genoD8Male2 <- geno[Sample=="D8Male2"]
+    colnames(genoD8Male2) <- c("chr", "pos", "ref", "alt", "D8Male2RD", "D8Male2AD", "D8Male2Sample", "D8Male2TD", "D8Male2propalt")
+    setkey(genoD8Male1, chr, pos, ref, alt)
+    setkey(genoD8Male2, chr, pos, ref, alt)
+    m <- merge(genoD8Male1, genoD8Male2)
+    ggplot(data=genoD8Male1, aes(x=D8Male1propalt)) + geom_histogram()
+
+    genoDBunkMale <- geno[Sample=="DBunkMale"]
+    colnames(genoDBunkMale) <- c("chr", "pos", "ref", "alt", "DBunkMale1RD", "DBunkMale1AD", "DBunkMale1Sample", "DBunkMale1TD", "DBunkMale1propalt")
+    genoDBunkPE1 <- geno[Sample=="DBunkPE1"]
+    colnames(genoDBunkPE1) <- c("chr", "pos", "ref", "alt", "DBunkPE1RD", "DBunkPE1AD", "DBunkPE1Sample", "DBunkPE1TD", "DBunkPE1propalt")
+    setkey(genoDBunkMale, chr, pos, ref, alt)
+    setkey(genoDBunkPE1, chr, pos, ref, alt)
+    m <- merge(genoDBunkMale, genoDBunkPE1)
+    ggplot(data=m, aes(x=DBunkMale1propalt, y=DBunkPE1propalt)) + geom_point()
+
+
+    quantile(geno$TD[geno$Sample=="D8Male1"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #49   716
+
+    quantile(geno$TD[geno$Sample=="D8Male2"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #33   422
+
+    quantile(geno$TD[geno$Sample=="D8PE1"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #17   169
+
+    quantile(geno$TD[geno$Sample=="D8PE2"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #8    38
+
+    quantile(geno$TD[geno$Sample=="DBunkMale"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #56   858
+
+    quantile(geno$TD[geno$Sample=="DBunkPE1"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #34   440
+
+    quantile(geno$TD[geno$Sample=="DBunkPE2"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #39   512
+
+    quantile(geno$TD[geno$Sample=="DCatMale"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #33   431
+
+    quantile(geno$TD[geno$Sample=="DCatPE1"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #33   542
+
+    quantile(geno$TD[geno$Sample=="DCatPE2"],probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #16   151
+
+    genoDCat <- geno[Sample=="DCatMale" | Sample=="DCatPE1"]
+    quantile(genoDCat$TD,probs=c(0.015,0.975), na.rm=TRUE)
+    genoDCatRDfilt <- genoDCat[TD > 32 & TD < 490]
+    genoDCatRDfilt$RRD <- ifelse(genoDCatRDfilt$Sample=="DCatMale",
+      (200*genoDCatRDfilt$TD)/(200+genoDCatRDfilt$TD),
+      (100*genoDCatRDfilt$TD)/(100+genoDCatRDfilt$TD))
+    genoDCatMale <- genoDCatRDfilt[Sample=="DCatMale"]
+    colnames(genoDCatMale) <- c("chr", "pos", "ref", "alt",
+      "DCatMaleRD", "DCatMaleAD", "DCatMaleSample",
+      "DCatMaleTD", "DCatMalepropalt", "DCatMaleRRD")
+    genoDCatPE1 <- genoDCatRDfilt[Sample=="DCatPE1"]
+    colnames(genoDCatPE1) <- c("chr", "pos", "ref", "alt",
+      "DCatPE1RD", "DCatPE1AD", "DCatPE1Sample",
+      "DCatPE1TD", "DCatPE1propalt", "DCatPE1RRD")
+    setkey(genoDCatMale, chr, pos, ref, alt)
+    setkey(genoDCatPE1, chr, pos, ref, alt)
+    m <- merge(genoDCatMale, genoDCatPE1)
+    ggplot(data=m, aes(x=DCatMalepropalt, y=DCatPE1propalt)) + geom_point
+    m$diffpropalt <- ifelse(m$DCatMalepropalt > m$DCatPE1propalt,
+      m$DCatMalepropalt-m$DCatPE1propalt, m$DCatPE1propalt-m$DCatMalepropalt)
+
+
+    genoDBunkMale <- geno[Sample=="DBunkMale"]
+    quantile(genoDBunkMale$TD,probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #56   858
+    DBunkMaleRDfilt <- genoDBunkMale[TD > 55 & TD < 859]
+    colnames(DBunkMaleRDfilt) <- c("chr", "pos", "ref", "alt",
+      "DBunkMaleRD", "DBunkMaleAD", "DBunkMaleSample",
+      "DBunkMaleTD", "DBunkMalepropalt")
+    genoDBunkPE1 <- geno[Sample=="DBunkPE1"]
+    quantile(genoDBunkPE1$TD,probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #34   440
+    DBunkPE1RDfilt <- genoDBunkPE1[TD > 33 & TD < 441]
+    colnames(DBunkPE1RDfilt) <- c("chr", "pos", "ref", "alt",
+      "DBunkPE1RD", "DBunkPE1AD", "DBunkPE1Sample",
+      "DBunkPE1TD", "DBunkPE1propalt")
+    genoDBunkPE2 <- geno[Sample=="DBunkPE2"]
+    quantile(genoDBunkPE2$TD,probs=c(0.015,0.975), na.rm=TRUE)
+    #1.5% 97.5%
+    #39   512
+    DBunkPE2RDfilt <- genoDBunkPE2[TD > 38 & TD < 513]
+    colnames(DBunkPE2RDfilt) <- c("chr", "pos", "ref", "alt",
+      "DBunkPE2RD", "DBunkPE2AD", "DBunkPE2Sample",
+      "DBunkPE2TD", "DBunkPE2propalt")
+    genoDCatPE2 <- geno[Sample=="DCatPE2"]
+    quantile(genoDCatPE2$TD,probs=c(0.015,0.975), na.rm=TRUE)
+    DCatPE2RDfilt <- genoDCatPE2[TD > 15 & TD < 152]
+    colnames(DCatPE2RDfilt) <- c("chr", "pos", "ref", "alt",
+      "DCatPE2RD", "DCatPE2AD", "DCatPE2Sample",
+      "DCatPE2TD", "DCatPE2propalt")
+
+    setkey(DBunkMaleRDfilt, chr, pos, ref, alt)
+    setkey(DBunkPE1RDfilt, chr, pos, ref, alt)
+    setkey(DBunkPE2RDfilt, chr, pos, ref, alt)
+    setkey(DCatPE2RDfilt, chr, pos, ref, alt)
+
+    m2 <- merge(m, DBunkMaleRDfilt)
+    setkey(m2, chr, pos, ref, alt)
+    m3 <- merge(m2, DBunkPE1RDfilt)
+    setkey(m3, chr, pos, ref, alt)
+    m4 <- merge(m3, DBunkPE2RDfilt)
+    setkey(m4, chr, pos, ref, alt)
+    m5 <- merge(m4, DCatPE2RDfilt)
+    m5$diffpropaltCat <- ifelse(m5$DCatMalepropalt > m5$DCatPE1propalt,
+      m5$DCatMalepropalt-m5$DCatPE1propalt, m5$DCatPE1propalt-m5$DCatMalepropalt)
+
+    m5$diffpropaltPE1MaleBunk <- ifelse(m5$DBunkMalepropalt > m5$DBunkPE1propalt,
+      m5$DBunkMalepropalt-m5$DBunkPE1propalt, m5$DBunkPE1propalt-m5$DBunkMalepropalt)
+
+    m5$diffpropaltPE2MaleBunk <- ifelse(m5$DBunkMalepropalt > m5$DBunkPE2propalt,
+      m5$DBunkMalepropalt-m5$DBunkPE2propalt, m5$DBunkPE2propalt-m5$DBunkMalepropalt)
+
+    m5$diffpropaltPE1PE2Bunk <- ifelse(m5$DBunkPE1propalt > m5$DBunkPE2propalt,
+      m5$DBunkPE1propalt-m5$DBunkPE2propalt, m5$DBunkPE2propalt-m5$DBunkPE1propalt)
+
+    m5$diffpropaltPE1PE2Cat <- ifelse(m5$DCatPE1propalt > m5$DCatPE2propalt,
+      m5$DCatPE1propalt-m5$DCatPE2propalt, m5$DCatPE2propalt-m5$DCatPE1propalt)
+
+
+    ggplot(data=m5, aes(x=diffpropaltCat)) + geom_histogram()
+    ggplot(data=m5, aes(x=diffpropaltPE1MaleBunk)) + geom_histogram()
+    ggplot(data=m5, aes(x=diffpropaltPE2MaleBunk)) + geom_histogram()
+    ggplot(data=m5, aes(x=diffpropaltPE1PE2Bunk)) + geom_histogram()
+    ggplot(data=m5, aes(x=diffpropaltPE1PE2Cat)) + geom_histogram()
