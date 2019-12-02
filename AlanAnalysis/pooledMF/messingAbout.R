@@ -159,6 +159,10 @@
 
 ### plot
     load(file="~/male_female_fst.Rdata")
+    fst.o.ag[,pond:="foo"]
+    fst.o.ag[grepl("D8", pair),pond:="D8"]
+    fst.o.ag[grepl("DBunk", pair),pond:="DBunk"]
+    fst.o.ag[grepl("DCat", pair),pond:="DCat"]
 
     pond.i <- "D8"
     ggplot(data=fst.o.ag[n.x>100][pond==pond.i], aes(x=i, y=mu.fst, color=chr)) +
@@ -192,16 +196,18 @@
 
 
     setkey(geno, chr, pos)
-    setkey(wins, chr, pos)
-    i <- 20901
-    tmp <- fst.o[J(data.table(chr=wins$chr[i], pos=wins$start[i]:wins$stop[i], key="chr,pos")), nomatch=0]
-    buffer <- 5000
+    #setkey(wins, chr, pos)
+    i <- fst.o.ag[n.x>100][pond=="D8"][pair=="D8Male2_D8PE2"][which.max(mu.fst)]$i
+    buffer <- 0
     tmp <- geno[J(data.table(chr=wins$chr[i], pos=(wins$start[i]-buffer):(wins$stop[i]+buffer), key="chr,pos")), nomatch=0]
 
     ggplot() +
-    geom_histogram(data=tmp[pond=="D8"], aes(propalt, fill=sex, group=Sample), bins=100) +
-    facet_grid(Sample~.)
+    geom_boxplot(data=tmp, aes(y=propalt, x=Sample, fill=sex, group=Sample)) +
+    facet_grid(pond~., scales="free_y") + coord_flip()
 
+    ggplot() +
+    geom_density(data=tmp, aes(propalt, color=sex, group=Sample)) +
+    facet_grid(pond~., scales="free_y")
 
 
     fst.o.ag[pair=="D8Male1_D8PE2"][n.x>100][med.fst>.105]
