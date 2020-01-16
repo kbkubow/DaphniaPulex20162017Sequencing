@@ -126,7 +126,7 @@
 
           seqSetFilter(genofile,
                        sample.id=clones$clone,
-                       variant.id=snp.dt[(final.use)]$id)
+                       variant.id=snp.dt[(use.chr)]$id)
 
           clones.af <- data.table(id=seqGetData(genofile, "variant.id"),
                                   af=seqAlleleFreq(genofile, .progress=T, parallel=F))
