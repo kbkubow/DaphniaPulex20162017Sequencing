@@ -21,3 +21,5 @@
   load("/mnt/sammas_storage/bergland-lab/alan/mf_fet.Rdata")
 
   ggplot(data=o, aes(x=pairs, y=log2(or))) + geom_boxplot() + coord_flip()
+
+  ggplot(data=o[p<.1], aes(x=log2(or), y=-log10(p))) + geom_point() + facet_wrap(~pairs)

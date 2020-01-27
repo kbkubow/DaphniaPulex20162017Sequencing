@@ -79,6 +79,10 @@
 ######## pick up here #######
 ### gets ported to Rivanna under file name: HWE_simulations_rivanna.R
 
+### ijob -c1 -p standard -A berglandlab
+### module load gcc/7.1.0  openmpi/3.1.4 R/3.6.0; R
+
+
 
   ### libraries
     library(SeqArray)
@@ -177,3 +181,4 @@
     }
 
     save(hwe.stat, file="/scratch/aob2x/daphnia_hwe_sims/hwe_stat.Rdata")
+    save(hwe.stat, file="/nv/vol186/bergland-lab/alan/hwe_stat.Rdata")
