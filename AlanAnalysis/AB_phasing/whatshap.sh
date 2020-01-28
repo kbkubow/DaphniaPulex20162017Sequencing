@@ -23,4 +23,4 @@ whatshap \
 phase \
 --ped /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.ped \
 -o /scratch/aob2x/daphnia_hwe_sims/trioPhase/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.trioPhased.vcf \
-/project/berglandlab/Karen/MappingDec2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf \
+/project/berglandlab/Karen/MappingDec2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf
