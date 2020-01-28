@@ -4,6 +4,7 @@
 ### libraries
   library(data.table)
   library(SeqArray)
+  library(foreach)
 
 ### load SuperClone & SNP filter file
   sc <- fread("/project/berglandlab/Karen/MappingDec2019/Superclones201617182019pulexonlyD82016problematic_20200122")
@@ -53,26 +54,44 @@
     tmp.ag
   }
 
-
   f1.set <- het.count[n>1000][A.geno==0 & B.geno==2 & fRA>.9]$sample.id
+
+
+  het.count.ag <- het.count[,list(RR=c(mean(fRR[A.geno==0]), mean(fRR[B.geno==0])),
+                                  RA=c(mean(fRA[A.geno==1]), mean(fRA[B.geno==1])),
+                                  AA=c(mean(fAA[A.geno==2]), mean(fAA[B.geno==2])),
+                                  n=sum(n),
+                                  SC=c("A", "B")),
+                             list(sample.id)]
+  het.count.ag[,mu:=(RR+RA+AA)/3]
+
 
 ### make small, dummy vcf
     seqResetFilter(genofile)
 
-    seqSetFilter(genofile, sample.id=c(sc[SC=="A"]$clone[1],
-                                       sc[SC=="B"]$clone[1],
-                                       f1.set[1]),
+    seqSetFilter(genofile, sample.id=c(het.count.ag[SC=="A"][which.max(mu)]$sample.id,
+                                       het.count.ag[SC=="B"][which.max(mu)]$sample.id,
+                                       f1.set[1:10]),
                            variant.id=snp.dt$id)
 
-     seqGDS2VCF(genofile, vcf.fn="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.vcf")
+     seqGDS2VCF(genofile, vcf.fn="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.vcf.gz", info.var=character(0), fmt.var=character(0))
 
      ped <- data.table(fam="family1",
-                       iid=f1.set[1],
-                       pid=sc[SC=="A"]$clone[1],
-                       mid=sc[SC=="B"]$clone[1])
+                       iid=f1.set[1:10],
+                       pid=het.count.ag[SC=="B"][which.max(mu)]$sample.id,
+                       mid=het.count.ag[SC=="A"][which.max(mu)]$sample.id,
+                       foo="N", bar="A")
 
-     write.table(ped, quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.ped")
+     write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.ped")
 
+### make ped file
+    ped <- data.table(fam="family1",
+                      iid=f1.set,
+                      pid=sc[SC=="A"]$clone[1],
+                      mid=sc[SC=="B"]$clone[1],
+                      foo="N", bar="A")
+
+    write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/allTrio.ped")
 
 
 

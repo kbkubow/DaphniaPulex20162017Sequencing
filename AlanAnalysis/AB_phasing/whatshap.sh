@@ -5,8 +5,8 @@
 #SBATCH --ntasks-per-node=1 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 12:00:00 # Running time of 12 hours
-#SBATCH --mem 12G # Memory request of 8 GB
+#SBATCH -t 2:00:00 # Running time of 2 hours
+#SBATCH --mem 12G # Memory request of 12 GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.%A_%a.err # Standard error
 #SBATCH -p standard
@@ -22,5 +22,5 @@ export PATH=$HOME/.local/bin:$PATH
 whatshap \
 phase \
 --ped /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.ped \
--o /scratch/aob2x/daphnia_hwe_sims/trioPhase/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.trioPhased.vcf \
-/project/berglandlab/Karen/MappingDec2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf
+-o /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.phased.vcf.gz \
+/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.vcf.gz
