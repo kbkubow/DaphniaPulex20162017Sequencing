@@ -16,6 +16,9 @@
   use <- data.table(id=snpsvarpulexpresentinhalf, pass=T, key="id")
   snp.dt <- merge(snp.dt, use)
 
+  snp.dt[,use.chr:=F]
+  snp.dt[chr%in%snp.dt[,.N,chr][N>1000]$chr, use.chr:=T]
+
 ### 1. identify fixed difference between A&B
   ab.fd <- foreach(sc.i=c("A", "B"), .combine="cbind")%do%{
     seqResetFilter(genofile)
@@ -56,6 +59,61 @@
 
   f1.set <- het.count[n>1000][A.geno==0 & B.geno==2 & fRA>.9]$sample.id
 
+### 3. make majority rule F1s, A & B
+  setkey(sc, clone)
+  sc.f1.ag <- sc[J(f1.set)][SC!="OO",.N,list(SC)]
+  sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "B")))[order(N, decreasing=T)]
+
+  nF1s <- 4
+
+  f1.cons <- foreach(i=1:(2+nF1s), .combine="cbind")%do%{
+    #i<-1
+    print(i)
+    seqResetFilter(genofile)
+    seqSetFilter(genofile, sample.id=sc[SC==sc.f1.ag$SC[i]]$clone, variant.id=snp.dt$id)
+
+    tmp <- data.table(af=seqAlleleFreq(genofile))
+    #tmp <- cbind(tmp, snp.dt)
+
+    tmp[!is.na(af), geno := unlist(sapply(tmp[!is.na(af)]$af, function(x) c("0/0","0/1","1/1")[which.min(abs(x-c(0,.5,1)))]))]
+
+    tmp[,"geno",with=F]
+  }
+  setnames(f1.cons, c(1:dim(f1.cons)[2]), sc.f1.ag[1:(2+nF1s)]$SC)
+
+  proto.vcf <- cbind(snp.dt, f1.cons)
+
+  vcf <- data.table('#CHROM'=snp.dt$chr,
+                    POS=snp.dt$pos,
+                    ID=paste("snp", snp.dt$id, sep="_"),
+                    REF=seqGetData(genofile, "$ref"),
+                    ALT=seqGetData(genofile, "$alt"),
+                    QUAL=".",
+                    FILTER="PASS",
+                    INFO=".",
+                    FORMAT="GT")
+  vcf <- cbind(vcf, f1.cons)
+
+### 4. write VCF file & PED file
+  seqSetFilter(genofile, variant.id=1)
+  seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.vcf", info.var=character(0), fmt.var=character(0),
+    verbose=TRUE)
+  system("grep '##' /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.vcf > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf")
+
+  write.table(vcf, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf", sep="\t", append=T, col.names=T, quote=F, row.names=F)
+
+  ped <- data.table(fam="family1",
+                    iid=names(f1.cons)[-c(1,2)],
+                    pid="B",
+                    mid="A",
+                    foo="N", bar="A")
+
+  write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.ped")
+
+
+
+
+
 
   het.count.ag <- het.count[,list(RR=c(mean(fRR[A.geno==0]), mean(fRR[B.geno==0])),
                                   RA=c(mean(fRA[A.geno==1]), mean(fRA[B.geno==1])),
@@ -69,15 +127,16 @@
 ### make small, dummy vcf
     seqResetFilter(genofile)
 
+    nF1 <- 2
     seqSetFilter(genofile, sample.id=c(het.count.ag[SC=="A"][which.max(mu)]$sample.id,
                                        het.count.ag[SC=="B"][which.max(mu)]$sample.id,
-                                       f1.set[1:10]),
-                           variant.id=snp.dt$id)
+                                       f1.set[1:nF1]),
+                           variant.id=snp.dt[use.chr==T]$id)
 
      seqGDS2VCF(genofile, vcf.fn="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.vcf.gz", info.var=character(0), fmt.var=character(0))
 
      ped <- data.table(fam="family1",
-                       iid=f1.set[1:10],
+                       iid=f1.set[1:nF1],
                        pid=het.count.ag[SC=="B"][which.max(mu)]$sample.id,
                        mid=het.count.ag[SC=="A"][which.max(mu)]$sample.id,
                        foo="N", bar="A")
