@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #SBATCH -N 1
-#SBATCH --ntasks-per-node=4
-#SBATCH --mem 24G
-#SBATCH -t 0-20:00:00
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem 8G
+#SBATCH -t 0-1:00:00
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
