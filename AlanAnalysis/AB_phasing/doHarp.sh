@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
+#SBATCH -J harp_pools
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem 8G
 #SBATCH -t 0-1:00:00
 #SBATCH -p standard
 #SBATCH --account berglandlab
+#SBATCH -o /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/harp_pools.%A_%a.out # Standard output
+#SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/harp_pools.%A_%a.err # Standard error
 
 # submit as
-# sbatch --array=1-$( wc -l /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f1 -d' ' ) doHarp.slurm
+# sbatch --array=1-$( wc -l /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f1 -d' ' ) /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/AB_phasing/doHarp.sh
 
 module load gparallel
 module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
@@ -55,9 +58,9 @@ module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
   --region ${chromosome}:1-${chrLength} \
   --refseq ${referenceGenome} \
   --snps ${priorsFile} \
-  --stem /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}/${sample} \
+  --stem /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}/${sample}.${chromosome} \
   -v \
-  --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}
+  --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}
 
   echo running harp freq
   $harp freq \
@@ -65,8 +68,8 @@ module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
   --region $chromosome:1-${chrLength} \
   --refseq $referenceGenome \
   --snps ${priorsFile} \
-  --stem /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}/${sample} \
-  --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}/  \
+  --stem /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}/${sample}.${chromosome} \
+  --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}/  \
   --window_step $window_step \
   --window_width $window_width \
   --em_min_freq_cutoff 0.0001
