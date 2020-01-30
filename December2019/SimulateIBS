@@ -1,0 +1,217 @@
+#!/usr/bin/env Rscript
+
+      ### libraries
+              library(gdsfmt)
+              library(SNPRelate)
+              library(data.table)
+              library(ggplot2)
+              library(foreach)
+              library(lattice)
+              library(tidyr)
+              library(SeqArray)
+              library(tidyverse)
+
+      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+# First let's load the superclone file and the LD pruned SNP file (b/c I calculate IBS using the LD pruned SNPs)
+
+      sc <- fread("CloneInfoFilePulexOnly_20200128.txt")
+
+      load("finalsetsnpset01pulex_20200121.Rdata")
+      seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+      snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+        chr = seqGetData(genofile, "chromosome"),
+        pos = seqGetData(genofile, "position"),
+        dp = seqGetData(genofile, "annotation/info/DP"))
+
+
+# Now let's choose which individuals we want to start with. Maybe try a single superclone first.
+
+      temp <- unlist(strsplit(sc$clone, split="_"))
+      mat <- matrix(temp, ncol=4, byrow=TRUE)
+      matdat <- as.data.table(mat)
+      sc$population <- matdat$V3
+      sc$year <- matdat$V2
+      sc$id <- paste(matdat$V3, matdat$V4, sep="_")
+
+      scBids <- sc$clone[sc$SC=="B" & sc$Nonindependent==0]
+
+      seqSetFilter(genofile, sample.id=scBids)
+
+# Let's pull out genotypes for all of these
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snps, variant.ids)
+
+      mhet <- merge(snps, het)
+
+      mhetlong <- melt(mhet, measure.vars=scBids, variable.name="clone", value.name="dosage")
+
+# Now let's pull out the read depths
+      dp <- t((seqGetData(genofile, "annotation/format/DP"))$data)
+      dp <- as.data.table(dp)
+
+      colnames(dp) <- c(seqGetData(genofile, "sample.id"))
+      dp$variant.ids <- seqGetData(genofile, "variant.id")
+
+      dplong <- melt(dp, measure.vars=scBids, variable.name="clone", value.name="dp")
+
+# Now let's choose a starting reference clone and load the gatk probability table
+      mhetlongref <- mhetlong[clone=="April_2017_D8_125"]
+      mhetlongrefsub <- mhetlongref[, c("variant.ids", "dosage"), with=FALSE]
+      setkey(mhetlongrefsub, variant.ids)
+
+      gatkprob <- fread("gtProbabilities.txt")
+      gtprobfilt <- gatkprob[2:3212]
+      gtprobfiltsub <- gtprobfilt[,c("ref.rd", "alt.rd", "GTprob2", "GTprob1", "GTprob0")]
+
+
+      fullsummarymodIBS <- foreach(x=1:(length(scBids)), .combine="rbind")%do%{
+
+        testclone <- scBids[x]
+
+        mhetlongrefsub$testrd <- dp[,testclone, with=F]
+        mhetlongrefsub$testdosage <- mhet[,testclone, with=F]
+        mhetlongrefsub$rbinommod <- rbinom(150408, mhetlongrefsub$testrd, 0.5)
+        mhetlongrefsub$ref.rd <- as.integer(ifelse(mhetlongrefsub$dosage==2, mhetlongrefsub$testrd,
+          ifelse(mhetlongrefsub$dosage==1, mhetlongrefsub$rbinommod,
+          ifelse(mhetlongrefsub$dosage==0, 0, "NA"))))
+        mhetlongrefsub$alt.rd <- mhetlongrefsub$testrd-mhetlongrefsub$ref.rd
+        mhetlongrefsubB <- mhetlongrefsub[mhetlongrefsub$testdosage==0 | mhetlongrefsub$testdosage==2 |
+          mhetlongrefsub$testdosage==2]
+
+        setkey(mhetlongrefsubB, ref.rd, alt.rd)
+        setkey(gtprobfiltsub, ref.rd, alt.rd)
+        mtmp <- merge(mhetlongrefsubB, gtprobfiltsub)
+        mtmp[,Ocall:= sample(c("2","1","0"), prob=c(GTprob2, GTprob1, GTprob0), size=1), by=variant.ids]
+        mtmpsub <- mtmp[,c("variant.ids", "Ocall")]
+        colnames(mtmpsub) <- c("variant.ids", testclone)
+        mhetlongrefsubsub <- mhetlongrefsub[,"variant.ids"]
+        setkey(mtmpsub, variant.ids)
+        setkey(mhetlongrefsubsub, variant.ids)
+        mmtmp <- merge(mhetlongrefsubsub, mtmpsub, all.x=TRUE)
+        setkey(mhetlongrefsub, variant.ids)
+        mhetlongrefsub[[testclone]] <- mmtmp[[testclone]]
+
+        }
+
+        mhetlongsim <- melt(mhetlongrefsub, measure.vars=scBids, variable.name="clone", value.name="dosage")
+        mhetlongsimsub <- mhetlongsim[,c("variant.ids", "clone", "dosage.1")]
+
+  ### Now that we have table of simulated genotypes, need to calculate IBS, should also calculate it for original genotypes
+  ### First let's try original genotypes
+    # First need to get a list of all pairwise combinations of Bs.
+
+      pairwiseids <- foreach(x=1:(length(scBids)), .combine="rbind")%do%{
+
+        testclone <- scBids[x]
+        data.table(cloneA=c(testclone), cloneB=scBids)
+
+        }
+
+    #Remove identical comparisons
+      pairwiseidsfilt <- pairwiseids[cloneA!=cloneB]
+    #Keep single way comparisons
+      pairwiseidsfilt$cloneAnum <- as.numeric(as.factor(pairwiseidsfilt$cloneA))
+      pairwiseidsfilt$cloneBnum <- as.numeric(as.factor(pairwiseidsfilt$cloneB))
+      pairwiseidsfilt$CloneNumComb <- ifelse(pairwiseidsfilt$cloneAnum > pairwiseidsfilt$cloneBnum,
+        paste(pairwiseidsfilt$cloneAnum,pairwiseidsfilt$cloneBnum,sep="_"),
+        paste(pairwiseidsfilt$cloneBnum,pairwiseidsfilt$cloneAnum,sep="_"))
+      setkey(pairwiseidsfilt, CloneNumComb)
+      pairwiseidsfiltunique <- unique(pairwiseidsfilt, by="CloneNumComb")
+    #Now get back to the original three columns
+      pairwiseidsfiltuniqueB <- data.table(cloneA=pairwiseidsfiltunique$cloneA,
+        cloneB=pairwiseidsfiltunique$cloneB)
+
+  ### Ok, now let's calculate IBS for all original B genotypes - have to figure out how IBS is calculated
+
+      IBSoriginal <- foreach(x=1:dim(pairwiseidsfiltuniqueB)[1], .combine="rbind")%do%{
+        cloneA=pairwiseidsfiltuniqueB$cloneA[[x]]
+        cloneB=pairwiseidsfiltuniqueB$cloneB[[x]]
+
+        tmp <- mhet[, c(cloneA, cloneB), with=F]
+        tmp$dist <- abs(tmp[[cloneA]]-tmp[[cloneB]])
+        data.table(cloneA=cloneA, cloneB=cloneB, IBS=1-(mean(tmp$dist, na.rm=TRUE)/2))
+
+      }
+
+  ### And now let's calculate IBS for all simulated B genotypes - have to figure out how IBS is calculated
+
+      IBSsimulated <- foreach(x=1:dim(pairwiseidsfiltuniqueB)[1], .combine="rbind")%do%{
+        cloneA=pairwiseidsfiltuniqueB$cloneA[[x]]
+        cloneB=pairwiseidsfiltuniqueB$cloneB[[x]]
+
+        tmp <- mhetlongrefsub[, c(cloneA, cloneB), with=F]
+        tmp$dist <- abs(as.integer(tmp[[cloneA]])-as.integer(tmp[[cloneB]]))
+        data.table(cloneA=cloneA, cloneB=cloneB, SimIBS=1-(mean(tmp$dist, na.rm=TRUE)/2))
+
+      }
+
+  ### Now let's put the original and simulated IBS distributions in one table and save
+      setkey(IBSoriginal, cloneA, cloneB)
+      setkey(IBSsimulated, cloneA, cloneB)
+      IBSorigsim <- merge(IBSoriginal, IBSsimulated)
+      save(IBSorigsim, file="IBSorigsim_Bclones_20200129.Rdata")
+
+  ### Also added in the original snpgds IBS distribution, saving below
+      save(totalIBSwithprogram, file="totalIBSwithprogram_20200129.Rdata")
+
+
+  ### Now let's look at the allele site frequency spectra for original and simulated genotypes
+    # Start with original
+      dosagecountsoriginal <- mhetlong[, .N, by=list(variant.ids, dosage)]
+      dosagecountsoriginalnoNA <- dosagecountsoriginal[dosage==0 | dosage==1 | dosage==2]
+
+    #Transform to wide format
+        dosagecountsoriginalwide <- dcast(dosagecountsoriginalnoNA, variant.ids ~ dosage, value.var="N")
+        colnames(dosagecountsoriginalwide) <- c("variant.ids", "dos0", "dos1", "dos2")
+        dosagecountsoriginalwide[is.na(dos0),dos0:=0]
+        dosagecountsoriginalwide[is.na(dos1),dos1:=0]
+        dosagecountsoriginalwide[is.na(dos2),dos2:=0]
+        dosagecountsoriginalwide$total <- dosagecountsoriginalwide$dos0+dosagecountsoriginalwide$dos1+
+          dosagecountsoriginalwide$dos2
+        dosagecountsoriginalwide$propalt <- (dosagecountsoriginalwide$dos0*2 +
+          dosagecountsoriginalwide$dos1)/(dosagecountsoriginalwide$total*2)
+        dosagecountsoriginalwide$foldedminorallele <- ifelse(dosagecountsoriginalwide$propalt > 0.5,
+          1-dosagecountsoriginalwide$propalt, dosagecountsoriginalwide$propalt)
+
+        save(dosagecountsoriginalwide, file="dosagecountsoriginalwide_SCB_20200129.Rdata")
+
+    # Now do the same with simulated
+        colnames(mhetlongsimsub) <- c("variant.ids", "clone", "dosage")
+        dosagecountssim <- mhetlongsimsub[, .N, by=list(variant.ids, dosage)]
+        dosagecountssimnoNA <- dosagecountssim[dosage==0 | dosage==1 | dosage==2]
+
+    #Transform to wide format
+        dosagecountssimwide <- dcast(dosagecountssimnoNA, variant.ids ~ dosage, value.var="N")
+        colnames(dosagecountssimwide) <- c("variant.ids", "dos0", "dos1", "dos2")
+        dosagecountssimwide[is.na(dos0),dos0:=0]
+        dosagecountssimwide[is.na(dos1),dos1:=0]
+        dosagecountssimwide[is.na(dos2),dos2:=0]
+        dosagecountssimwide$total <- dosagecountssimwide$dos0+dosagecountssimwide$dos1+
+            dosagecountssimwide$dos2
+        dosagecountssimwide$propalt <- (dosagecountssimwide$dos0*2 +
+            dosagecountssimwide$dos1)/(dosagecountssimwide$total*2)
+        dosagecountssimwide$foldedminorallele <- ifelse(dosagecountssimwide$propalt > 0.5,
+            1-dosagecountssimwide$propalt, dosagecountssimwide$propalt)
+
+        save(dosagecountssimwide, file="dosagecountssimwide_SCB_20200129.Rdata")
+
+    # Combine two files together
+        dosagecountsoriginalwidesub <- data.table(variant.ids=dosagecountsoriginalwide$variant.ids,
+          foldedminorallele=dosagecountsoriginalwide$foldedminorallele, type=c("original"))
+        dosagecountssimwidesub <- data.table(variant.ids=dosagecountssimwide$variant.ids,
+          foldedminorallele=dosagecountssimwide$foldedminorallele, type=c("simulated"))
+        allelespectra <- rbind(dosagecountsoriginalwidesub, dosagecountssimwidesub)
+
+        ggplot(data=allelespectra, aes(x=foldedminorallele, fill=type)) + geom_histogram() + facet_wrap(~type)
+        ggplot(data=allelespectra[foldedminorallele!=0 & foldedminorallele!=0.5],
+          aes(x=foldedminorallele, fill=type)) + geom_histogram() + facet_wrap(~type)
+
+  

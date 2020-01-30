@@ -1,0 +1,1008 @@
+Filtering my vcf that includes individual genome sequences from 2016,2017, 2018, and 2019, pulex individuals only.
+I am removing snps within 10 basepairs of indels, hard filtering according to gatk's recommendations, and setting low quality genotype scores to missing.
+First remove all snps within 10 basepairs of indels.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 3:00:00
+#SBATCH --mem=60000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+module load bcftools
+
+cd /scratch/kbb7sh/Daphnia/MappingDecember2019
+
+bcftools filter --SnpGap 10 MapDec19PulexOnly.vcf -o MapDec19PulexOnly_filtsnps10bpindels.vcf
+```
+Line count of original file was 9,745,081. Line count of ouput file was 6,757,744. Assuming this change in line count accurately reflects the number of snps removed, then 2,987,337 snps were removed.
+Next remove all indels, so the file has only SNPs.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 6:00:00
+#SBATCH --mem=30000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+cd /scratch/kbb7sh/Daphnia/MappingDecember2019
+
+echo running gatk
+
+java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
+	-T SelectVariants \
+	-R /scratch/kbb7sh/genomefiles/totalHiCwithallbestgapclosed.fa \
+	-V /scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnly_filtsnps10bpindels.vcf \
+    -selectType SNP \
+    -o MapDec19PulexOnly_filtsnps10bpindels_snps.vcf
+```
+Line count of file after indels are removed is 3,694,923. Assuming this change in line count accurately reflects the number of indels removed, then 2,940,692 indels were removed.
+Next hard filter the SNPs based on GATK recommendations for organisms with no reference SNP panel.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 4:00:00
+#SBATCH --mem=30000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+cd /scratch/kbb7sh/Daphnia/MappingDecember2019
+
+echo running gatk
+
+# Run program
+
+java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
+	-T VariantFiltration \
+	-R /scratch/kbb7sh/genomefiles/totalHiCwithallbestgapclosed.fa \
+	-V /scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnly_filtsnps10bpindels_snps.vcf   \
+    --filterExpression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" \
+    --filterName "my_snp_filter" \
+    -o MapDec19PulexOnly_filtsnps10bpindels_snps_filter.vcf
+---
+---
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 2:00:00
+#SBATCH --mem=30000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+cd /scratch/kbb7sh/Daphnia/MappingDecember2019
+
+echo running gatk
+
+# Run program
+
+
+java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
+	-T SelectVariants \
+	-R /scratch/kbb7sh/genomefiles/totalHiCwithallbestgapclosed.fa \
+	-V /scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnly_filtsnps10bpindels_snps_filter.vcf   \
+	-ef \
+    -o MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass.vcf
+```
+Filtering out SNPs results in a file with a line count of 2,998,158. Assuming the change in line count reflects the change in SNPs, then 696,765 SNPs were dropped based on filtering.
+Set low GQ (scores less than 10) to zero.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 2:00:00
+#SBATCH --mem=30000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+cd /scratch/kbb7sh/Daphnia/MappingDecember2019
+
+module load bcftools
+
+# Run program
+
+bcftools filter -e "FORMAT/GQ<10" -S "." MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass.vcf | bcftools view -O v -o MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf
+```
+Use gatk check variants to make an index.
+```
+#!/bin/bash
+
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH -t 2:00:00
+#SBATCH --mem=30000
+#SBATCH -p standard
+#SBATCH -A berglandlab
+
+cd /scratch/kbb7sh/Daphnia/MappingDecember2019
+
+ java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
+   -T ValidateVariants \
+   -R /scratch/kbb7sh/genomefiles/totalHiCwithallbestgapclosed.fa \
+   -V MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf \
+   --validationTypeToExclude ALL
+```
+The final filtered VCF has 2,988,846 SNP variants. Next step will be to import the VCF into R and do further filtering.
+
+
+Now I will import the VCF into R, and do additional filtering there.
+First, I will convert the VCF into gds and seq.gds formats.
+```
+#!/usr/bin/env Rscript
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+### format data properly to work with SNPRelate
+        ### subsetted data for PCA stuff
+                vcf.fn <- "/scratch/kbb7sh/Daphnia/MappingDecember2019/201620172018FinalMapping/MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf"
+                snpgdsVCF2GDS(vcf.fn, "/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass_lowGQmiss.gds",
+                                        method=c("biallelic.only"), snpfirstdim = FALSE)
+
+                seqVCF2GDS(vcf.fn, "/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnly_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+```
+Now let's open the file and take an intial loook at the SNPs.
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+		genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+		snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+					chr = seqGetData(genofile, "chromosome"),
+					pos = seqGetData(genofile, "position"),
+					dp = seqGetData(genofile, "annotation/info/DP"))
+
+    ggplot(data=snps, aes(x=dp)) + geom_histogram()
+	  ggplot(data=snps, aes(x=log10(dp))) + geom_histogram()
+
+		#Now let's filter out SNPs that occur in areas flagged as having too high or low read depth when mapping the D84A 10X Illumina short reads to the D84Aimages reference genome. Will also filter out SNPs on the edges of runs of Ns and at the ends of scaffolds.
+		#Starting with 2,885,182 SNPs.
+		```
+			NsChrRD <- fread("/scratch/kbb7sh/Daphnia/genomefiles/NsandDepthandChrEnd.sorted.500merged.bed")
+			colnames(NsChrRD) <- c("chr", "start", "stop")
+			NsChrRD$count <- c(1:26531)
+
+			setkey(snps, chr, pos)
+			initialsnps <- snps$variant.ids
+
+			NsChrRDsnps <- foreach(i=NsChrRD$count, .combine="c")%do%{
+
+			c=NsChrRD$chr[[i]]
+			s=NsChrRD$start[[i]]
+			p=NsChrRD$stop[[i]]
+
+			temp <- snps[J(data.table(chr=c, pos=c(s:p), key="chr,pos")), nomatch=0]
+			temp$variant.ids
+
+			}
+
+			save(NsChrRDsnps, file="NsChrRDsnps_20200117.Rdata")
+
+			seqSetFilter(genofile, variant.id=NsChrRDsnps)
+
+			NsChrRDsnpssnps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+				chr = seqGetData(genofile, "chromosome"),
+				pos = seqGetData(genofile, "position"),
+				dp = seqGetData(genofile, "annotation/info/DP"))
+
+			ggplot(data=NsChrRDsnpssnps, aes(x=dp)) + geom_histogram()
+			ggplot(data=NsChrRDsnpssnps, aes(x=log10(dp))) + geom_histogram()
+
+			goodsnpsnotinNsChrRD <- setdiff(initialsnps, NsChrRDsnps)
+
+			seqSetFilter(genofile, variant.id=goodsnpsnotinNsChrRD)
+
+			goodsnpsnotinNsChrRDtable <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+				chr = seqGetData(genofile, "chromosome"),
+				pos = seqGetData(genofile, "position"),
+				dp = seqGetData(genofile, "annotation/info/DP"))
+
+			ggplot(data=goodsnpsnotinNsChrRDtable, aes(x=dp)) + geom_histogram()
+			ggplot(data=goodsnpsnotinNsChrRDtable, aes(x=log10(dp))) + geom_histogram()
+
+			save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_20200117.Rdata")
+
+			#This resulted in removing 481,062 SNPs, and leaves 2,404,120.
+
+### Now remove SNPs in repeat masker identified regions
+			RMout <- fread("/scratch/kbb7sh/Daphnia/genomefiles/RMoutHiCGMgoodscaff.bed")
+			colnames(RMout) <- c("chr", "start", "stop")
+			RMout$count <- c(1:125881)
+
+			setkey(goodsnpsnotinNsChrRDtable, chr, pos)
+			initialsnps <- goodsnpsnotinNsChrRDtable$variant.ids
+
+			RMoutSNPs <- foreach(i=RMout$count, .combine="c")%do%{
+
+			c=RMout$chr[[i]]
+			s=RMout$start[[i]]
+			p=RMout$stop[[i]]
+
+			temp <- goodsnpsnotinNsChrRDtable[J(data.table(chr=c, pos=c(s:p), key="chr,pos")), nomatch=0]
+			temp$variant.ids
+
+			}
+
+			save(RMoutSNPs, file="RMoutSNPs_20200117.Rdata")
+
+			seqSetFilter(genofile, variant.id=RMoutSNPs)
+
+			RMoutSNPssnps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+				chr = seqGetData(genofile, "chromosome"),
+				pos = seqGetData(genofile, "position"),
+				dp = seqGetData(genofile, "annotation/info/DP"))
+
+				ggplot(data=RMoutSNPssnps, aes(x=dp)) + geom_histogram()
+				ggplot(data=RMoutSNPssnps, aes(x=log10(dp))) + geom_histogram()
+
+				goodsnpsnotinNsChrRDorRM <- setdiff(initialsnps, RMoutSNPs)
+
+				seqSetFilter(genofile, variant.id=goodsnpsnotinNsChrRDorRM)
+
+			goodsnpsnotinNsChrRDorRMtable <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+				chr = seqGetData(genofile, "chromosome"),
+				pos = seqGetData(genofile, "position"),
+				dp = seqGetData(genofile, "annotation/info/DP"))
+
+				ggplot(data=goodsnpsnotinNsChrRDorRMtable, aes(x=dp)) + geom_histogram()
+				ggplot(data=goodsnpsnotinNsChrRDorRMtable, aes(x=log10(dp))) + geom_histogram()
+
+				save(goodsnpsnotinNsChrRDorRMtable, file="goodsnpsnotinNsChrRDorRMtable_20200121.Rdata")
+
+###Now remove triallelic snps
+
+			seqSetFilter(genofile, variant.id=goodsnpsnotinNsChrRDorRM)
+
+			tri <- (seqGetData(genofile, "$num_allele"))
+			tri <- as.data.table(tri)
+			tri$variant.ids <- seqGetData(genofile, "variant.id")
+			tri$diallelic <- ifelse(tri$tri=="2", 1, 0)
+
+			updatesnpstouse <- tri$variant.ids[tri$tri=="2"]
+
+			save(updatesnpstouse, file="updatesnpstouse_depthfiltandnotrialleleic_20200121.Rdata")
+
+			seqSetFilter(genofile, variant.id=updatesnpstouse)
+
+			snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+						chr = seqGetData(genofile, "chromosome"),
+						pos = seqGetData(genofile, "position"),
+						dp = seqGetData(genofile, "annotation/info/DP"))
+
+### Overall read depth filtering on snps without removing Repeat Masker
+
+							quantile(snps$dp,probs=c(0.05,0.95))
+
+							#5%   95%
+					  #3252 10907
+
+							lowRDsnps <- snps[dp < 3252]
+							highRDsnps <- snps[dp > 10907]
+							lowRDsnps$RD <- c("low")
+							highRDsnps$RD <- c("high")
+							lowhighRDsnps <- rbind(lowRDsnps, highRDsnps)
+
+							save(lowhighRDsnps, file="lowhighRDsnps_20200121.Rdata")
+
+							dpfiltsnps <- snps[dp > 3251 & dp < 10908]
+							dpfiltsnpsids <- dpfiltsnps$variant.ids
+
+							save(dpfiltsnps, file="dpfiltsnps_20200121.Rdata")
+
+							ggplot(data=dpfiltsnps, aes(x=dp)) + geom_histogram()
+							ggplot(data=dpfiltsnps, aes(x=log10(dp))) + geom_histogram()
+
+							seqSetFilter(genofile, variant.id=dpfiltsnpsids)
+
+							snpsG <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+										chr = seqGetData(genofile, "chromosome"),
+										pos = seqGetData(genofile, "position"),
+										dp = seqGetData(genofile, "annotation/info/DP"))
+
+### Seems like an awful lot of SNPs still, must be a non-pulex in here somewhere, lets try a PCA and see
+### set some global parameters
+			maf <- 0.003
+			missing.rate <- 0.15
+			threads <- 10
+
+			sample.ids <- seqGetData(genofile, "sample.id")
+			sampleidsdt <- as.data.table(sample.ids)
+			samplestouse <- sampleidsdt$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
+				sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
+				sample.ids!="March20_2018_D8_19"]
+
+			seqSetFilter(genofile, sample.id=samplestouse)
+
+			pca <- snpgdsPCA(genofile, snp.id=finalsetsnpset01, sample.id=samplestouseB, autosome.only=FALSE, maf=maf,
+							missing.rate=missing.rate, num.thread=threads)
+							#Working space: 132 samples, 134,629 SNVs
+
+			pc.percent <- pca$varprop*100
+			head(round(pc.percent, 2))
+			#[1] 72.74  5.86  1.74  1.64  0.90  0.75
+
+
+			tab <- data.frame(clone = pca$sample.id,
+				EV1 = pca$eigenvect[,1],
+				EV2 = pca$eigenvect[,2],
+				stringsAsFactors = FALSE)
+			head(tab)
+
+			temp <- unlist(strsplit(tab$clone, split="_"))
+			mat <- matrix(temp, ncol=4, byrow=TRUE)
+			matdat <- as.data.table(mat)
+			tab$population <- matdat$V3
+			tab$year <- matdat$V2
+			tab$season <- matdat$V1
+			tab$popseason <- paste(tab$population,"_",tab$season, sep="")
+			tab$season2 <- ifelse(tab$season=="April", "Spring", tab$season)
+			tab$seasonyear <- paste(tab$year,"_",tab$season2, sep="")
+
+			tab <- as.data.table(tab)
+
+			ggplot(data=tab, aes(x=EV1, y=EV2, color=popseason)) + geom_point()
+			ggplot(data=tab[population!="W1" & population!="W6" &
+				population!="D10"], aes(x=EV1, y=EV2, color=popseason)) + geom_point()
+			ggplot(data=tab[population=="D8" | population=="DBunk" |
+				population=="DCat"], aes(x=EV1, y=EV2, color=popseason)) +
+				geom_point() + facet_grid(year~population)
+
+## Yes, two Obtusa individuals look like they snuck through in DBunk:
+	#March15_2019_DBunk_MomPE1 and March15_2019_DBunk_MomPE20
+
+## Ok, so we need to try to get rid of all SNPs that are fixed within Pulex and variable between those two obstusa individuals and the pulex ones
+
+#!/usr/bin/env Rscript
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+		genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+
+		load("dpfiltsnps_20200121.Rdata")
+		dpfiltsnpsids <- dpfiltsnps$variant.ids
+		seqSetFilter(genofile, variant.id=dpfiltsnpsids)
+
+
+		sample.ids <- seqGetData(genofile, "sample.id")
+		sampleidsdt <- as.data.table(sample.ids)
+		samplestouseB <- sampleidsdt$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
+		sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
+		sample.ids!="March20_2018_D8_19" & sample.ids!="March15_2019_DBunk_MomPE1" &
+		sample.ids!="March15_2019_DBunk_MomPE20"]
+
+		seqSetFilter(genofile, sample.id=samplestouseB)
+
+			het <- t(seqGetData(genofile, "$dosage"))
+			het <- as.data.table(het)
+
+			colnames(het) <- c(seqGetData(genofile, "sample.id"))
+			het$variant.ids <- seqGetData(genofile, "variant.id")
+
+			save(het, file="het_20200121.Rdata")
+
+			hetlong <- melt(het, measure.vars=samplestouseB, variable.name="clone", value.name="dosage")
+
+			genoclone <- hetlong[, .N, by=list(variant.ids, dosage)]
+
+			#Remove NAs
+				genoclone <- genoclone[dosage!="NA"]
+
+			#Transform to wide format
+				genoclonewide <- dcast(genoclone, variant.ids ~ dosage, value.var="N")
+				colnames(genoclonewide) <- c("variant.ids", "dos0", "dos1", "dos2")
+				genoclonewide[is.na(dos0),dos0:=0]
+				genoclonewide[is.na(dos1),dos1:=0]
+				genoclonewide[is.na(dos2),dos2:=0]
+
+				save(genoclonewide, file="genoclonewide_20200121.Rdata")
+
+				genoclonewidePulexVar <- genoclonewide[dos0>0 | dos1>0]
+				snpstousevarPulex <- genoclonewidePulexVar$variant.ids
+
+				seqSetFilter(genofile, variant.id=snpstousevarPulex)
+
+				snpsvarPulex <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+							chr = seqGetData(genofile, "chromosome"),
+							pos = seqGetData(genofile, "position"),
+							dp = seqGetData(genofile, "annotation/info/DP"))
+
+				save(snpsvarPulex, file="snpsvarPulex_20200121.Rdata")
+
+				genoclonewideObtusavsPulex <- genoclonewide[dos0==0 & dos1==0]
+				genoclonewideObtusavsPulexids <- genoclonewideObtusavsPulex$variant.ids
+
+				seqSetFilter(genofile, variant.id=genoclonewideObtusavsPulexids)
+
+				snpsPulexObtusafixed <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+							chr = seqGetData(genofile, "chromosome"),
+							pos = seqGetData(genofile, "position"),
+							dp = seqGetData(genofile, "annotation/info/DP"))
+
+				save(snpsPulexObtusafixed, file="snpsPulexObtusafixed_20200121.Rdata")
+
+### Ok, now let's check number of individuals per snp and number of snps per index
+
+				load("snpsvarPulex_20200121.Rdata")
+				snpstousevarPulex <- snpsvarPulex$variant.ids
+				seqSetFilter(genofile, variant.id=snpstousevarPulex)
+
+	#!/usr/bin/env Rscript
+
+				### libraries
+				        library(gdsfmt)
+				        library(SNPRelate)
+				        library(data.table)
+				        library(ggplot2)
+				        library(foreach)
+				        library(lattice)
+				        library(tidyr)
+				        library(SeqArray)
+				        library(tidyverse)
+
+				genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+				load("snpsvarPulex_20200121.Rdata")
+				snpstousevarPulex <- snpsvarPulex$variant.ids
+				seqSetFilter(genofile, variant.id=snpstousevarPulex)
+
+				sample.ids <- seqGetData(genofile, "sample.id")
+				sampleidsdt <- as.data.table(sample.ids)
+				samplestouseB <- sampleidsdt$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
+				sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
+				sample.ids!="March20_2018_D8_19" & sample.ids!="March15_2019_DBunk_MomPE1" &
+				sample.ids!="March15_2019_DBunk_MomPE20"]
+				seqSetFilter(genofile, sample.id=samplestouseB)
+
+				#Pull out genotypes
+
+							het <- t(seqGetData(genofile, "$dosage"))
+							het <- as.data.table(het)
+
+							colnames(het) <- c(seqGetData(genofile, "sample.id"))
+							het$variant.ids <- seqGetData(genofile, "variant.id")
+
+							setkey(het, variant.ids)
+							setkey(snpsvarPulex, variant.ids)
+
+							mhet <- merge(snpsvarPulex, het)
+
+				# Set all genotypes to 1
+
+							mhet[mhet == 0] <- 1
+							mhet[mhet == 2] <- 1
+
+							save(mhet, file="mhet_20200121.Rdata")
+
+				#load("mhet_20200121.Rdata")
+
+				mhetlong <- melt(mhet, measure.vars=samplestouseB, variable.name="clone", value.name="dosage")
+
+				mhetlong.ag <- mhetlong[,list(numgeno = sum(dosage, na.rm=TRUE)), list(variant.ids) ]
+
+				save(mhetlong.ag, file="mhetlong.ag_20200121.Rdata")
+
+# Having done this, let's look at the distribution of number of individuals genotypes per SNP.
+
+			ggplot(data=mhetlong.ag, aes(x=numgeno)) + geom_histogram(binwidth=10)
+
+		# Let's drop SNPs that are genotyped in less than half the individuals, this drops 3,786 SNPs and leaves 655,051
+			snpsvarpulexpresentinhalf <- mhetlong.ag$variant.ids[mhetlong.ag$numgeno>267]
+
+			seqSetFilter(genofile, variant.id=snpsvarpulexpresentinhalf)
+
+			save(snpsvarpulexpresentinhalf, file="snpsvarpulexpresentinhalf_20200121.Rdata")
+
+			snpsvarPulex <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+						chr = seqGetData(genofile, "chromosome"),
+						pos = seqGetData(genofile, "position"),
+						dp = seqGetData(genofile, "annotation/info/DP"))
+
+
+# Now lets look at SNPs genotyped per individual
+		#Pull out genotypes
+
+			het <- t(seqGetData(genofile, "$dosage"))
+			het <- as.data.table(het)
+
+			colnames(het) <- c(seqGetData(genofile, "sample.id"))
+			het$variant.ids <- seqGetData(genofile, "variant.id")
+
+			setkey(het, variant.ids)
+			setkey(snpsvarPulex, variant.ids)
+
+			mhetB <- merge(snpsvarPulex, het)
+
+		# Set all genotypes to 1
+
+			mhetB[mhetB == 0] <- 1
+			mhetB[mhetB == 2] <- 1
+
+			save(mhet, file="mhet_20200114.Rdata")
+
+		# Sum genotypes across individuals, to get number of genotype sites per individual
+
+			genocounts <- as.data.table(colSums(Filter(is.numeric, mhetB), na.rm=TRUE))
+
+			genocounts <- genocounts[4:536]
+
+			sample.ids <- seqGetData(genofile, "sample.id")
+
+			genocounts$sample.ids <- sample.ids
+
+			colnames(genocounts) <- c("numsitesgenotype", "sample.ids")
+
+			setkey(genocounts, numsitesgenotype)
+
+			save(genocounts, file="genocountpulex_20200114.Rdata")
+
+		# Let's look at the distribution of number of genotype sites across individuals. Haven't gone beyond this point. Both Simo are really low.
+
+			ggplot(data=genocounts, aes(x=numsitesgenotype)) + geom_histogram(binwidth=10000)
+
+		# There are low samples. But, I am wondering if they can still be assigned to superclones.
+			# Really low clones include April_2017_DBunk_23, March15_2019_D8_MomPE18, March20_2018_D8_Male2,
+				March15_2019_D8_MomPE10, April29_2018_DCat_Male1, April17_2018_D8_Male5)
+
+	#For now lets proceed with SNP pruning and IBS superclone assignment, and see where low coverage individuals fall out
+	# For now setting maf pretty low, so SNPs are kept even if present in 1 individual, can also try in 2 ind to compare
+
+						### set some global parameters
+									maf <- 0.001
+									missing.rate <- 0.15
+									threads <- 10
+
+						### SNP pruning
+									set.seed(10000)
+									snpset01 <- snpgdsLDpruning(genofile, snp.id=snpsvarpulexpresentinhalf, sample.id=samplestouseB,
+									autosome.only=FALSE, maf=maf,missing.rate=missing.rate, slide.max.bp=500, ld.threshold=0.1)
+									finalsetsnpset01 <-unlist(snpset01[c(1:62)])
+									finalsetsnpset01dt <- as.data.table(finalsetsnpset01)
+
+									save(finalsetsnpset01, file="finalsetsnpset01pulex_20200121.Rdata")
+									#This resulted in 150,408 SNPs
+
+
+						### set some global parameters
+									maf <- 0.003
+									missing.rate <- 0.15
+									threads <- 10
+
+						### SNP pruning
+									set.seed(10000)
+									snpset02 <- snpgdsLDpruning(genofile, snp.id=snpsvarpulexpresentinhalf, sample.id=samplestouseB,
+									autosome.only=FALSE, maf=maf,missing.rate=missing.rate, slide.max.bp=500, ld.threshold=0.1)
+									finalsetsnpset02 <-unlist(snpset02[c(1:62)])
+									finalsetsnpset02dt <- as.data.table(finalsetsnpset02)
+
+									save(finalsetsnpset02, file="finalsetsnpset02pulex_20200114.Rdata")
+									#This results in 105,402 SNPs
+
+		# Run IBS
+				genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+				load("finalsetsnpset01pulex_20200121.Rdata")
+
+				sample.ids <- seqGetData(genofile, "sample.id")
+				sampleidsdt <- as.data.table(sample.ids)
+				samplestouseB <- sampleidsdt$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
+				sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
+				sample.ids!="March20_2018_D8_19" & sample.ids!="March15_2019_DBunk_MomPE1" &
+				sample.ids!="March15_2019_DBunk_MomPE20"]
+				seqSetFilter(genofile, sample.id=samplestouseB)
+
+				temp <- unlist(strsplit(sampleidsdt$sample.ids, split="_"))
+				mat <- matrix(temp, ncol=4, byrow=TRUE)
+				matdat <- as.data.table(mat)
+				sampleidsdt$population <- matdat$V3
+				sampleidsdt$year <- matdat$V2
+				sampleidsdt$season <- matdat$V1
+				sampleidsdt$pop_year <- paste(sampleidsdt$population, sampleidsdt$year, sep="_")
+
+				sampleidsdtnoD82016 <- sampleidsdt[pop_year!="D8_2016" & sample.ids!="Spring_2017_DBunk_340" &
+				sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
+				sample.ids!="March20_2018_D8_19" & sample.ids!="March15_2019_DBunk_MomPE1" &
+				sample.ids!="March15_2019_DBunk_MomPE20"]
+				sampleidsdtnoD82016ids <- sampleidsdtnoD82016$sample.ids
+
+		#First lets try IBS with we keep SNPs present in 1 individuals
+				### set some global parameters
+							maf <- 0.001
+							missing.rate <- 0.15
+							threads <- 10
+
+				ibs <- snpgdsIBS(genofile, snp.id=finalsetsnpset01, sample.id=samplestouseB, num.thread=20, maf=maf,
+							missing.rate=0.15, autosome.only = FALSE)
+
+			### a bit of re-formating of the ibs matrix
+				ibs.mat <- ibs$ibs
+				rownames(ibs.mat) <- ibs$sample.id
+				colnames(ibs.mat) <- ibs$sample.id
+
+			### quick plot
+				#ggplot(melt(ibs.mat), aes(Var1,Var2, fill=value)) + geom_raster() + scale_fill_viridis()
+
+			### make the IBs matrix long form
+				ibs.long <- as.data.table(melt(ibs.mat))
+				setnames(ibs.long, names(ibs.long), c("cloneA", "cloneB", "distance"))
+				ibs.long <- na.omit(ibs.long)
+
+			### Identify cutoff by graphing
+
+				ggplot(data=ibs.long, aes(x=distance)) + geom_histogram(binwidth=0.001)
+
+				# When I drop the D8 2016 individuals I get a pretty clear cutoff at 0.9665, though there is a tail still.
+				#The tail mostly seems to be due to low read depth individuals, though there are a few exceptions.
+				# Choice of 0.9665 is also based on the D8 2016 individuals.
+
+			### Identify superclones
+				### give temporary labels to super clones based on identity of clone B
+						superclone <- ibs.long[distance>.9665]
+						superclone[,SC.sub := as.numeric(as.factor(cloneB))]
+
+				### collapse nested superclones
+						superclone.o <- foreach(sc.i=unique(superclone$SC.sub), .combine="c")%do%{
+								paste(sort(unique(superclone[cloneB%in%superclone[SC.sub==sc.i]$cloneA]$cloneA)), collapse=";")
+								}
+
+						superclone.o.uniq <- unique(superclone.o)
+
+						sc.dt <- foreach(i=superclone.o.uniq, .combine="rbind")%do%{
+									data.table(clone=strsplit(i, ";")[[1]],
+									superClone.size=length(strsplit(i, ";")[[1]]),
+									superClone.index=which(i==superclone.o.uniq))
+						}
+						sc.dt[,superClone.sizeRank := as.numeric(as.factor(rank(-superClone.size, ties="average")))]
+
+						sc.dt <- as.data.table(sc.dt %>%
+								mutate(SCnum = group_indices_(sc.dt, .dots=c("superClone.sizeRank", "superClone.index"))))
+
+						#temp <- unlist(strsplit(sc.dt$clone, split="_"))
+						#mat <- matrix(temp, ncol=4, byrow=TRUE)
+						#matdat <- as.data.table(mat)
+						#sc.dt$population <- matdat$V3
+						#sc.dt$year <- matdat$V2
+
+
+						### do plot to make sure our head is screwed on correctly
+						plot(superClone.sizeRank ~ superClone.size, sc.dt)
+
+						### label superclones with letters. What do you do when you have more than 26 superclones?
+				        sc.dt[,SC:=LETTERS[SCnum]]
+				        sc.dt$SC <- ifelse(sc.dt$SCnum==27, "AA", ifelse(sc.dt$SCnum==28, "AB", ifelse(sc.dt$SCnum==29, "AC",
+				            ifelse(sc.dt$SCnum==30, "AD", ifelse(sc.dt$SCnum==31, "AE", ifelse(sc.dt$SCnum=="32", "AF", sc.dt$SC))))))
+								sc.dt$SC <- ifelse(sc.dt$SCnum==33, "AG", ifelse(sc.dt$SCnum==34, "AH", ifelse(sc.dt$SCnum==35, "AI",
+						        ifelse(sc.dt$SCnum==36, "AJ", ifelse(sc.dt$SCnum==37, "AK", ifelse(sc.dt$SCnum=="38", "AL", sc.dt$SC))))))
+								sc.dt$SC <- ifelse(sc.dt$SCnum==39, "AM", ifelse(sc.dt$SCnum==40, "AN", ifelse(sc.dt$SCnum==41, "AO",
+										ifelse(sc.dt$SCnum==42, "AP", ifelse(sc.dt$SCnum==43, "AQ", ifelse(sc.dt$SCnum=="44", "AR", sc.dt$SC))))))
+								sc.dt$SC <- ifelse(sc.dt$SCnum==45, "AS", ifelse(sc.dt$SCnum==46, "AT", ifelse(sc.dt$SCnum==47, "AU",
+										ifelse(sc.dt$SCnum==48, "AV", ifelse(sc.dt$SCnum==49, "AW", ifelse(sc.dt$SCnum=="50", "AX", sc.dt$SC))))))
+								sc.dt$SC <- ifelse(sc.dt$SCnum==51, "AY", ifelse(sc.dt$SCnum==52, "AZ", sc.dt$SC))
+
+				    ### rename singleton individuals to "OO" to follow Karen's convention
+				        sc.dt[superClone.size==1, SC:="OO"]
+
+				        write.table(sc.dt, file="Superclones201617182019pulexonlyD82016problematic_20200122", sep="\t", row.names=FALSE, quote=FALSE)
+
+								temp <- unlist(strsplit(sc.dt$clone, split="_"))
+								mat <- matrix(temp, ncol=4, byrow=TRUE)
+								matdat <- as.data.table(mat)
+								sc.dt$population <- matdat$V3
+								sc.dt$year <- matdat$V2
+
+						### Pull out individuals that aren't independent
+								sc.dtfilt <- sc.dt[clone!="Lab_2019_D8_349Male" & clone!="May_2017_D8_770SM" &
+									clone!="April_2017_D8_515R" & clone!="April_2017_D8_515R" &
+									clone!="Lab_2019_D8_222Male" & clone!="Lab_2019_D8_222Male" &
+									clone!="May_2017_D8_773SM" & clone!="Spring_2017_DBunk_347SM" &
+									clone!="Spring_2017_DBunk_116SM" & clone!="Spring_2017_DBunk_73SM" &
+									clone!="May_2017_D8_731SM"]
+
+								sc.dtfilt[,sc.uniq := SC]
+								sc.dtfilt[SC=="OO", sc.uniq:=paste(SC, SCnum, sep=".")]
+
+								setkey(sc.dtfilt, SC, population, year, sc.uniq)
+
+								sc.ag <- sc.dtfilt[,list(n=length(SC)), list(year, population, sc.uniq)]
+								sc.agB <- sc.dtfilt[,list(n=length(SC)), list(sc.uniq)]
+
+								sc.dtfiltnoOO <- sc.dtfilt[SC!="OO"]
+								sc.agC <- sc.dtfiltnoOO[,list(n=length(SC)), list(sc.uniq)]
+
+
+								write.table(sc.ag, file="sc.ag_pulexonlyD82016iffy_20200122", quote=FALSE, row.names=FALSE)
+
+								setkey(sc.ag, year, population)
+
+								p2016 <- ggplot(data=sc.ag[population=="D8"][year=="2016"], aes(x="", y=n, fill=sc.uniq)) +
+								geom_bar(stat="identity") + coord_polar("y", start=0) + facet_grid(~year) + theme(legend.position = "none")
+
+								p2017 <- ggplot(data=sc.ag[population=="D8"][year=="2017"], aes(x="", y=n, fill=sc.uniq)) +
+								geom_bar(stat="identity") + coord_polar("y", start=0) + facet_grid(~year)+ theme(legend.position = "none")
+
+
+								ggplot(data=sc.dt, aes(x=superClone.size)) + geom_histogram()
+								ggplot(data=SCcounts[population=="D8" | population=="DBunk" | population=="DCat"],
+								aes(x="", y=as.factor(N), fill=SC)) +
+									geom_bar(stat = "identity") + coord_polar(theta="y") +
+									theme_void() + facet_grid(population~year, scales = "free")
+
+		### Let's try looking at those D82016 individuals that are a bit weird
+
+			# First let's remove all identical comparisons from ibs.long
+				ibs.longnoident <- ibs.long[ibs.long$cloneA!=ibs.long$cloneB]
+			#Let's also remove duplicated comparisons - how to do this?
+				ibs.longnoident$cloneAnum <- as.numeric(ibs.longnoident$cloneA)
+				ibs.longnoident$cloneBnum <- as.numeric(ibs.longnoident$cloneB)
+				ibs.longnoident$CloneNumComb <- ifelse(ibs.longnoident$cloneAnum > ibs.longnoident$cloneBnum,
+					paste(ibs.longnoident$cloneAnum,ibs.longnoident$cloneBnum,sep="_"),
+					paste(ibs.longnoident$cloneBnum,ibs.longnoident$cloneAnum,sep="_"))
+				setkey(ibs.longnoident, CloneNumComb)
+				ibs.longnoidentunique <- unique(ibs.longnoident, by="CloneNumComb")
+			#Now get back to the original three columns
+				ibs.longunique <- data.table(cloneA=ibs.longnoidentunique$cloneA,
+					cloneB=ibs.longnoidentunique$cloneB, distance=ibs.longnoidentunique$distance)
+
+			# Next let's get population and year info for cloneA and cloneB
+				temp <- unlist(strsplit(as.character(ibs.longunique$cloneA), split="_"))
+				mat <- matrix(temp, ncol=4, byrow=TRUE)
+				matdat <- as.data.table(mat)
+				ibs.longunique$populationA <- matdat$V3
+				ibs.longunique$yearA <- matdat$V2
+
+				temp <- unlist(strsplit(as.character(ibs.longunique$cloneB), split="_"))
+				mat <- matrix(temp, ncol=4, byrow=TRUE)
+				matdat <- as.data.table(mat)
+				ibs.longunique$populationB <- matdat$V3
+				ibs.longunique$yearB <- matdat$V2
+
+			#Now let's add in SC info
+				scsub <- data.table(clone=sc.dt$clone, SC=sc.dt$SC)
+				scsubA <- scsub
+				colnames(scsubA) <- c("cloneA", "SCA")
+				scsubB <- scsub
+				colnames(scsubB) <- c("cloneB", "SCB")
+				setkey(scsubA, cloneA)
+				setkey(scsubB, cloneB)
+				setkey(ibs.longunique, cloneB)
+				ibs.longuniqueSCB <- merge(scsubB, ibs.longunique)
+				setkey(ibs.longuniqueSCB, cloneA)
+				ibs.longuniqueSCBSCA <- merge(scsubA, ibs.longuniqueSCB)
+				ibs.longuniqueSCBSCA$SCcompare <- paste(ibs.longuniqueSCBSCA$SCA,ibs.longuniqueSCBSCA$SCB,sep="_")
+
+			#Let's pull out the subset of comparisons that are within SC
+				ibswithinSC <- ibs.longuniqueSCBSCA[SCA==SCB & SCA!="OO"]
+
+			#Let's try graphing this somehow.
+				ggplot(data=ibswithinSC, aes(x=SCA, y=distance)) + geom_point()
+
+			#Ok, let's pull out all D8 2016 individuals to start with
+				ibs.longnoidentD82016 <- ibs.longnoident[populationA=="D8" & populationB=="D8" &
+					yearA=="2016" & yearB=="2016"]
+
+				ggplot(data=ibs.longnoidentD82016, aes(x=distance)) + geom_histogram()
+				ggplot(data=ibs.longnoidentD82016[cloneA=="Spring_2016_D8_8.10"], aes(x=distance)) + geom_histogram()
+
+			#Ok, let's pull out a few individuals to compare
+				D82016cloneid <- c("Spring_2016_D8_8.12", "Spring_2016_D8_8.3", "Spring_2016_D8_8.18")
+				seqSetFilter(genofile, sample.id=D82016cloneid)
+
+			#Now let's pull out their genotypes
+			load("snpsvarpulexpresentinhalf_20200121.Rdata")
+			seqSetFilter(genofile, variant.id=snpsvarpulexpresentinhalf)
+
+			snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+				chr = seqGetData(genofile, "chromosome"),
+				pos = seqGetData(genofile, "position"),
+				dp = seqGetData(genofile, "annotation/info/DP"))
+
+
+				het <- t(seqGetData(genofile, "$dosage"))
+				het <- as.data.table(het)
+
+				colnames(het) <- c(seqGetData(genofile, "sample.id"))
+				het$variant.ids <- seqGetData(genofile, "variant.id")
+
+				setkey(het, variant.ids)
+				setkey(snps, variant.ids)
+
+				mhetABfixed <- merge(snps, het)
+
+				mhetABfixed$diff12 <- mhetABfixed$Spring_2016_D8_8.12-mhetABfixed$Spring_2016_D8_8.18
+				mhetABfixed$diff13 <- mhetABfixed$Spring_2016_D8_8.12-mhetABfixed$Spring_2016_D8_8.3
+				mhetABfixed$diff23 <- mhetABfixed$Spring_2016_D8_8.18-mhetABfixed$Spring_2016_D8_8.3
+
+				ggplot(data=mhetABfixed[chr=="Scaffold_1863_HRSCAF_2081"], aes(x=pos, y=diff13)) + geom_point()
+
+		### remake ibs.long
+				ibs.mat.fig <- ibs.mat
+				ibs.long <- as.data.table(melt(ibs.mat.fig))
+				setnames(ibs.long, names(ibs.long), c("cloneA", "cloneB", "distance"))
+				ibs.long <- na.omit(ibs.long)
+
+		### first, need to tack in SC identities
+
+			setnames(ibs.long, "cloneA", "clone")
+			setkey(ibs.long, "clone")
+			setkey(sc.dt, "clone")
+			ibs.long <- merge(ibs.long, sc.dt)
+			setnames(ibs.long, "clone", "cloneA")
+			setnames(ibs.long, "SC", "SC.A")
+
+			setnames(ibs.long, "cloneB", "clone")
+			setkey(ibs.long, "clone")
+			setkey(sc.dt, "clone")
+			ibs.long <- merge(ibs.long, sc.dt)
+			setnames(ibs.long, "clone", "cloneB")
+			setnames(ibs.long, "SC", "SC.B")
+
+			### re-rank SCs based on size in pond
+
+			ibs.long <- ibs.long[,c("cloneA", "cloneB", "SC.A", "SC.B", "distance"), with=F]
+							ibs.long[,pondA := tstrsplit(cloneA, "_")[[3]]]
+							ibs.long[,pondB := tstrsplit(cloneB, "_")[[3]]]
+
+
+							ibs.long.ag <- ibs.long[,list(pond.n = length(distance)), list(pondA, SC.A) ]
+							ibs.long.ag[,pond.sc.rank := ibs.long.ag[,list(pond.sc.rank = rank(-pond.n, ties="random")), list(pondA)]$pond.sc.rank]
+							ibs.long.ag[,pond.sc.rank := letters[pond.sc.rank]]
+
+		### be lazy and write a loop
+							ibs.long.2 <- foreach(i=1:dim(ibs.long.ag)[1], .combine="rbind")%do%{
+											temp <- ibs.long[pondA==ibs.long.ag$pondA[i] & SC.A==ibs.long.ag$SC.A[i]]
+											temp[,sc.a:=ibs.long.ag$pond.sc.rank[i]]
+											temp
+							}
+
+							ibs.long.3 <- foreach(i=1:dim(ibs.long.ag)[1], .combine="rbind")%do%{
+											temp <- ibs.long.2[pondB==ibs.long.ag$pondA[i] & SC.B==ibs.long.ag$SC.A[i]]
+											temp[,sc.b:=ibs.long.ag$pond.sc.rank[i]]
+											temp
+							}
+
+							ibs.long <- ibs.long.3
+
+							### next, generate [s]uper[c]lone[i]ds for individual 'A' and 'B'
+
+					    ibs.long[,scid.a := paste(SC.A, sprintf("%03d", as.numeric(as.factor(cloneA))), sep=".")]
+					    ibs.long[,scid.b := paste(SC.B, sprintf("%03d", as.numeric(as.factor(cloneB))), sep=".")]
+
+					### group on pond
+
+					    ibs.long[,pondA := factor(pondA, levels=c("D10", "D8", "DBunk", "DCat", "DLily", "Dmud", "DOil", "Dcat", "Dramp", "W1", "W6"))]
+					    ibs.long[,pondB := factor(pondB, levels=c("D10", "D8", "DBunk", "DCat", "DLily", "Dmud", "DOil", "Dcat", "Dramp", "W1", "W6"))]
+
+					        ibs.long[,scid.a := paste(LETTERS[as.numeric(pondA)], scid.a, sep=".")]
+					    ibs.long[,scid.b := paste(LETTERS[as.numeric(pondB)], scid.b, sep=".")]
+
+					    ibs.long[,scid.a := as.factor(scid.a)]
+					    ibs.long[,scid.b := as.factor(scid.b)]
+
+							### tack in buffer cloneIds for graphical purposes
+					        ibs.long <- rbind(ibs.long,
+					                          data.table(scid.a=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk",
+					                                "DCat", "W1")]$pondA)], min(ibs.long$SC.A), sep=".")), c("000"), sep="."),
+					                                 paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk",
+					                                 "Dramp", "W6")]$pondA)], max(ibs.long$SC.A), sep=".")), c("999"), sep=".")),
+					                                     scid.b=c(paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk",
+					                                     "DCat", "W1")]$pondB)], min(ibs.long$SC.B), sep=".")), c("000"), sep="."),
+					                                              paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk",
+					                                              "Dramp", "W6")]$pondB)], max(ibs.long$SC.B), sep=".")), c("999"), sep="."))),
+					                                                fill=T)
+					         ibs.long[,scid.a := factor(scid.a, levels=sort(unique(as.character(scid.a))))]
+					         ibs.long[,scid.b := factor(scid.b, levels=sort(unique(as.character(scid.b))))]
+
+					    ### make lower triangle poofy-de-poof
+					        ibs.long[,dist.noTri := distance]
+					        ibs.long[as.numeric(scid.a)>as.numeric(scid.b), dist.noTri:=NA]
+
+									### make pond bounding boxes
+											ibs.long.ag <- data.table(scid.a.min=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "DCat", "W1")]$pondA)], min(ibs.long$SC.A, na.rm=T), sep=".")), c("000"), sep="."),
+																								scid.a.max=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondA%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$pondA)], max(ibs.long$SC.A, na.rm=T), sep=".")), c("999"), sep="."),
+																								scid.b.min=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk", "DCat", "W1")]$pondB)], min(ibs.long$SC.B, na.rm=T), sep=".")), c("000"), sep="."),
+																								scid.b.max=paste(unique(paste(LETTERS[as.numeric(ibs.long[pondB%in%c("D10", "D8", "DBunk", "Dramp", "W6")]$pondB)], max(ibs.long$SC.B, na.rm=T), sep=".")), c("999"), sep="."))
+
+											ibs.long.ag[,scid.a.min := as.numeric(factor(scid.a.min, levels=sort(unique(as.character(ibs.long$scid.a)))))]
+											ibs.long.ag[,scid.a.max := as.numeric(factor(scid.a.max, levels=sort(unique(as.character(ibs.long$scid.a)))))]
+											ibs.long.ag[,scid.b.min := as.numeric(factor(scid.b.min, levels=sort(unique(as.character(ibs.long$scid.b)))))]
+											ibs.long.ag[,scid.b.max := as.numeric(factor(scid.b.max, levels=sort(unique(as.character(ibs.long$scid.b)))))]
+
+
+									### plot it
+											h.just <- .25
+											v.just <- .25
+											l.size <- 1.5
+										 ggplot(data=ibs.long, aes(scid.a, scid.b, fill=distance)) +
+											geom_raster() +
+											scale_fill_viridis(option="D") +
+											geom_rect(xmin=ibs.long.ag$scid.a.min[1]-2*h.just, xmax=ibs.long.ag$scid.a.max[1]+h.just,
+																ymin=ibs.long.ag$scid.b.min[1]-2*v.just, ymax=ibs.long.ag$scid.b.max[1]+v.just,
+																fill=NA, color="red", size=l.size) +
+											geom_rect(xmin=ibs.long.ag$scid.a.min[2]-2*h.just, xmax=ibs.long.ag$scid.a.max[2]+h.just,
+																ymin=ibs.long.ag$scid.b.min[2]-2*v.just, ymax=ibs.long.ag$scid.b.max[2]+v.just,
+																fill=NA, color="red", size=l.size) +
+											geom_rect(xmin=ibs.long.ag$scid.a.min[3]-2*h.just, xmax=ibs.long.ag$scid.a.max[3]+h.just,
+																ymin=ibs.long.ag$scid.b.min[3]-2*v.just, ymax=ibs.long.ag$scid.b.max[3]+v.just,
+																fill=NA, color="red", size=l.size) +
+											geom_rect(xmin=ibs.long.ag$scid.a.min[4]-2*h.just, xmax=ibs.long.ag$scid.a.max[4]+h.just,
+																ymin=ibs.long.ag$scid.b.min[4]-2*v.just, ymax=ibs.long.ag$scid.b.max[4]+v.just,
+																fill=NA, color="red", size=l.size) +
+											geom_rect(xmin=ibs.long.ag$scid.a.min[5]-2*h.just, xmax=ibs.long.ag$scid.a.max[5]+h.just,
+																ymin=ibs.long.ag$scid.b.min[5]-2*v.just, ymax=ibs.long.ag$scid.b.max[5]+v.just,
+																fill=NA, color="red", size=l.size)
+
+
+
+#Look at number of sites genotyped per individual
+							load("/scratch/kbb7sh/Daphnia/genomefiles/mvar_variablesitesDorsetchrpos.Rdata")
+							mvarsub <- data.table(chr=mvar$chr, pos=mvar$pos)
+							setkey(mvarsub, chr, pos)
+							setkey(snpsG, chr, pos)
+							m <- merge(mvarsub, snpsG)
+							mids <- m$variant.ids
+							seqSetFilter(genofile, variant.id=mids)
+
+
+							het <- t(seqGetData(genofile, "$dosage"))
+							het <- as.data.table(het)
+
+							colnames(het) <- c(seqGetData(genofile, "sample.id"))
+
+							het[het == 0] <- 1
+							het[het == 2] <- 1
+
+							genocounts <- as.data.table(colSums(Filter(is.numeric, het), na.rm=TRUE))
+							sample.ids <- seqGetData(genofile, "sample.id")
+
+							genocounts$sample.ids <- sample.ids
+
+							colnames(genocounts) <- c("numsitesgenotype", "sample.ids")
+
+							setkey(genocounts, numsitesgenotype)
+
+							temp <- unlist(strsplit(genocounts$sample.ids, split="_"))
+							mat <- matrix(temp, ncol=4, byrow=TRUE)
+							matdat <- as.data.table(mat)
+							genocounts$population <- matdat$V3
+							genocounts$year <- matdat$V2
+							ggplot(data=genocounts, aes(x=numsitesgenotype, fill=year)) + geom_histogram()
+
+### Try to look at median read depth
+		dp <- t(seqGetData(genofile, "annotation/format/DP"))
+		dp <- as.data.table(dp)
+
+		colnames(dp) <- c(seqGetData(genofile, "sample.id"))
+		dp$variant.ids <- seqGetData(genofile, "variant.id")

@@ -1,0 +1,204 @@
+#!/usr/bin/env Rscript
+
+      ### libraries
+              library(gdsfmt)
+              library(SNPRelate)
+              library(data.table)
+              library(ggplot2)
+              library(foreach)
+              library(lattice)
+              library(tidyr)
+              library(SeqArray)
+              library(tidyverse)
+
+### Load genofile
+      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+### Load superclone file
+      sc <- fread("Superclones201617182019pulexonlyD82016problematic_20200122")
+
+### Add in pond and year info
+      temp <- unlist(strsplit(sc$clone, split="_"))
+      mat <- matrix(temp, ncol=4, byrow=TRUE)
+      matdat <- as.data.table(mat)
+      sc$population <- matdat$V3
+      sc$year <- matdat$V2
+
+### Pull out D82018 individuals
+      D82018clones <- sc[population=="D8" & year=="2018"]
+      D82018clonesids <- D82018clones$clone
+
+    #Add in 2 Bs
+      Bs <- sc[clone=="May_2017_D8_515" | clone=="April_2017_D8_125"]
+      D82018clonesandBs <- rbind(D82018clones, Bs)
+      D82018clonesandBsids <- D82018clonesandBs$clone
+
+      seqSetFilter(genofile, sample.id=D82018clonesandBsids)
+
+### Load filtered but not LD pruned snpset
+
+      load("snpsvarpulexpresentinhalf_20200121.Rdata")
+
+      seqSetFilter(genofile, variant.id=snpsvarpulexpresentinhalf)
+
+### Pull out SNPs on scaffold Scaffold_7757_HRSCAF_8726 between 8660157 - 8710157, results in 1530 SNPs.
+
+      snpsvarPulex <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+        chr = seqGetData(genofile, "chromosome"),
+        pos = seqGetData(genofile, "position"),
+        dp = seqGetData(genofile, "annotation/info/DP"))
+
+      snpsvarPulex7757 <- snpsvarPulex[chr=="Scaffold_7757_HRSCAF_8726" & pos > 8660156 &
+        pos < 8710158]
+
+      snpsvarPulex7757ids <- snpsvarPulex7757$variant.ids
+
+      seqSetFilter(genofile, variant.id=snpsvarPulex7757ids)
+
+### Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex7757, variant.ids)
+
+      mhetABfixed <- merge(snpsvarPulex7757, het)
+
+      mhetABfixedlong <- melt(mhetABfixed, measure.vars=D82018clonesandBsids, variable.name="clone", value.name="dosage")
+
+    #Remove NAs
+        mhetABfixedlong <- mhetABfixedlong[dosage!="NA"]
+
+        dosagecountsABfixed <- mhetABfixedlong[, .N, by=list(clone, dosage)]
+
+      #Transform to wide format
+        dosagecountsABfixedwide <- dcast(dosagecountsABfixed, clone ~ dosage, value.var="N")
+        colnames(dosagecountsABfixedwide) <- c("clone", "dos0", "dos1", "dos2")
+        dosagecountsABfixedwide[is.na(dos0),dos0:=0]
+        dosagecountsABfixedwide[is.na(dos1),dos1:=0]
+        dosagecountsABfixedwide[is.na(dos2),dos2:=0]
+
+        setkey(dosagecountsABfixedwide, clone)
+        setkey(D82018clonesandBs, clone)
+        mdosagecountsABfixedwide <- merge(D82018clonesandBs, dosagecountsABfixedwide)
+        mdosagecountsABfixedwide$total <- mdosagecountsABfixedwide$dos0+mdosagecountsABfixedwide$dos1+
+          mdosagecountsABfixedwide$dos2
+        mdosagecountsABfixedwide$prophet <- mdosagecountsABfixedwide$dos1/mdosagecountsABfixedwide$total
+        setkey(mdosagecountsABfixedwide, SC, prophet)
+
+        mdosagecountsABfixedwide$sex <- ifelse(mdosagecountsABfixedwide$clone=="April17_2018_D8_Male1" |
+          mdosagecountsABfixedwide$clone=="March20_2018_D8_Male1" | mdosagecountsABfixedwide$clone=="March20_2018_D8_Male2" |
+          mdosagecountsABfixedwide$clone=="March20_2018_D8_Male3" | mdosagecountsABfixedwide$clone=="April17_2018_D8_Male2" |
+          mdosagecountsABfixedwide$clone=="April17_2018_D8_Male3" | mdosagecountsABfixedwide$clone=="April17_2018_D8_Male4" |
+          mdosagecountsABfixedwide$clone=="April17_2018_D8_Male5", "male", ifelse(mdosagecountsABfixedwide$SC=="A", "A", ifelse(
+          mdosagecountsABfixedwide$SC=="B", "B", "female"
+          )))
+
+        ggplot(data=mdosagecountsABfixedwide, aes(x=prophet, fill=sex)) + geom_histogram()
+
+        dp <- t((seqGetData(genofile, "annotation/format/DP"))$data)
+        dp <- as.data.table(dp)
+
+        colnames(dp) <- c(seqGetData(genofile, "sample.id"))
+        dp$variant.ids <- seqGetData(genofile, "variant.id")
+
+        dplong <- melt(dp, measure.vars=D82018clonesandBsids, variable.name="clone", value.name="dp")
+
+        dplong.ag <- dplong[,list(medrd = median(dp, na.rm=TRUE)), list(clone) ]
+
+        setkey(mdosagecountsABfixedwide, clone)
+        setkey(dplong.ag, clone)
+        m <- merge(mdosagecountsABfixedwide, dplong.ag)
+        mhighRD <- m[medrd > 3]
+        setkey(mhighRD, sex, SC)
+
+        ggplot(data=mhighRD, aes(x=prophet, fill=sex)) + geom_histogram()
+
+
+### So this didn't really work... Bs are more heterozygous than As overall in this region... Need to focus more on SNPs of interest.
+### What if we pull out SNPs that are heterozygous in A but homozygous in B.
+
+        setkey(mhetABfixedlong, clone)
+        setkey(sc, clone)
+        m <- merge(sc, mhetABfixedlong)
+
+        dosagecountsABfixed <- m[, .N, by=list(SC, variant.ids, dosage)]
+        dosagecountsABfixedA<- dosagecountsABfixed[SC=="A"]
+        dosagecountsABfixedAsub <- data.table(variant.ids=dosagecountsABfixedA$variant.ids, dosage=dosagecountsABfixedA$dosage,
+          N=dosagecountsABfixedA$N)
+        dosagecountsABfixedAsubwide <- dcast(dosagecountsABfixedAsub, variant.ids ~ dosage, value.var="N")
+        colnames(dosagecountsABfixedAsubwide) <- c("variant.ids", "dos0A", "dos1A", "dos2A")
+        dosagecountsABfixedAsubwide[is.na(dos0A),dos0A:=0]
+        dosagecountsABfixedAsubwide[is.na(dos1A),dos1A:=0]
+        dosagecountsABfixedAsubwide[is.na(dos2A),dos2A:=0]
+        dosagecountsABfixedAsubwide$totalA <- dosagecountsABfixedAsubwide$dos0A + dosagecountsABfixedAsubwide$dos1A +
+          dosagecountsABfixedAsubwide$dos2A
+
+        dosagecountsABfixedB<- dosagecountsABfixed[SC=="B"]
+        dosagecountsABfixedBsub <- data.table(variant.ids=dosagecountsABfixedB$variant.ids, dosage=dosagecountsABfixedB$dosage,
+          N=dosagecountsABfixedB$N)
+        dosagecountsABfixedBsubwide <- dcast(dosagecountsABfixedBsub, variant.ids ~ dosage, value.var="N")
+        colnames(dosagecountsABfixedBsubwide) <- c("variant.ids", "dos1B", "dos2B")
+        dosagecountsABfixedBsubwide$dos0B <- c(0)
+        dosagecountsABfixedBsubwide[is.na(dos0B),dos0B:=0]
+        dosagecountsABfixedBsubwide[is.na(dos1B),dos1B:=0]
+        dosagecountsABfixedBsubwide[is.na(dos2B),dos2B:=0]
+        dosagecountsABfixedBsubwide$totalB <- dosagecountsABfixedBsubwide$dos0B + dosagecountsABfixedBsubwide$dos1B +
+          dosagecountsABfixedBsubwide$dos2B
+
+        setkey(dosagecountsABfixedAsubwide, variant.ids)
+        setkey(dosagecountsABfixedBsubwide, variant.ids)
+        mAB <- merge(dosagecountsABfixedAsubwide, dosagecountsABfixedBsubwide)
+
+        AhetBhom <- mAB[dos1A==totalA & dos2B==totalB]
+
+        AhetBhomids <- AhetBhom$variant.ids
+
+        seqSetFilter(genofile, variant.id=AhetBhomids)
+
+        ### Pull out genotypes
+              het <- t(seqGetData(genofile, "$dosage"))
+              het <- as.data.table(het)
+
+              colnames(het) <- c(seqGetData(genofile, "sample.id"))
+              het$variant.ids <- seqGetData(genofile, "variant.id")
+
+              setkey(het, variant.ids)
+              setkey(snpsvarPulex7757, variant.ids)
+
+              mhetABfixed <- merge(snpsvarPulex7757, het)
+
+              mhetABfixedlong <- melt(mhetABfixed, measure.vars=D82018clonesandBsids, variable.name="clone", value.name="dosage")
+
+            #Remove NAs
+                mhetABfixedlong <- mhetABfixedlong[dosage!="NA"]
+
+                dosagecountsABfixed <- mhetABfixedlong[, .N, by=list(clone, dosage)]
+
+              #Transform to wide format
+                dosagecountsABfixedwide <- dcast(dosagecountsABfixed, clone ~ dosage, value.var="N")
+                colnames(dosagecountsABfixedwide) <- c("clone", "dos0", "dos1", "dos2")
+                dosagecountsABfixedwide[is.na(dos0),dos0:=0]
+                dosagecountsABfixedwide[is.na(dos1),dos1:=0]
+                dosagecountsABfixedwide[is.na(dos2),dos2:=0]
+
+                setkey(dosagecountsABfixedwide, clone)
+                setkey(D82018clonesandBs, clone)
+                mdosagecountsABfixedwide <- merge(D82018clonesandBs, dosagecountsABfixedwide)
+                mdosagecountsABfixedwide$total <- mdosagecountsABfixedwide$dos0+mdosagecountsABfixedwide$dos1+
+                  mdosagecountsABfixedwide$dos2
+                mdosagecountsABfixedwide$prophet <- mdosagecountsABfixedwide$dos1/mdosagecountsABfixedwide$total
+                setkey(mdosagecountsABfixedwide, SC, prophet)
+
+                mdosagecountsABfixedwide$sex <- ifelse(mdosagecountsABfixedwide$clone=="April17_2018_D8_Male1" |
+                  mdosagecountsABfixedwide$clone=="March20_2018_D8_Male1" | mdosagecountsABfixedwide$clone=="March20_2018_D8_Male2" |
+                  mdosagecountsABfixedwide$clone=="March20_2018_D8_Male3" | mdosagecountsABfixedwide$clone=="April17_2018_D8_Male2" |
+                  mdosagecountsABfixedwide$clone=="April17_2018_D8_Male3" | mdosagecountsABfixedwide$clone=="April17_2018_D8_Male4" |
+                  mdosagecountsABfixedwide$clone=="April17_2018_D8_Male5", "male", ifelse(mdosagecountsABfixedwide$SC=="A", "A", ifelse(
+                  mdosagecountsABfixedwide$SC=="B", "B", "female"
+                  )))
+
+                ggplot(data=mdosagecountsABfixedwide, aes(x=prophet, fill=sex)) + geom_histogram()
