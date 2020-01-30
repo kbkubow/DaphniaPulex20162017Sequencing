@@ -1,0 +1,68 @@
+#!/usr/bin/env Rscript
+
+      ### libraries
+              library(gdsfmt)
+              library(SNPRelate)
+              library(data.table)
+              library(ggplot2)
+              library(foreach)
+              library(lattice)
+              library(tidyr)
+              library(SeqArray)
+              library(tidyverse)
+
+      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+### Load LD pruned SNP set
+      load("finalsetsnpset01pulex_20200121.Rdata")
+
+### Load superclone file
+      sc <- fread("CloneInfoFilePulexOnly_20200128.txt")
+      scids <- sc$clone
+
+      seqSetFilter(genofile, sample.id=scids)
+      seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+      snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+        chr = seqGetData(genofile, "chromosome"),
+        pos = seqGetData(genofile, "position"),
+        dp = seqGetData(genofile, "annotation/info/DP"))
+
+
+### Pull out dosage info
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snps, variant.ids)
+
+      mhet <- merge(snps, het)
+
+      mhetlong <- melt(mhet, measure.vars=scids, variable.name="clone", value.name="dosage")
+
+### Pull out alternate and reference read depth counts
+  # First pull out the total read depth at each site
+      geno <- expand.grid(seqGetData(genofile, var.name="$dosage", .useraw=FALSE))[,1]
+      sample.id <- scids
+      ad <- seqGetData(genofile, var.name="annotation/format/AD", .useraw=FALSE)
+      ad.ref = expand.grid(as.matrix(ad$data[,c(1:(2*length(snps$pos)))%%2==1], ncol=length(snps$pos)))[,1]
+      ad.alt = expand.grid(as.matrix(ad$data[,c(1:(2*length(snps$pos)))%%2==0], ncol=length(snps$pos)))[,1]
+      snp.id <- rep(snps$variant.ids, each=length(seqGetData(gdsfile=genofile, var.name="sample.id", .useraw=FALSE)))
+      gt.dt <- data.table(snp.id=snp.id, sample.id=sample.id, GT=geno, ref.rd=ad.ref, alt.rd=ad.alt)
+
+      # get the probabilities
+         out.dt <- gt.dt[,list(nRR=sum(GT==2, na.rm=T),
+                               nRA=sum(GT==1,na.rm=T),
+                               nAA=sum(GT==0,na.rm=T)),
+                         by=list(ref.rd,alt.rd)]
+         setkey(out.dt, ref.rd, alt.rd)
+         out.dt[,nT:=nRR+nRA+nAA]
+         out.dt[,GTprob2:=nRR/nT]
+         out.dt[,GTprob1:=nRA/nT]
+         out.dt[,GTprob0:=nAA/nT]
+
+         ## write out the table
+     write.table(out.dt, "gtProbabilities.txt", col.names=T, row.names=F, sep="\t", quote=FALSE)
