@@ -21,6 +21,21 @@ export PATH=$HOME/.local/bin:$PATH
 
 whatshap \
 phase \
---ped /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.ped \
--o /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.phased.vcf.gz \
-/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.10f1.vcf.gz
+--ped /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.ped \
+-o /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf \
+/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf
+
+
+cat /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf | grep -v "##" | cut -f1,2,4,5,10- | awk '{
+printf $1","$2","$3","$4","
+for(i = 5; i <= NF; i++) {
+  split($i, sp1, ":")
+  printf sp1[1]
+  if(i==NF) printf "\n"
+  if(i<NF) printf ","
+}
+}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.csv
+
+
+cp /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.csv \
+/nv/vol186/bergland-lab/alan/.
