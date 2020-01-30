@@ -40,8 +40,8 @@ module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
   sample=$( echo $bam | rev  | cut -f1 -d'/' | rev | cut -f1 -d'.' | cut -f3 -d"_" )
 
 # harp parameters
-  window_step=100000
-  window_width=100000
+  window_step=10000
+  window_width=200000
   #window_step=100
   #window_width=100
 
