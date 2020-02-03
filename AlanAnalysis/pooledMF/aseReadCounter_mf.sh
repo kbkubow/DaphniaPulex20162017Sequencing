@@ -15,15 +15,15 @@
 
 module load gatk/4.0.0.0
 
-cat /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf | awk '{
-  if(substr($1, 0, 1)=="#") {
-    print $0
-  } else {
-    for(i=1; i<=9; i++) printf $i"\t"
-    printf "0/1\t0/1\t0/1\t0/1\t0/1\t0/1\n"
-  }
-}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant.vcf
-
+#cat /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf | awk '{
+#  if(substr($1, 0, 1)=="#") {
+#    print $0
+#  } else {
+#    for(i=1; i<=9; i++) printf $i"\t"
+#    printf "0/1\t0/1\t0/1\t0/1\t0/1\t0/1\n"
+#  }
+#}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant.vcf
+#
 
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant.vcf
