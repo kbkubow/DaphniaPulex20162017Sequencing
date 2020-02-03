@@ -26,8 +26,8 @@ if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]; then
   --variant /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf \
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa \
-  -nt 4  
-else
+  -nt 4
+elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]
   gatk ASEReadCounter \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8Male1.filt.merged.mdup.bam \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8Male2.filt.merged.mdup.bam \
