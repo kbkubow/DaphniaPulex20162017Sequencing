@@ -11,7 +11,8 @@
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.err # Standard error
 
 # ijob -c1 -p standard -A berglandlab
-# submit as: sbatch /scratch/aob2x/daphnia_hwe_sims
+# submit as: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh
+
 
 module load gatk/4.0.0.0
 
