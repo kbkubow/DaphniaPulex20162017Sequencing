@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 #SBATCH -J ASE_readcounter
 #SBATCH -N 1
