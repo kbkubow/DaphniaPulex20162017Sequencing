@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH -J ASE_readcounter
 #SBATCH -N 1
-#SBATCH --ntasks-per-node=44
+#SBATCH --ntasks-per-node=4
 #SBATCH --mem 8G
 #SBATCH -t 0-1:00:00
 #SBATCH -p standard
