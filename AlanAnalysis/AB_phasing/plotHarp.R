@@ -38,9 +38,72 @@
 
   ol <- melt(o, id.vars=c("chr", "start", "stop", "pool", "mid", "i"), variable.name = "haplotype", value.name = "f")
 
-  ggplot(data=ol, aes(y=f, x=haplotype, color=haplotype)) + geom_hline(yintercept=0.25) + geom_boxplot()
+  ggplot(data=ol, aes(y=f, x=haplotype, color=interaction(haplotype, pool))) + geom_hline(yintercept=0.25) + geom_boxplot()
 
   ggplot(data=ol, aes(y=f, x=i, color=chr, group=haplotype)) + geom_line() + facet_wrap(~pool, ncol=1)
 
   ggplot(data=ol[chr=="Scaffold_7757_HRSCAF_8726"], aes(y=f, x=i, color=haplotype, group=haplotype)) +
   geom_line() + facet_wrap(~pool, ncol=1)
+
+  ol.ag <- ol[,list(male=mean(f[grepl("Male", pool)]), pe=mean(f[grepl("PE", pool)])), list(chr, mid, i, haplotype)]
+
+  ol.ag[,diff:=male-pe]
+  ol.ag[,nDiff:=qlogis(male) - qlogis(pe)]
+
+  ggplot(data=ol.ag, aes(x=i, y=diff, group=haplotype, color=haplotype)) + geom_line()
+  ggplot(data=ol.ag[chr=="Scaffold_7757_HRSCAF_8726"], aes(x=i, y=nDiff, group=haplotype, color=haplotype)) + geom_line()
+
+
+  o.ag2 <- ol.ag[,list(male.or=(male[haplotype=="pA1"] /male[haplotype=="pA2"]) / (male[haplotype=="pB1"] /male[haplotype=="pB2"]),
+                       pe.or=(pe[haplotype=="pA1"] /pe[haplotype=="pA2"]) / (pe[haplotype=="pB1"] /pe[haplotype=="pB2"])), list(chr, mid, i)]
+
+
+   o.ag2 <- ol.ag[,list(male.or=(male[haplotype=="pA1"] /male[haplotype=="pB1"]) / (male[haplotype=="pA2"] /male[haplotype=="pB2"]),
+                        pe.or=(pe[haplotype=="pA1"] /pe[haplotype=="pB1"]) / (pe[haplotype=="pA2"] /pe[haplotype=="pB2"])), list(chr, mid, i)]
+
+
+
+
+   o.ag2 <- ol.ag[,list(a.or=(male[haplotype=="pA1"] /pe[haplotype=="pA1"]) / (male[haplotype=="pA2"] /pe[haplotype=="pA2"]),
+                        b.or=(male[haplotype=="pB1"] /pe[haplotype=="pB1"]) / (male[haplotype=="pB2"] /pe[haplotype=="pB2"])), list(chr, mid, i)]
+
+
+  o.ag2 <- ol.ag[,list(a.or=(male[haplotype=="pA1"] /male[haplotype=="pA2"]) / (pe[haplotype=="pA1"] /pe[haplotype=="pA2"]),
+                       b.or=(male[haplotype=="pB1"] /male[haplotype=="pB2"]) / (pe[haplotype=="pB1"] /pe[haplotype=="pB2"])), list(chr, mid, i)]
+
+
+
+  o.ag2[,a.or:=log2(a.or)]
+  o.ag2[,b.or:=log2(b.or)]
+
+     o.ag2[,diff:=(male.or)
+
+
+   o.ag2[,diff:=log2(a.or/b.or)]
+
+
+ ggplot(data=o.ag2[chr=="Scaffold_7757_HRSCAF_8726"], aes(x=i, y=b.or)) + geom_line()
+ ggplot(data=o.ag2, aes(x=i, y=b.or, color=chr)) + geom_line()
+ ggplot(data=o.ag2, aes(x=i, y=diff, color=chr)) + geom_line()
+
+
+
+   o.ag2 <- ol.ag[,list(or=(male[haplotype=="pA1"]  + male[haplotype=="pA2"]) / (pe[haplotype=="pA1"] + pe[haplotype=="pA2"]) /
+                            (male[haplotype=="pB1"] + male[haplotype=="pB2"]) / (pe[haplotype=="pB1"] + pe[haplotype=="pB2"])), list(chr, mid, i)]
+
+  ggplot(data=o.ag2, aes(x=i, y=log2(or), color=chr)) + geom_line()
+
+
+
+ol.ag[chr=="Scaffold_7757_HRSCAF_8726"][which.min(abs(mid-8660157))]
+ol.ag[i==7187]
+
+
+
+o.ag2 <- ol.ag[,list(male.ss=sum((male-.25)^2), pe.ss=sum((pe-.25)^2)), list(chr, mid, i)]
+ggplot(data=o.ag2, aes(x=i, y=male.ss, color=chr)) + geom_line()
+
+ggplot(ol.ag, aes(x=male, y=pe, color=haplotype)) + geom_hex() + facet_wrap(~haplotype)
+
+
+ol.ag.ag <- ol.ag[,list(diff=)]

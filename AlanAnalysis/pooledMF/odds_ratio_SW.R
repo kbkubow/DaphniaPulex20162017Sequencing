@@ -212,7 +212,7 @@
     plot.it <- function(i=o[which.min(ppa)]$win.i) {
       #i <- wins[chr=="Scaffold_7757_HRSCAF_8726"][which.min(abs(start-8660157))]$i
       #i <- o[nSNPs>25][which.max(ppa)]$win.i
-      #i <- o[win.i<5000][which.min(ppa)]$win.i
+      #i <- o[win.i>5000][which.min(ppa)]$win.i
 
       m.inform[,win:=0]
       m.inform[chr==wins$chr[i] & pos>=wins$start[i] & pos<=wins$stop[i], win:=1]
