@@ -15,7 +15,7 @@
 
 module load gatk/4.0.0.0
 
-#gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf
+#gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf
 
 ###
 
@@ -24,7 +24,7 @@ if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]; then
   gatk ASEReadCounter \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8PE1.filt.merged.mdup.bam \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8PE2.filt.merged.mdup.bam \
-  --variant /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf \
+  --variant /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf \
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa \
 
@@ -33,7 +33,7 @@ elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]; then
   gatk ASEReadCounter \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8Male1.filt.merged.mdup.bam \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8Male2.filt.merged.mdup.bam \
-  --variant /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf \
+  --variant /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf \
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa \
 

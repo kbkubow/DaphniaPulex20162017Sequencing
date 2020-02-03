@@ -19,6 +19,9 @@ export PATH=$HOME/.local/bin:$PATH
 
 ### run whatshap
 
+sed 's/NA/.\/./g' /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf > \
+/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.noNA.vcf
+
 whatshap \
 phase \
 --ped /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.ped \
