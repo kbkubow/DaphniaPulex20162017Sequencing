@@ -27,7 +27,7 @@ if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]; then
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa \
   -nt 4
-elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]
+elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]; then
   gatk ASEReadCounter \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8Male1.filt.merged.mdup.bam \
   --I /scratch/aob2x/daphnia_hwe_sims/harp_pools/bams/HT2LNDSXX_s1_D8Male2.filt.merged.mdup.bam \
@@ -35,4 +35,14 @@ elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa \
   -nt 4
+fi
+
+
+SLURM_ARRAY_TASK_ID=1
+if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]
+then
+  echo "foo"
+elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]
+then
+  echo "bar"
 fi
