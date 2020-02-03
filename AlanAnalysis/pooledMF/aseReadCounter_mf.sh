@@ -36,8 +36,3 @@ elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa \
   -nt 4
 fi
-
-
-
-
-mkdir /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/
