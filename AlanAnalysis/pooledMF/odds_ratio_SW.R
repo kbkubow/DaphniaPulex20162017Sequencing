@@ -244,6 +244,13 @@
                         B2=as.numeric(substr(B, 3, 3))),
                     list(chr, pos)]
 
+  ### load pulicaria
+    puli <- fread("/scratch/aob2x/daphnia_hwe_sims/pulicaria/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant.delim")
+
+
+
+
+
   ### generte windows
     setkey(dat.p, chr, pos)
     chrs <- m.inform[use.chr==T, list(min=min(pos), max=max(pos)), chr]
