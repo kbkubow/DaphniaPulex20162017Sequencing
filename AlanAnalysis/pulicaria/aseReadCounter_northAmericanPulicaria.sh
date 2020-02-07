@@ -37,6 +37,7 @@ module load gatk/4.0.0.0
 #    }
 #}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf
 #
+gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf
 
 
 ###
@@ -48,5 +49,5 @@ module load gatk/4.0.0.0
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
 
 
-  cp /scratch/aob2x/daphnia_hwe_sims/pulicaria/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant.delim \
-  /nv/vol186/bergland-lab/alan/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant.delim
+  cp /scratch/aob2x/daphnia_hwe_sims/pulicaria/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant2.delim \
+  /nv/vol186/bergland-lab/alan/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant2.delim
