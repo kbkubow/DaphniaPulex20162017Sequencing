@@ -245,9 +245,37 @@
                     list(chr, pos)]
 
   ### load pulicaria
-    puli <- fread("/scratch/aob2x/daphnia_hwe_sims/pulicaria/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant.delim")
+    #puli <- fread("/mnt/sammas_storage/bergland-lab/alan/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant.delim")
+    #setnames(puli, c("contig", "position"), c("chr", "pos"))
+    #setkey(puli, chr, pos)
+    #puli[,puli.geno:=round(refCount/totalCount*10)/10]
+    #puli[puli.geno!=1 & puli.geno!=0, puli.geno:=.5]
 
+    #### playing
+      #setkey(dat.p, chr, pos)
+      #foo <- merge(puli[,c("chr", "pos", "puli.geno")], dat.p, all.x=T, all.y=T)
+      #prop.table(table(foo$puli.geno==foo$A.geno))
+      #prop.table(table(foo$puli.geno==foo$B.geno))
 
+      #foo.l <- melt(foo, id.vars=c("chr", "pos", "puli.geno", "ref", "alt"))
+      #foo.l.ag <- foo.l[puli.geno%in%c(0,1), list(IBS=mean(value==puli.geno, na.rm=T), .N), list(chr, variable)]
+
+      #ggplot(data=foo.l.ag[N>1000], aes(x=variable, y=IBS, color=chr)) + geom_point() + coord_flip()
+
+    load("/mnt/sammas_storage/bergland-lab/alan/puAg.Rdata")
+    setkey(pu.ag, chr, pos)
+
+    #### playing
+      setkey(dat.p, chr, pos)
+      foo <- merge(pu.ag[,c("chr", "pos", "puli.geno")], dat.p)
+      foo[,puli.geno:=puli.geno/2]
+      prop.table(table(foo$puli.geno==foo$A.geno))
+      prop.table(table(foo$puli.geno==foo$B.geno))
+
+      foo.l <- melt(foo, id.vars=c("chr", "pos", "puli.geno", "ref", "alt"))
+      foo.l.ag <- foo.l[puli.geno%in%c(0,1), list(IBS=mean(value==puli.geno, na.rm=T), .N), list(chr, variable)]
+
+      ggplot(data=foo.l.ag[N>1000], aes(x=variable, y=IBS, color=chr)) + geom_point() + coord_flip()
 
 
 
@@ -320,12 +348,18 @@
     plot.hap <- function(i=o[which.min(ppa)]$win.i) {
 
      ### haplotype painting plot
-      ### extract out haplotypes
+      ### extract out A&B haplotypes
        tmp <- dat.p[chr==o[win.i==i]$chr & pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]
+
+       tmp <- merge(tmp, pu.ag[,c("chr", "pos", "puli.geno"), with=F], all.x=T)
+       tmp[,puli.geno:=puli.geno/2]
+
        tmp.ag <- tmp[,list(i=seq(from=min(pos), to=max(pos), length.out=length(pos)), pos=pos), list(chr)]
        setkey(tmp.ag, chr, pos)
        setkey(tmp, chr, pos)
        tmp <- merge(tmp, tmp.ag)
+
+
 
        tmp[A1==0, A1.allele:=alt]
        tmp[A1==1, A1.allele:=ref]
@@ -337,12 +371,18 @@
        tmp[B2==0, B2.allele:=alt]
        tmp[B2==1, B2.allele:=ref]
 
+       tmp[puli.geno==0, puli.allele:=alt]
+       tmp[puli.geno==1, puli.allele:=ref]
+       tmp[puli.geno==.5, puli.allele:=ref]
 
        tmp2 <- tmp
        tmp2[tmp$B2==0, A1:=abs(1-A1)]
        tmp2[tmp$B2==0, A2:=abs(1-A2)]
        tmp2[tmp$B2==0, B1:=abs(1-B1)]
        tmp2[tmp$B2==0, B2:=abs(1-B2)]
+       tmp2[tmp$B2==0, puli.geno:=abs(1-puli.geno)]
+
+
 
        tmp2[tmp$B2==0 & A1==0, A1.allele:=ref]
        tmp2[tmp$B2==0 & A1==1, A1.allele:=alt]
@@ -354,11 +394,17 @@
        tmp2[tmp$B2==0 & B2==0, B2.allele:=ref]
        tmp2[tmp$B2==0 & B2==1, B2.allele:=alt]
 
+       tmp2[tmp$B2==0 & puli.geno==0, puli.allele:=ref]
+       tmp2[tmp$B2==0 & puli.geno==1, puli.allele:=alt]
+       tmp2[tmp$B2==0 & puli.geno==0.5, puli.allele:=ref]
+
+
+
        tmpl <- melt(tmp2, id.vars=c("chr", "pos", "ref", "alt", "i"),
-                      measure=list(c("A1", "A2", "B1", "B2"),
-                                   c("A1.allele", "A2.allele", "B1.allele", "B2.allele")),
+                      measure=list(c("A1", "A2", "B1", "B2", "puli.geno"),
+                                   c("A1.allele", "A2.allele", "B1.allele", "B2.allele", "puli.allele")),
                        value.name=c("value", "allele"))
-       tmpl[,variable:=c("A1", "A2", "B1", "B2")[variable]]
+       tmpl[,variable:=c("A1", "A2", "B1", "B2", "puli.geno")[variable]]
 
      ### fold in annotations
        seqSetFilter(genofile, variant.id=m.inform[chr==o[win.i==i]$chr][pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]$id)
