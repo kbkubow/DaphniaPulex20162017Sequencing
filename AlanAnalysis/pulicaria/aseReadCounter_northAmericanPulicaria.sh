@@ -28,23 +28,28 @@ module load gatk/4.0.0.0
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant.vcf
 
-cat /nv/vol186/bergland-lab/doerthe/2019_NovaSeq_Males_BACKUP/03_gvcfs_vcf/Males_2018_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf | awk '{
-    if(substr($1, 0, 1)=="#") {
-      print $0
-    } else {
-      for(i=1; i<=9; i++) printf $i"\t"
-       printf "0/1\t0/1\t0/1\t0/1\t0/1\t0/1\t0/1\t0/1\t0/1\n"
-    }
-}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf
+#cat /nv/vol186/bergland-lab/doerthe/2019_NovaSeq_Males_BACKUP/03_gvcfs_vcf/Males_2018_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf | awk '{
+#    if(substr($1, 0, 1)=="#") {
+#      print $0
+#    } else {
+#      for(i=1; i<=9; i++) printf $i"\t"
+#       printf "0/1\t0/1\t0/1\t0/1\t0/1\t0/1\t0/1\t0/1\t0/1\n"
+#    }
+#}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf
 
-gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf
+
+cp /nv/vol186/bergland-lab/doerthe/2019_NovaSeq_Males_BACKUP/03_gvcfs_vcf/Males_2018_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf* \
+/scratch/aob2x/daphnia_hwe_sims/pulicaria/.
+
+
+#gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf
 
 
 ###
 
   gatk ASEReadCounter \
   --I /scratch/aob2x/daphnia_hwe_sims/pulicaria/pulicaria.sort.D84a.rmDup.bam \
-  --variant /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant2.vcf \
+  --variant /scratch/aob2x/daphnia_hwe_sims/pulicaria/Males_2018_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf \
   --output /scratch/aob2x/daphnia_hwe_sims/pulicaria/pulicaria.sort.D84a.rmDup.aseReadCounter.allvariant2.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
 
