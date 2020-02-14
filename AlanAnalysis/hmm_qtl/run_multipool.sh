@@ -19,7 +19,7 @@ module load gcc/7.1.0  openmpi/3.1.4 python/2.7.16
 chr=$( ls /scratch/aob2x/daphnia_hwe_sims/multipool/inputData/* | rev | cut -f1 -d'/' | rev | cut -f1 -d'.' | sort | uniq | \
 awk -v currJob=${SLURM_ARRAY_TASK_ID} '{if(currJob==NR) print $0}' )
 
-/scratch/aob2x/daphnia_hwe_sims/multipool/multipool/mp_inference.py -n 100 -m contrast -r 5000 -c 150000 \
+/scratch/aob2x/daphnia_hwe_sims/multipool/multipool/mp_inference.py -n 100 -m contrast -r 50000 -c 150000 \
 --plotFile /scratch/aob2x/daphnia_hwe_sims/multipool/output/${chr}.plotfile \
 -o /scratch/aob2x/daphnia_hwe_sims/multipool/output/${chr}.out \
 /scratch/aob2x/daphnia_hwe_sims/multipool/inputData/${chr}.male.count.delim \
