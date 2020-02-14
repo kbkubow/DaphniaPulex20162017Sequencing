@@ -10,10 +10,10 @@
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/popPhase/slurmOut/copy_bams.%A_%a.err # Standard error
 
 # ijob -c1 -p standard -A berglandlab
-# submit as: sbatch --array=1-2 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh
+# submit as: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyBams.sh
 
 cp -r /project/berglandlab/Karen/MappingDec2019/bams/* \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/.
 
-cp MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf \
+cp /project/berglandlab/Karen/MappingDec2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/.

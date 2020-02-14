@@ -59,3 +59,7 @@ elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]
 then
   echo "bar"
 fi
+
+
+### cp /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim  /nv/vol186/bergland-lab/alan/.
+### cp /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.delim  /nv/vol186/bergland-lab/alan/.

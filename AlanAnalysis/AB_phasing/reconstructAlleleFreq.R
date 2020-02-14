@@ -64,6 +64,7 @@
   save(haf, file="/mnt/sammas_storage/bergland-lab/alan/haf.Rdata")
 
 ### compare with empirical estimates
+  load( file="/mnt/sammas_storage/bergland-lab/alan/haf.Rdata")
   load("/mnt/sammas_storage/bergland-lab/alan/totalADRDlongall.Rdata")
   setnames(geno, "Sample", "pool")
 

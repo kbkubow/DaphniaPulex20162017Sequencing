@@ -29,6 +29,42 @@
 
   load("/mnt/sammas_storage/bergland-lab/alan/harpWins.Rdata")
   o[,mid:=(start+stop)/2]
+
+  o[,mid:=(start+stop)/2]
+  o.ag <- o[,.N,list(chr,mid)]
+  setkey(o.ag, chr, mid)
+  o.ag[,i:=1:dim(o.ag)[1]]
+
+  setkey(o, chr, mid)
+  o <- merge(o, o.ag[,-"N",with=F])
+
+  setkey(o, chr, mid)
+
+  ol <- melt(o, id.vars=c("chr", "start", "stop", "pool", "mid", "i"), variable.name = "haplotype", value.name = "f")
+
+  ol.ag <- ol[,list(f.delta=(qlogis(f)-qlogis(mean(f))), pool=pool), list(chr, mid, haplotype, i)]
+  ol.ag.ag <- ol.ag[,list(f.delta.mu=f.delta[which.min(abs(f.delta))]), list(chr, mid, haplotype, i, pool=ifelse(grepl("Male", pool), "male", "pe"))]
+
+
+  ggplot(data=ol.ag.ag, aes(x=i, y=f.delta.mu, group=pool, color=haplotype)) + facet_wrap(~haplotype, ncol=1) +
+  geom_vline(xintercept=ol.ag[chr=="Scaffold_7757_HRSCAF_8726"][which.min(abs(mid-8660157))]$i) +  geom_line()
+
+
+  ii <- ol.ag[chr=="Scaffold_7757_HRSCAF_8726"][which.min(abs(mid-8660157))]$i
+  ii <- ol.ag.ag[f.delta.mu< -1]$i
+  ggplot(data=ol.ag.ag[i>=(ii-10) & i<=(ii+10)], aes(x=i, y=f.delta.mu, group=pool, color=pool)) + geom_line() + facet_wrap(~haplotype, ncol=1)
+
+wins[chr=="Scaffold_7757_HRSCAF_8726"][which.min(abs(start-8660157))]$i
+
+
+
+
+
+
+
+
+
+  o[,mid:=(start+stop)/2]
   o.ag <- o[,.N,list(chr,mid)]
   setkey(o.ag, chr, mid)
   o.ag[,i:=1:dim(o.ag)[1]]
