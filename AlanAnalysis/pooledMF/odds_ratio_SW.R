@@ -207,6 +207,17 @@
 
 
 ##### PLOT
+cp /project/berglandlab/Karen/MappingDec2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds \
+/nv/vol186/bergland-lab/alan/.
+
+cp /project/berglandlab/Karen/MappingDec2019/CloneInfoFilePulexandObtusa_withmedrd_20200207 \
+/nv/vol186/bergland-lab/alan/.
+
+
+cp /project/berglandlab/Karen/MappingDec2019/finalsetsnpset01pulex_20200207.Rdata \
+/nv/vol186/bergland-lab/alan/.
+
+
 ### fold in haplotype estimates
   ### libraries
     library(data.table)
@@ -228,7 +239,19 @@
     load(file="~/mInform.Rdata")
 
   ### open connection to annotated GDS file
-    genofile <- seqOpen("/mnt/pricey_2/DaphniaGenomeAnnotation/snpEff/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.annotated.gds")
+    #genofile <- seqOpen("/mnt/pricey_2/DaphniaGenomeAnnotation/snpEff/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.annotated.gds")
+    genofile <- seqOpen("/mnt/sammas_storage/bergland-lab/alan/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+    load("/mnt/sammas_storage/bergland-lab/alan/finalsetsnpset01pulex_20200207.Rdata")
+
+    allSNPs.dt <- data.table(variant.id=seqGetData(genofile, "variant.id"),
+                             chr=seqGetData(genofile, "chromosome"),
+                             pos=seqGetData(genofile, "position"))
+
+
+  ### superclone (note, the 'B' superclone is now the 'C' superclone)
+    sc <- fread("/mnt/sammas_storage/bergland-lab/alan/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+
+    samps <- seqGetData(genofile, "sample.id")
 
   ### load haplotype priors
     dat <- fread("/mnt/sammas_storage/bergland-lab/alan/testTrio.consensus.header.phase.csv")
@@ -359,8 +382,6 @@
        setkey(tmp, chr, pos)
        tmp <- merge(tmp, tmp.ag)
 
-
-
        tmp[A1==0, A1.allele:=alt]
        tmp[A1==1, A1.allele:=ref]
        tmp[A2==0, A2.allele:=alt]
@@ -407,7 +428,11 @@
        tmpl[,variable:=c("A1", "A2", "B1", "B2", "puli.geno")[variable]]
 
      ### fold in annotations
-       seqSetFilter(genofile, variant.id=m.inform[chr==o[win.i==i]$chr][pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]$id)
+
+      # THIS line is problematic
+       seqSetFilter(genofile, variant.id=allSNPs.dt[chr==o[win.i==i]$chr][pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]$variant.id)
+
+
        ann.tmp <- seqGetData(genofile, "annotation/info/ANN")
        ann.tmp.dt <- data.table(times=ann.tmp$length, id=seqGetData(genofile, "variant.id"))
        ann.tmp.l <- ann.tmp.dt[,list(id=rep(id, times)), list(i=id)]
@@ -437,19 +462,19 @@
                 theme(legend.position = "none")
 
      ### annotations
-      seqSetFilter(genofile, variant.id=m.inform[chr==o[win.i==i]$chr][pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]$id)
-      ann.tmp <- seqGetData(genofile, "annotation/info/ANN")
-      ann.tmp.dt <- data.table(times=ann.tmp$length, id=seqGetData(genofile, "variant.id"))
-      ann.tmp.l <- ann.tmp.dt[,list(id=rep(id, times)), list(i=id)]
-      ann.tmp.l[,ann:=ann.tmp$data]
+      #seqSetFilter(genofile, variant.id=m.inform[chr==o[win.i==i]$chr][pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]$id)
+      #ann.tmp <- seqGetData(genofile, "annotation/info/ANN")
+      #ann.tmp.dt <- data.table(times=ann.tmp$length, id=seqGetData(genofile, "variant.id"))
+      #ann.tmp.l <- ann.tmp.dt[,list(id=rep(id, times)), list(i=id)]
+      #ann.tmp.l[,ann:=ann.tmp$data]
 
-      setkey(ann.tmp.l, id)
-      setkey(m.inform, id)
+      #setkey(ann.tmp.l, id)
+      #setkey(m.inform, id)
 
-      ann.tmp.m <- merge(ann.tmp.l, m.inform[,c("chr", "pos", "id", "A.geno", "B.geno")])
+      #ann.tmp.m <- merge(ann.tmp.l, m.inform[,c("chr", "pos", "id", "A.geno", "B.geno")])
 
-      ann.tmp.m[grepl("stop", ann)]$pos[1]
-      ann.tmp.m[grepl("missense", ann)]
+      #ann.tmp.m[grepl("stop", ann)]$pos[1]
+      #ann.tmp.m[grepl("missense", ann)]
 
      ### haplotype frequency plot
       pad <- 0
@@ -477,6 +502,7 @@
         geom_point(data=tmp, aes(y=0, x=pos)) +
         geom_segment(data=tmp, aes(y=0, yend=1, x=pos, xend=seq(from=min(pos), to=max(pos), length.out=length(pos))), size=.01) +
         scale_size_manual()
+
 
       ### density
         dens <- ggplot() +
@@ -542,10 +568,69 @@
 
     }
 
+    plot.genos <- function(i=o[win.i<5000][which.min(ppa)]$win.i, ii) {
+
+      #i=o[win.i<5000][which.min(ppa)]$win.i
+
+
+
+      region <- m.inform[chr==o[win.i==i]$chr][pos>=o[win.i==i]$start & pos<=o[win.i==i]$stop]
+      setkey(region, chr, pos)
+      setkey(allSNPs.dt, chr, pos)
+
+      sets <- list(A_v_C=sc[SC%in%c("A", "C")]$clone,
+                   D8=sc[population=="D8"]$clone,
+                   DBunk=sc[population=="DBunk"]$clone)
+
+
+
+      seqResetFilter(genofile)
+      seqSetFilter(genofile,
+                   sample.id=sets[[ii]],
+                   variant.id=allSNPs.dt[J(region)]$variant.id)
+
+      geno.mat <- as.data.table(seqGetData(genofile, "$dosage"))
+      setnames(geno.mat,
+                names(geno.mat),
+               paste(seqGetData(genofile, "chromosome"), seqGetData(genofile, "position"), c(1:length(seqGetData(genofile, "position"))), sep=";"))
+      geno.mat[,clone:=seqGetData(genofile, "sample.id")]
+      gml <- melt(geno.mat, id.vars="clone")
+      gml[,chr:=tstrsplit(variable, ";")[[1]]]
+      gml[,pos:=tstrsplit(variable, ";")[[2]]]
+      gml[,i:=tstrsplit(variable, ";")[[3]]]
+      setnames(gml, "value", "geno")
+
+      setkey(gml, "clone")
+      setkey(sc, "clone")
+      gml <- merge(gml, sc)
+      gml.ag <- gml[,list(r=superClone.sizeRank[1], clone=unique(clone)), list(SC)]
+
+      gml[,clonef:=factor(clone, levels=gml.ag[order(r)]$clone)]
+
+      #if(ii==1) gml[,clonef:=factor(clone, levels=sc[SC%in%c("A", "C")][order(SC)]$clone)]
+      #if(ii==2) gml[,clonef:=factor(clone, levels=sc[population=="D8"][order(SC)]$clone)]
+
+
+      gml[,clonefn:=as.numeric(clonef)]
+
+      ggplot(data=gml, aes(y=i, x=clonefn, fill=as.factor(geno))) + geom_tile() + coord_flip() + facet_wrap(~SC, scales="free")
+    }
+
+
+
+
+
+
+    plot.genos(i=sample(o$win.i, 1), ii=2)
+
+    plot.genos(i=sample(o$win.i, 1), ii=2)
+    plot.genos(i=o[win.i<5000][which.min(ppa)]$win.i, ii=2)
+    plot.genos(i=o[which.max(ppa)]$win.i, ii=2)
+
     ii <- o[which.max(ppa)]$win.i
     ii <- o[win.i<5000][which.min(ppa)]$win.i
     ii <- o[which.min(ppa)]$win.i
-  #  ii <- sample(o$win.i, 1)
+    ii <- sample(o$win.i, 1)
 
     b1a0 <- plot.hap.freq(i=ii, bi=1, aj=0)
     b0a1 <- plot.hap.freq(i=ii, bi=0, aj=1)
@@ -563,10 +648,16 @@
     ii <- o[which.max(ppa)]$win.i
     ii <- o[win.i<5000][which.min(ppa)]$win.i
     ii <- o[which.min(ppa)]$win.i
+    ii <- o[win.i<10000][which.max(ppa)]$win.i
+    ii <- o[win.i>20000][which.max(ppa)]$win.i
+    ii <- sample(o$win.i, 1)
+    ii <- o[chr=="Scaffold_2158_HRSCAF_2565"][which.min(abs((start/2 + stop/2) - 1100000))]$win.i
+    ii <- o[chr=="Scaffold_9199_HRSCAF_10755"][which.min(abs((start/2 + stop/2) - 6145323))]$win.i
+    ii <- o[chr=="Scaffold_2158_HRSCAF_2565"][which.min(abs((start/2 + stop/2) - 965423))]$win.i
 
     plot.hap(i=ii)
-
-
+    plot.or(i=ii)
+    plot.freq(i=ii)
 
     hapPlot <- plot.hap(i=o[which.min(ppa)]$win.i)
     freqPlot <- plot.freq(i=o[which.min(ppa)]$win.i)
