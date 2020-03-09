@@ -616,6 +616,7 @@ cp /project/berglandlab/Karen/MappingDec2019/finalsetsnpset01pulex_20200207.Rdat
       ggplot(data=gml, aes(y=i, x=clonefn, fill=as.factor(geno))) + geom_tile() + coord_flip() + facet_wrap(~SC, scales="free")
     }
 
+    
 
 
 
@@ -626,6 +627,13 @@ cp /project/berglandlab/Karen/MappingDec2019/finalsetsnpset01pulex_20200207.Rdat
     plot.genos(i=sample(o$win.i, 1), ii=2)
     plot.genos(i=o[win.i<5000][which.min(ppa)]$win.i, ii=2)
     plot.genos(i=o[which.max(ppa)]$win.i, ii=2)
+
+
+    ### QTL peaks
+      Scaffold_9199_HRSCAF_10755:5475572..6459754
+      plot.hap(o[chr=="Scaffold_9199_HRSCAF_10755"][which.min(sqrt((5475572/2 + 6459754/2 -start)^2 + (5475572/2 + 6459754/2 -stop)^2))]$win.i)
+
+    plot.genos(i=o[])
 
     ii <- o[which.max(ppa)]$win.i
     ii <- o[win.i<5000][which.min(ppa)]$win.i
