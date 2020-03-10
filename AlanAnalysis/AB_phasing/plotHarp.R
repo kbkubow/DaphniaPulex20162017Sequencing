@@ -19,8 +19,8 @@
   }
 
 ### save
-  save(o, file="/scratch/aob2x/daphnia_hwe_sims/harp_pools/summarizedOut/harpWins.Rdata")
-  save(o, file="/nv/vol186/bergland-lab/alan/harpWins.Rdata")
+  save(o, file="/scratch/aob2x/daphnia_hwe_sims/harp_pools/summarizedOut/harpWins_250K.Rdata")
+  save(o, file="/nv/vol186/bergland-lab/alan/harpWins_250K.Rdata")
 
 
 ### libraries

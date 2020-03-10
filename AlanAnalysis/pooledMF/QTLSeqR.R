@@ -51,18 +51,43 @@
                        verbose = TRUE)
 
 
-  gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=200000)
+  gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000)
   gprime <- as.data.table(gprime)
   p <- plotQTLStats(SNPset = gprime, var = "Gprime") +
        geom_hline(aes(yintercept=min(gprime[qvalue<.1]$Gprime)), color="red") +
        geom_hline(aes(yintercept=min(gprime[qvalue<.05]$Gprime)), color="blue") +
        geom_hline(aes(yintercept=min(gprime[qvalue<.01]$Gprime)), color="green")
 
-  ggsave(p, file="~/D8_QTL.pdf", width=14, height=7)
+  #ggsave(p, file="~/D8_QTL.pdf", width=14, height=7)
 
 
-  peaks <- as.data.table(getQTLTable(SNPset = gprime, method = "Gprime", alpha = 0.01, export = FALSE))
-  save(peaks, file="/mnt/sammas_storage/bergland-lab/alan/peaks.Rdata")
+  peaks <- as.data.table(getQTLTable(SNPset = gprime, method = "Gprime", alpha = 0.05, export = FALSE))
+  save(gprime, peaks, file="/mnt/sammas_storage/bergland-lab/alan/peaks.Rdata")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### LD clumped
 ### libraries
