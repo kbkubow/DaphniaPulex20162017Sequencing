@@ -5,7 +5,7 @@
   library(data.table)
 
 ### load pre-computed file (probably from here: DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/harp_windows.R)
-  load("scratch/aob2x/daphnia_hwe_sims/harp_pools/summarizedOut/harpWins.Rdata")
+  load("scratch/aob2x/daphnia_hwe_sims/harp_pools/summarizedOut/harpWins_250K.Rdata")
 
 ### anyting jump out?
   o[,sex:=gsub("1|2", "", pool)]
@@ -40,14 +40,14 @@
   load(file="/mnt/sammas_storage/bergland-lab/alan/peaks.Rdata")
 
 
-    o.ag.ag <- o.ag[,list(delta=(freq[sex=="D8Male"]) - (freq[sex=="D8PE"])),
+  o.ag.ag <- o.ag[,list(delta=(freq[sex=="D8Male"]) - (freq[sex=="D8PE"])),
                      list(chr, start, stop, allele)]
 
    m <- o.ag.ag[,list(dist=sum(delta^2)), list(chr, start, stop)]
 
    m[,i:=c(1:dim(m)[1])]
 
-
+   setnames(peaks, "CHROM", "chr")
 
    plotPeak <- function(i, buffer=5000) {
     #i<-6; buffer<-5000
@@ -73,10 +73,9 @@
           setkey(m, chr)
           tmp <- as.data.frame(m)
           tmp <- as.data.table(tmp[m$chr==peaks$chr[i],])
-          tmp$posDist <- sqrt((tmp$start - peaks[i]$start)^2 + (tmp$stop - peaks[i]$end)^2)
-          tmp <- tmp[which.min(posDist)]
+          tmp$posDist <- sqrt((tmp$start - peaks[i]$posMaxGprime)^2 + (tmp$stop - peaks[i]$posMaxGprime)^2)
+          which(peaks[i]$posMaxGprime==tmp[which.min(posDist)]$start:tmp[which.min(posDist)]$stop) / (tmp[which.min(posDist)]$stop - tmp[which.min(posDist)]$start) + 0.5 + tmp[which.min(posDist)]$i
 
-          return(tmp$i)
         }
 
         peaks[,i:=unlist(sapply(c(1:dim(peaks)[1]), findPeak))]
@@ -119,13 +118,13 @@
 
         ### combined
 
-        qtl.plot <- ggplot(data=gprime.i, aes(x=i, y=negLog10Pval, color=chr)) +
+        qtl.plot <- ggplot(data=gprime.i, aes(x=i, y=Gprime, color=chr)) +
         geom_vline(data=peaks, aes(xintercept=i), color="black", linetype="dashed") +
         geom_line(size=1) +
         theme(legend.position = "none")
 
         effect.plot <- ggplot(data=m, aes(x=i, y=-100*dist, color=chr)) +
-        geom_vline(data=peaks, aes(xintercept=i), color="black", linetype="dashed") +
+        #geom_vline(data=peaks, aes(xintercept=i), color="black", linetype="dashed") +
         geom_line(size=.75) +
         theme(legend.position = "none") +
         scale_x_continuous(position = "top")
