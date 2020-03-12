@@ -72,45 +72,12 @@
 
   load("/mnt/sammas_storage/bergland-lab/alan/mf_expectation.Rdata")
 
-  ggplot(data=m.ag, aes(x=pool, y=mu)) +
-  geom_hline(aes(yintercept=exp.fq/2), linetype="dashed") +
-  geom_point() + geom_errorbar(aes(ymin=mu-sd, ymax=mu+sd), width=.1) +
-  facet_wrap(~A.geno+B.geno) +
+  F1.plot <- ggplot(data=m.ag, aes(x=pool, y=mu)) +
+  geom_hline(aes(yintercept=exp.fq/2), linetype="solid", color="red", size=.75) +
+  geom_errorbar(aes(ymin=mu-sd, ymax=mu+sd), width=.2, size=.75) +
+  geom_point(size=4, fill="white", shape=21, stroke=1) +
+  facet_grid(~A.geno+B.geno) +
   ylab("Frequencuy") +
   xlab("Pool") +
-  scale_x_discrete(labels=c("m" = "male", "1" = "Dose 1",
-                              "2" = "Dose 2"))
-
-  table(m$m.hat==0, )
-
-  summary(m[A.geno==2 & B.geno==2]$m.hat, na.rm=T); table(m[A.geno==2 & B.geno==2]$m.hat<.95)
-  summary(m[A.geno==2 & B.geno==2]$f.hat, na.rm=T); table(m[A.geno==2 & B.geno==2]$f.hat<.95)
-
-  summary(m[A.geno==0 & B.geno==0]$m.hat, na.rm=T); table(m[A.geno==0 & B.geno==0]$m.hat>.05)
-  summary(m[A.geno==0 & B.geno==0]$f.hat, na.rm=T); table(m[A.geno==0 & B.geno==0]$f.hat>.05)
-
-  summary(m[A.geno==1 & B.geno==1]$m.hat, na.rm=T); table(m[A.geno==0 & B.geno==0]$m.hat>.05)
-  summary(m[A.geno==1 & B.geno==1]$f.hat, na.rm=T); table(m[A.geno==0 & B.geno==0]$f.hat>.05)
-
-  summary(m[A.geno==0 & B.geno==2]$m.hat, na.rm=T)
-  summary(m[A.geno==0 & B.geno==2]$f.hat, na.rm=T)
-
-  summary(m[A.geno==0 & B.geno==0]$m.hat, na.rm=T); table(m[A==0 & B==0]$m.hat>.05)
-  summary(m[A.geno==0 & B.geno==0]$f.hat, na.rm=T); table(m[A==0 & B==0]$f.hat>.05)
-
-
-
-  summary(m[A==0 & B==0]$f.hat, na.rm=T)
-  table(m[A==1 & B==1]$m.hat, na.rm=T)
-
-
-  m[,BA_delta:=B-A]
-  m[,mf_delta.naive:=(effPA_D8Male1+effPA_D8Male2)/2 - (effPA_D8PE1+effPA_D8PE2)/2]
-  m[,m.hat:=(effPA_D8Male1 * effRD_D8Male1 + effPA_D8Male2 * effRD_D8Male2) / (effRD_D8Male1 + effRD_D8Male2)]
-  m[,f.hat:=(effPA_D8PE1 * effRD_D8PE1 + effPA_D8PE2 * effRD_D8PE2) / (effRD_D8PE1 + effRD_D8PE2)]
-  m[,mf_delta:=m.hat - f.hat]
-
-
-  setkey(snp.dt, chr, pos)
-  setkey(m, chr, pos)
-  m <- merge(snp.dt, m)
+  scale_x_discrete(labels=c("m" = "Male", "f" = "Female")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
