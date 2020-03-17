@@ -1,5 +1,5 @@
 #ijob -c1 -p standard -A berglandlab
-#module load intel/18.0 intelmpi/18.0 R/3.6.0; R
+#module load gcc/7.1.0  openmpi/3.1.4 R/3.6.0; R
 
 ### libraries
   library(data.table)
@@ -7,22 +7,32 @@
   library(foreach)
 
 ### load SuperClone & SNP filter file
-  sc <- fread("/project/berglandlab/Karen/MappingDec2019/Superclones201617182019pulexonlyD82016problematic_20200122")
-  load("/project/berglandlab/Karen/MappingDec2019/snpsvarpulexpresentinhalf_20200121.Rdata")
+  sc <- fread("/project/berglandlab/Karen/MappingDec2019/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  snps2use <- fread("/project/berglandlab/Karen/MappingDec2019/snpsvarpulexpresentinhalf_table_20200207")
+  setnames(snps2use, "variant.ids", "id")
+  snps2use[,use:=T]
+
+  setkey(snps2use, chr, pos)
+
+  sc[,SC.uniq:=paste(SC, SCnum, sep="_")]
 
 ### open GDS
-  genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+
+### open GDS
+  #genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+  genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
   snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"), pos=seqGetData(genofile, "position"), id=seqGetData(genofile, "variant.id"), key="id")
-  use <- data.table(id=snpsvarpulexpresentinhalf, pass=T, key="id")
-  snp.dt <- merge(snp.dt, use)
+  setkey(snp.dt, chr, pos)
+
+  snp.dt <- merge(snp.dt, snps2use)
 
   snp.dt[,use.chr:=F]
   snp.dt[chr%in%snp.dt[,.N,chr][N>1000]$chr, use.chr:=T]
 
 ### 1. identify fixed difference between A&B
-  ab.fd <- foreach(sc.i=c("A", "B"), .combine="cbind")%do%{
+  ab.fd <- foreach(sc.i=c("A", "C"), .combine="cbind")%do%{
     seqResetFilter(genofile)
-    seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
+    seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id.x)
 
     data.table(af=seqAlleleFreq(genofile))
   }
@@ -34,11 +44,14 @@
 
 ### 2. Identify F1s
   seqResetFilter(genofile)
-  seqSetFilter(genofile, variant.id=snp.dt$id)
+  seqSetFilter(genofile, variant.id=snp.dt$id.x)
 
   genomat <- seqGetData(genofile, "$dosage")
 
+
   het.count <- foreach(i=1:dim(genomat)[1], .combine="rbind")%do%{
+    #i<-100
+    # i <- which(seqGetData(genofile, "sample.id")==sc[SC=="A"]$clone[1])
     print(paste(i, dim(genomat)[1], sep=" / "))
 
     tmp <- ab.fd
@@ -56,21 +69,23 @@
     tmp.ag[,sample.id:=seqGetData(genofile, "sample.id")[i]]
     tmp.ag
   }
+  f1.set <- het.count[n>1000][A.geno==0 & B.geno==2 & fRA>.9]$sample.id
+
 
   f1.set <- het.count[n>1000][A.geno==0 & B.geno==2 & fRA>.9]$sample.id
 
 ### 3. make majority rule F1s, A & B
   setkey(sc, clone)
-  sc.f1.ag <- sc[J(f1.set)][SC!="OO",.N,list(SC)]
-  sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "B")))[order(N, decreasing=T)]
+  sc.f1.ag <- sc[J(f1.set)][,.N,list(SC, SC.uniq)]
+  sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "C"), SC.uniq=c("A_1", "C_3")))[order(N, decreasing=T)]
 
-  nF1s <- 4
+  nF1s <- 25
 
   f1.cons <- foreach(i=1:(2+nF1s), .combine="cbind")%do%{
-    #i<-1
+    #i<-13
     print(i)
     seqResetFilter(genofile)
-    seqSetFilter(genofile, sample.id=sc[SC==sc.f1.ag$SC[i]]$clone, variant.id=snp.dt$id)
+    seqSetFilter(genofile, sample.id=sc[SC.uniq==sc.f1.ag$SC.uniq[i]]$clone, variant.id=snp.dt$id.x)
 
     tmp <- data.table(af=seqAlleleFreq(genofile))
     #tmp <- cbind(tmp, snp.dt)
@@ -79,13 +94,13 @@
 
     tmp[,"geno",with=F]
   }
-  setnames(f1.cons, c(1:dim(f1.cons)[2]), sc.f1.ag[1:(2+nF1s)]$SC)
+  setnames(f1.cons, c(1:dim(f1.cons)[2]), sc.f1.ag[1:(2+nF1s)]$SC.uniq)
 
   proto.vcf <- cbind(snp.dt, f1.cons)
 
   vcf <- data.table('#CHROM'=snp.dt$chr,
                     POS=snp.dt$pos,
-                    ID=paste("snp", snp.dt$id, sep="_"),
+                    ID=paste("snp", snp.dt$id.x, sep="_"),
                     REF=seqGetData(genofile, "$ref"),
                     ALT=seqGetData(genofile, "$alt"),
                     QUAL=".",
@@ -96,26 +111,19 @@
 
 ### 4. write VCF file & PED file
   seqSetFilter(genofile, variant.id=1)
-  seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.vcf", info.var=character(0), fmt.var=character(0),
+  seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/popPhase/allF1.consensus.vcf", info.var=character(0), fmt.var=character(0),
     verbose=TRUE)
-  system("grep '##' /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.vcf > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf")
+  system("grep '##' /scratch/aob2x/daphnia_hwe_sims/popPhase/allF1.consensus.vcf > /scratch/aob2x/daphnia_hwe_sims/popPhase/allF1.consensus.header.vcf")
 
-  write.table(vcf, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf", sep="\t", append=T, col.names=T, quote=F, row.names=F)
+  write.table(vcf, file="/scratch/aob2x/daphnia_hwe_sims/popPhase/allF1.consensus.header.vcf", sep="\t", append=T, col.names=T, quote=F, row.names=F)
 
   ped <- data.table(fam="family1",
                     iid=names(f1.cons)[-c(1,2)],
-                    pid="B",
-                    mid="A",
+                    pid="C_3",
+                    mid="A_1",
                     foo="N", bar="A")
 
-  write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.ped")
-
-
-
-
-
-
-
+  write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/popPhase/allF1.consensus.ped")
 
 
 
