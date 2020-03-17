@@ -19,9 +19,23 @@ module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools
 export PATH=$HOME/.local/bin:$PATH
 
 ### run whatshap
-#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/*.bai; do
-#  touch -c ${f}
-#done
+
+### update bai files (I think they must get copied before the bams which throws the error re: their age)
+  #for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/*.bai; do
+  #  touch -c ${f}
+  #done
+
+### one of the bams is problematic, remove from analysis
+  #samtools quickcheck -v /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/*.bam > ~/bad_bams.fofn
+  #
+  #samtools quickcheck /project/berglandlab/Karen/MappingDec2019/bams/PulexBams/Spring_2017_DBunk_340_finalmap_mdup.bam
+  #
+  #grep -m1 "#CHROM" /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf | \
+  #tr '\t' '\n' | grep "Spring_2017_DBunk_340"
+
+### Karen says that these are the same individual
+  #Spring_2016_D8_8.1
+  #Spring_2016_D8_8.10
 
 
 whatshap \
@@ -520,7 +534,6 @@ phase \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_321_finalmap_mdup.bam \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_333_finalmap_mdup.bam \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_338_finalmap_mdup.bam \
-/scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_340_finalmap_mdup.bam \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_347_finalmap_mdup.bam \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_347SM_finalmap_mdup.bam \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/Spring_2017_DBunk_34_finalmap_mdup.bam \
