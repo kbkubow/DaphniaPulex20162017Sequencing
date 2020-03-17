@@ -69,6 +69,7 @@
 
   library(ggplot2)
   library(data.table)
+  library(cowplot)
 
   load("/mnt/sammas_storage/bergland-lab/alan/mf_expectation.Rdata")
 
@@ -81,3 +82,5 @@
   xlab("Pool") +
   scale_x_discrete(labels=c("m" = "Male", "f" = "Female")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+  ggsave("~/F1_plot.pdf")
