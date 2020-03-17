@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 #
-#SBATCH -J trioPhase_whatshapp # A single job name for the array
+#SBATCH -J popPhasing_whatshapp # A single job name for the array
 #SBATCH --ntasks-per-node=1 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
@@ -12,13 +12,17 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### run with sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_allF1s.sh
+### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_allF1s.sh
 
 #ijob -c1 -p standard -A berglandlab
 module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools
 export PATH=$HOME/.local/bin:$PATH
 
 ### run whatshap
+#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/*.bai; do
+#  touch -c ${f}
+#done
+
 
 whatshap \
 phase \
