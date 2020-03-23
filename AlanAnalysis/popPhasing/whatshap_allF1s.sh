@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 6:00:00 # Running time of 2 hours
+#SBATCH -t 7-0:00:00 # Running time of 2 hours
 #SBATCH --mem 24G # Memory request of 12 GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.%A_%a.err # Standard error
@@ -37,10 +37,25 @@ export PATH=$HOME/.local/bin:$PATH
   #Spring_2016_D8_8.1
   #Spring_2016_D8_8.10
 
+### get 12 big chromosomes
+#cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' \
+#| sort | uniq | grep -v "chr" | sed 's/^/--chromosome /g' | sed 's/$/ \\/g'
 
 whatshap \
 phase \
 -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.phase.vcf \
+--chromosome Scaffold_1863_HRSCAF_2081 \
+--chromosome Scaffold_1931_HRSCAF_2197 \
+--chromosome Scaffold_2158_HRSCAF_2565 \
+--chromosome Scaffold_2217_HRSCAF_2652 \
+--chromosome Scaffold_2373_HRSCAF_2879 \
+--chromosome Scaffold_6786_HRSCAF_7541 \
+--chromosome Scaffold_7757_HRSCAF_8726 \
+--chromosome Scaffold_9197_HRSCAF_10753 \
+--chromosome Scaffold_9198_HRSCAF_10754 \
+--chromosome Scaffold_9199_HRSCAF_10755 \
+--chromosome Scaffold_9200_HRSCAF_10757 \
+--chromosome Scaffold_9201_HRSCAF_10758 \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/April17_2018_D8_Male1_finalmap_mdup.bam \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/April17_2018_D8_Male2_finalmap_mdup.bam \
