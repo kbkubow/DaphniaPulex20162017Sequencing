@@ -9,7 +9,7 @@
 #SBATCH --mem 64G # Memory request of 12 GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.%A_%a.err # Standard error
-#SBATCH -p parallel
+#SBATCH -p standard
 #SBATCH --account berglandlab
 
 ### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_allF1s.sh
