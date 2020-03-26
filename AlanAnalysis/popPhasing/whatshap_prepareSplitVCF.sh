@@ -13,7 +13,7 @@
 #SBATCH --account berglandlab
 
 ### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_prepareSplitVCF.sh
-## sacct -u aob2x -j 9995559
+## sacct -u aob2x -j 9995600
 
 #ijob -c1 -p standard -A berglandlab
 module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib gparallel/20170822
