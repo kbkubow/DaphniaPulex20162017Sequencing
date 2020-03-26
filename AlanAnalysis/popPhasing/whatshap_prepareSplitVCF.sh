@@ -13,7 +13,7 @@
 #SBATCH --account berglandlab
 
 ### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_prepareSplitVCF.sh
-## sacct -u aob2x -j 9899403
+## sacct -u aob2x -j 9995453
 
 #ijob -c1 -p standard -A berglandlab
 module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib
@@ -22,7 +22,7 @@ export PATH=$HOME/.local/bin:$PATH
 ### first, bgzip and tabix vcf file
   bgzip \
   -c -i -@ 10 \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf | \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf > \
   /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf.gz
 
 
