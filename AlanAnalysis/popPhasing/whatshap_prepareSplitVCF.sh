@@ -38,6 +38,7 @@ export PATH=$HOME/.local/bin:$PATH
       -p vcf \
       -h \
       /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf.gz
-      $line > \
-      /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.${line}.vcf
+      $line |
+      bgzip -c -@10 > \
+      /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.${line}.vcf.gz
   done <<< "$chr"
