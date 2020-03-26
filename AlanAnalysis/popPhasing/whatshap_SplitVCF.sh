@@ -6,14 +6,15 @@
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 2:00:00 # Running time of 2 hours
-#SBATCH --mem 8G # Memory request of 12 GB
+#SBATCH --mem 20G # Memory request of 12 GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
 ### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
-## sacct -u aob2x -j 9899403
+## sacct -u aob2x -j 9995634
+## cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.9995634_4294967294.err
 
 #ijob -c1 -p standard -A berglandlab
 module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools
