@@ -15,8 +15,8 @@
 # ijob -c1 -p standard -A berglandlab
 ### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 -d' ' )
 ### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
-### sacct -u aob2x -j 10007369
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007369_38.err
+### sacct -u aob2x -j 10007470
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007470_20.out
 
 
 
@@ -44,12 +44,13 @@
 
 
 ### get parameters
-  # SLURM_ARRAY_JOB_ID=2
-  chr=$( awk -v samp=${SLURM_ARRAY_JOB_ID} '{if(NR==samp) { print $2} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim )
-  sample=$( awk -v samp=${SLURM_ARRAY_JOB_ID} '{if(NR==samp) { print $3} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim  )
+  # SLURM_ARRAY_TASK_ID=2
+  chr=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $2} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim )
+  sample=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $3} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim  )
 
-  echo ${chr}
-  echo ${sample}
+
+  echo "chr: "${chr}
+  echo "samp: "${sample}
 
 ### extract simplified vcf file per chromosome per sample
   echo "Getting simple vcf"
