@@ -46,6 +46,8 @@
   sample=$( egrep "^${SLURM_ARRAY_JOB_ID}[^0-9]" /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f3 )
 
 ### extract simplified vcf file per chromosome per sample
+  echo "Getting simple vcf"
+
   bcftools view \
   -s ${sample} \
   -O v \
@@ -62,6 +64,8 @@
   }' > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}_${chr}.vcf
 
 ### extract reads from bam file per chromosome per sample
+  echo "getting bam"
+
   samtools view \
   -b \
   -q 20 \
@@ -75,6 +79,8 @@
   samtools index /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}_${chr}.bam
 
 ### run whatshap
+  echo "whatshapp"
+
   whatshap \
   phase \
   -o /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}.${chr}.phase.vcf \
