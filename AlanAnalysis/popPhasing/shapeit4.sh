@@ -12,8 +12,9 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-
-
+### run with: sbatch --array=1 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
+### sacct -u aob2x -j 10024220
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.
 #module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
 #
 #
@@ -28,6 +29,9 @@
 
 
 module load gcc shapeit4
+
+chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
+
 
 shapeit4 \
 --input /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.bcf \
