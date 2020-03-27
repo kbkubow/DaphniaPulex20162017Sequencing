@@ -15,8 +15,8 @@
 #ijob -c1 -p standard -A berglandlab
 ### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 -d' ' )
 ### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
-
-
+### sacct -u aob2x -j 10007346
+### less -S /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007346
 ### load modules
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
   export PATH=$HOME/.local/bin:$PATH
@@ -42,8 +42,8 @@
 
 ### get parameters
   # SLURM_ARRAY_JOB_ID=1003
-  chr=${ egrep "^${SLURM_ARRAY_JOB_ID}[^0-9]" /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f2 )
-  sample=${ egrep "^${SLURM_ARRAY_JOB_ID}[^0-9]" /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f3 )
+  chr=$( egrep "^${SLURM_ARRAY_JOB_ID}[^0-9]" /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f2 )
+  sample=$( egrep "^${SLURM_ARRAY_JOB_ID}[^0-9]" /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f3 )
 
 ### extract simplified vcf file per chromosome per sample
   bcftools view \
