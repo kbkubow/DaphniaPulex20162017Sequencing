@@ -1,5 +1,20 @@
-1. DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_prepareSplitVCF.sh
-2. DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
+# Get data in right place
+  1. copyBams.sh
+  2. bams2phase.sh
+  3. path2bams
+
+# Run Whatshapp to generate read-backed phase-sets
+  1. DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
+
+# merge individual vcfs
+  1. 
+
+
+
+
+
+
+
 
 
 
