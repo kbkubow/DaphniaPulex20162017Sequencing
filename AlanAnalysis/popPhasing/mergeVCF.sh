@@ -2,10 +2,10 @@
 #
 #
 #SBATCH -J popPhasing_mergeVCF # A single job name for the array
-#SBATCH --ntasks-per-node=10 # one core
+#SBATCH --ntasks-per-node=11 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 0:60:00 # Running time of 15 minutes
+#SBATCH -t 0:30:00 # Running time of 15 minutes
 #SBATCH --mem 1G # Memory request of 4GGB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.%A_%a.err # Standard error
@@ -14,7 +14,7 @@
 
 # ijob -c1 -p standard -A berglandlab
 ### run with: sbatch --array=1 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh
-### sacct -u aob2x -j 10007523
+### sacct -u aob2x -j 10016769
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007470_20.out
 
 ### load modules
@@ -32,4 +32,4 @@
   -l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list \
   -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.vcf \
   -O v \
-  --threads 10
+  --threads 1
