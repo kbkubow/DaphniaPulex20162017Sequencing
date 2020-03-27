@@ -6,7 +6,7 @@
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0:30:00 # Running time of 15 minutes
-#SBATCH --mem 1G # Memory request of 4GGB
+#SBATCH --mem 20G # Memory request of 4GGB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.%A_%a.err # Standard error
 #SBATCH -p standard
