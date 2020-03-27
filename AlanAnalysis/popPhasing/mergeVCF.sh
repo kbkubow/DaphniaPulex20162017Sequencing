@@ -2,7 +2,7 @@
 #
 #
 #SBATCH -J popPhasing_mergeVCF # A single job name for the array
-#SBATCH --ntasks-per-node=1 # one core
+#SBATCH --ntasks-per-node=10 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0:30:00 # Running time of 15 minutes
@@ -14,7 +14,7 @@
 
 # ijob -c1 -p standard -A berglandlab
 ### run with: sbatch --array=1 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh
-### sacct -u aob2x -j 10016791
+### sacct -u aob2x -j 10016822
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007470_20.out
 
 ### load modules
@@ -25,11 +25,28 @@
   chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
 ## make sure that all vcf files are there, should be 511 pulex. 509 worked because of some diferences in naming conventions
-  ls /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
+
+## bgzip vcf files
+#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf; do
+#  echo "File -> $f"
+#  bgzip \
+#  -c \
+#  -@ 1 \
+#  ${f} > ${f}.gz
+#done
+
+#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz; do
+#  echo "File -> $f"
+#  tabix \
+#  -p vcf \
+#  ${f}
+#done
+
+  ls /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
 
   bcftools \
   merge \
   -l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list \
   -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.vcf \
   -O v \
-  --threads 1
+  --threads 10
