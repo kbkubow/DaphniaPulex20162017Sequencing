@@ -13,40 +13,12 @@
 
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
 ### sacct -u aob2x -j 10041462
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.10027221_1.out
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.10041462_12.err
 #module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
 #
 #
 ## ijob -c1 -p standard -A berglandlab
 #SLURM_ARRAY_TASK_ID=1
-
-### define chr
-  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
-
-
-### convert whatshapp output
-  module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
-
-  # bgzip vcf files
-    for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf; do
-      echo "File -> $f"
-      bgzip \
-      -c \
-      -@ 20 \
-      -i \
-      ${f} > ${f}.gz
-    done
-
-  # merge
-    bcftools \
-    merge \
-    -l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list \
-    -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.bcf \
-    -O b \
-    --threads 20
-
-  # index
-    bcftools index --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.bcf
 
 
 ### run shapeit
