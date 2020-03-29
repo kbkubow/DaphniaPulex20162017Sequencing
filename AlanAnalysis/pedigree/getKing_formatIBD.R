@@ -10,6 +10,11 @@
 
 ### clone metadata file
   sc <- fread("/project/berglandlab/Karen/MappingDec2019/CloneInfoFilePulexandObtusa_withmedrd_update20200324")
+  sc[,SC.uniq:=SC]
+  sc[SC=="OO", SC.uniq:=paste(SC, SCnum, sep="")]
+
+  sc.ag <- sc[Species=="pulex",list(clone=clone[which.max(medrd)][1]), list(SC.uniq)]
+  table(sc.ag$SC.uniq)
 
 ### filtered SNP set
   snps <- fread("/project/berglandlab/Karen/MappingDec2019/finalsetsnpset01pulex_table_20200207")
@@ -28,10 +33,10 @@
 
 ### set filter
   seqResetFilter(genofile)
-  seqSetFilter(genofile, variant.id=snps.use$id, sample.id=sc[Species=="pulex"]$clone)
+  seqSetFilter(genofile, variant.id=snps.use$id, sample.id=sc.ag$clone)
 
 ### get King Relatedness estimate
-  king <- snpgdsIBDKING(genofile, sample.id=sc[Species=="pulex"]$clone, snp.id=snps.use$id, autosome.only=FALSE,
+  king <- snpgdsIBDKING(genofile, sample.id=sc.ag$clone, snp.id=snps.use$id, autosome.only=FALSE,
                 remove.monosnp=TRUE, maf=NaN, missing.rate=NaN,
                 type=c("KING-robust"),
                 family.id=NULL, num.thread=10L, useMatrix=FALSE, verbose=TRUE)
@@ -50,6 +55,10 @@
   setkey(truffle, ID1, ID2)
 
   m <- merge(king.dt, truffle)
+
+  dim(king.dt)
+  dim(truffle)
+  dim(m)
 
 ### format
   " the input file must have columns 1-4 and 7-10 described in option --plink_ibd, except that the PI_HAT/RELATEDNESS column can be a different measure of relatednes"
