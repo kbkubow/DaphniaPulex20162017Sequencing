@@ -14,7 +14,7 @@
 
 
 ### run primus: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pedigree/primus.sh
-### sacct -j 10077986
+### sacct -j 10077999
 
 module load perl
 
