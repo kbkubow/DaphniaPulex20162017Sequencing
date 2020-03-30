@@ -19,7 +19,7 @@
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
 
 ## get job
-  # SLURM_ARRAY_TASK_ID=1
+  # SLURM_ARRAY_TASK_ID=2
   chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
 # bgzip vcf files
@@ -33,7 +33,7 @@
 #done
 
   # merge
-    ls /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz > scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
+    ls /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
 
     bcftools \
     merge \
