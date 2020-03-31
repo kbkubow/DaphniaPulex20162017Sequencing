@@ -19,6 +19,7 @@
 #
 ## ijob -c1 -p standard -A berglandlab
 #SLURM_ARRAY_TASK_ID=1
+chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
 
 ### run shapeit

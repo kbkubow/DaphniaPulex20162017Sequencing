@@ -12,8 +12,8 @@
 
 # ijob -c1 -p standard -A berglandlab
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh
-### sacct -u aob2x -j 10088312
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.10088312_3.err
+### sacct -u aob2x -j 10096702
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.10096702_1.err
 
 ### load modules
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
