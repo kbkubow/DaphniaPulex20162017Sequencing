@@ -4,16 +4,18 @@
 #SBATCH -J popPhasing_shapeit4 # A single job name for the array
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=20 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 2-00:00:00 # Running time of 4 days
-#SBATCH --mem 100G # Memory request of 20GB
+#SBATCH -t 02:00:00 # Running time of 2 hours
+#SBATCH --mem 120G # Memory request of 120GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
-### sacct -u aob2x -j 10260082
+### sacct -u aob2x -j 10260553
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.10260082_1.err
+### run with: sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
+
 #module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
 #
 #
