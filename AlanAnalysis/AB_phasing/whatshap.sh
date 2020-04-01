@@ -19,14 +19,17 @@ export PATH=$HOME/.local/bin:$PATH
 
 ### run whatshap
 
+sed 's/NA/.\/./g' /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf > \
+/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.noNA.vcf
+
 whatshap \
 phase \
 --ped /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.ped \
--o /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf \
-/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf
+-o /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf \
+/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.noNA.vcf
 
 
-cat /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.vcf | grep -v "##" | cut -f1,2,4,5,10- | awk '{
+cat /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf | grep -v "##" | cut -f1,2,4,5,10- | awk '{
 printf $1","$2","$3","$4","
 for(i = 5; i <= NF; i++) {
   split($i, sp1, ":")
@@ -34,8 +37,8 @@ for(i = 5; i <= NF; i++) {
   if(i==NF) printf "\n"
   if(i<NF) printf ","
 }
-}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.csv
+}' > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.csv
 
 
-cp /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.csv \
+cp /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.csv \
 /nv/vol186/bergland-lab/alan/.
