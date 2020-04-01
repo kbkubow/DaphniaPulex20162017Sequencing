@@ -21,8 +21,12 @@ module load perl
 wd=/scratch/aob2x/daphnia_hwe_sims/pedigree/PRIMUS_v1.9.0/bin
 
 
+# rm -fr /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
+cd /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
+
 ${wd}/run_PRIMUS.pl \
 -i FILE=/scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim \
 IBD0=7 IBD1=8 IBD2=9 PI_HAT=10 \
 -o /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
+--age_file /scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ag.delim \
 -v 3
