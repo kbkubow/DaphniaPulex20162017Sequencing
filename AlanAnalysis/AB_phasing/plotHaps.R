@@ -14,23 +14,41 @@ datl[,p1:=substr(value, 0, 1)]
 datl[,p2:=substr(value, 3, 3)]
 
 datll <- melt(datl, id.var=c("chr", "pos", "REF", "ALT", "id", "variable"), measure.var=c("p1", "p2"))
-
 datll[,haplo:=paste(variable, variable.1, sep="_")]
 
+pat.datll <- rbind(datll[variable.1=="p1"][!variable%in%c("A", "B")],
+                    datll[variable%in%c("A", "B")])
 
-ggplot(data=datll[chr=="Scaffold_7757_HRSCAF_8726"][pos>=(8660157-5000) & pos<=(8660157+5000)],
+
+mat.datll <- rbind(datll[variable.1=="p2"][!variable%in%c("A", "B")],
+                    datll[variable%in%c("A", "B")])
+
+
+
+
+
+
+
+
+
+
+
+
+ggplot(data=mat.datll[chr=="Scaffold_9199_HRSCAF_10755"],
         aes(x=as.factor(haplo), y=id, fill=as.factor(value))) +
 geom_tile() +
-facet_wrap(~chr, scales="free") +
+facet_wrap(as.factor(variable=="A" | variable=="B")~chr, scales="free", ncol=1) +
 coord_flip()
 
 
 
-ggplot(data=datll[chr=="Scaffold_7757_HRSCAF_8726"],
+
+ggplot(data=pat.datll[chr=="Scaffold_2217_HRSCAF_2652"],
         aes(x=as.factor(haplo), y=id, fill=as.factor(value))) +
 geom_tile() +
-facet_wrap(variable.1~chr, scales="free") +
+facet_wrap(as.factor(variable=="A" | variable=="B")~chr, scales="free", ncol=1) +
 coord_flip()
+
 
 
 ggplot(data=datll,

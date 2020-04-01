@@ -11,7 +11,8 @@
 
 # submit as
 # sbatch --array=1-$( wc -l /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f1 -d' ' ) /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/AB_phasing/doHarp.sh
-
+# sbatch --array=$( sacct -u aob2x -j 9317685 | grep "FAILED" | grep "harp_pools" | cut -f1 -d' ' | cut -f2 -d'_' | tr '\n' ',' ) /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/AB_phasing/doHarp.sh
+# sacct -j 9318168 -u aob2x
 module load gparallel
 module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
 
@@ -40,8 +41,8 @@ module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
   sample=$( echo $bam | rev  | cut -f1 -d'/' | rev | cut -f1 -d'.' | cut -f3 -d"_" )
 
 # harp parameters
-  window_step=5000
-  window_width=50000
+  window_step=10000 #5000
+  window_width=250000 #50000
   #window_step=100
   #window_width=100
 
@@ -60,7 +61,8 @@ module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
   --snps ${priorsFile} \
   --stem /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}/${sample}.${chromosome} \
   -v \
-  --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}
+  --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome} #\
+  #--compute_standard_errors
 
   echo running harp freq
   $harp freq \
@@ -72,4 +74,5 @@ module load gcc/7.1.0  openmpi/3.1.4 boost/1.60.0
   --out /scratch/aob2x/daphnia_hwe_sims/harp_pools/out/${sample}.${chromosome}/  \
   --window_step $window_step \
   --window_width $window_width \
-  --em_min_freq_cutoff 0.0001
+  --em_min_freq_cutoff 0.0001 #\
+  #--compute_standard_errors
