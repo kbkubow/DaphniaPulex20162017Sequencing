@@ -12,10 +12,11 @@
               library(tidyverse)
 
 ### Load genofile
-      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
 
 ### Load superclone file
-      sc <- fread("Superclones201617182019pulexonlyD82017problematic_20200122")
+      sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+      sc <- sc[Nonindependent==0 & Species=="pulex"]
 
 ### Add in pond and year info
       temp <- unlist(strsplit(sc$clone, split="_"))
@@ -25,7 +26,7 @@
       sc$year <- matdat$V2
 
 ### First pull out all A and B clones
-      ABclones <- sc[SC=="A" | SC=="B"]
+      ABclones <- sc[SC=="A" | SC=="C"]
       ABclonesD8 <- ABclones[population=="D8"]
       ABclonesD8ids <- ABclonesD8$clone
       ABclonesD8sub <- data.table(clone=ABclonesD8$clone, SC=ABclonesD8$SC)
@@ -33,8 +34,19 @@
       seqSetFilter(genofile, sample.id=ABclonesD8ids)
 
 ### Load set of goodsnps, but not LD filtered
-      load("snpsvarpulexpresentinhalf_20200121.Rdata")
-      seqSetFilter(genofile, variant.id=snpsvarpulexpresentinhalf)
+      snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+        chr = seqGetData(genofile, "chromosome"),
+        pos = seqGetData(genofile, "position"))
+
+      snpsvarPulex <- fread("snpsvarpulexpresentinhalf_table_20200207")
+      colnames(snpsvarPulex) <- c("oldvariant.id", "chr", "pos", "olddp")
+
+      setkey(snps, chr, pos)
+      setkey(snpsvarPulex, chr, pos)
+      msnps <- merge(snpsvarPulex, snps)
+      snpids <- msnps$variant.ids
+
+      seqSetFilter(genofile, variant.id=snpids)
 
       snpsvarPulex <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
             chr = seqGetData(genofile, "chromosome"),
@@ -73,18 +85,19 @@
       	doscountwide[is.na(dos2),dos2:=0]
         yetwider <- dcast(doscountwide, variant.ids~SC, value.var=c("dos0", "dos1", "dos2"))
         yetwider$A_total <- yetwider$dos0_A + yetwider$dos1_A + yetwider$dos2_A
-        yetwider$B_total <- yetwider$dos0_B + yetwider$dos1_B + yetwider$dos2_B
+        yetwider$C_total <- yetwider$dos0_C + yetwider$dos1_C + yetwider$dos2_C
 
 ### Now let's pull out all the SNPs that are fixed ref in A and fixed alt in B or vice versa
 
-        ArefBalt <- yetwider[dos2_A==A_total & dos0_B==B_total]
-        BrefAalt <- yetwider[dos0_A==A_total & dos2_B==B_total]
+        ArefBalt <- yetwider[dos2_A==A_total & dos0_C==C_total]
+        BrefAalt <- yetwider[dos0_A==A_total & dos2_C==C_total]
         ABfixed <- rbind(ArefBalt, BrefAalt)
+        save(ABfixed, file="ABfixed_20190226.Rdata")
         ABfixedids <- ABfixed$variant.ids
         ABfixed$Ref <- ifelse(ABfixed$dos2_A > 0, "A", "B")
         ABfixedsub <- data.table(variant.ids=ABfixed$variant.ids, ref=ABfixed$Ref)
 
-        save(ABfixed, file="ABfixed_20200122.Rdata")
+        save(ABfixed, file="ABfixed_20200226.Rdata")
 
 ### Ok, now lets pull out the D8 2018 individuals
         D82018clones <- sc[population=="D8" & year=="2018"]
@@ -122,9 +135,11 @@
           mmhetABfixedlong$dosageB <- ifelse(mmhetABfixedlong$ref=="B" & mmhetABfixedlong$dosage==2, 0, ifelse(
             mmhetABfixedlong$ref=="B" & mmhetABfixedlong$dosage==0, 2, mmhetABfixedlong$dosage))
 
-          save(mmhetABfixedlong, file="mmhetABfixedlong__2018_20200122.Rdata")
+          save(mmhetABfixedlong, file="mmhetABfixedlong_2018_20200226.Rdata")
 
           dosagecountsABfixed <- mmhetABfixedlong[, .N, by=list(clone, dosageB)]
+          dosagecountsABfixed <- dosagecountsABfixed[dosageB!="NA"]
+
 
         #Transform to wide format
           dosagecountsABfixedwide <- dcast(dosagecountsABfixed, clone ~ dosageB, value.var="N")
@@ -141,8 +156,9 @@
           setkey(dosagecountsABfixedwide, clone)
           setkey(sc, clone)
           mdosagecountsABfixedwide <- merge(sc, dosagecountsABfixedwide)
+          setkey(mdosagecountsABfixedwide, SC, clone)
 
-          save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_2018_20200122.Rdata")
+          save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_2018_20200226.Rdata")
 
 #Many of the putative F1 hybrids are about 90-95% het, and then the rest is some A and some B, is this due to low read depth and miscalls?
 #Let's pull out the depth of the 2018 D8 individuals for each site
@@ -251,6 +267,56 @@
             save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_D82019.Rdata")
 
             #We see that 2 of 23 individuals look like AxB F1 hybrids.
+
+### Lets pull out the DBunk 2018 individuals
+            DBunk2018clones <- sc[population=="DBunk" & year=="2018"]
+            DBunk2018clonesids <- DBunk2018clones$clone
+
+            seqSetFilter(genofile, sample.id=DBunk2018clonesids)
+
+            het <- t(seqGetData(genofile, "$dosage"))
+            het <- as.data.table(het)
+
+            colnames(het) <- c(seqGetData(genofile, "sample.id"))
+            het$variant.ids <- seqGetData(genofile, "variant.id")
+
+            setkey(het, variant.ids)
+            setkey(snps, variant.ids)
+
+            mhetABfixed <- merge(snps, het)
+
+            mhetABfixedlong <- melt(mhetABfixed, measure.vars=DBunk2018clonesids, variable.name="clone", value.name="dosage")
+
+        #Remove NAs
+            mhetABfixedlong <- mhetABfixedlong[dosage!="NA"]
+
+            setkey(mhetABfixedlong, variant.ids)
+            setkey(ABfixedsub, variant.ids)
+            mmhetABfixedlong <- merge(ABfixedsub, mhetABfixedlong)
+            mmhetABfixedlong$dosageB <- ifelse(mmhetABfixedlong$ref=="B" & mmhetABfixedlong$dosage==2, 0, ifelse(
+            mmhetABfixedlong$ref=="B" & mmhetABfixedlong$dosage==0, 2, mmhetABfixedlong$dosage))
+
+            dosagecountsABfixed <- mmhetABfixedlong[, .N, by=list(clone, dosageB)]
+
+        #Transform to wide format
+            dosagecountsABfixedwide <- dcast(dosagecountsABfixed, clone ~ dosageB, value.var="N")
+            colnames(dosagecountsABfixedwide) <- c("clone", "dos0", "dos1", "dos2")
+            dosagecountsABfixedwide[is.na(dos0),dos0:=0]
+            dosagecountsABfixedwide[is.na(dos1),dos1:=0]
+            dosagecountsABfixedwide[is.na(dos2),dos2:=0]
+            dosagecountsABfixedwide$total <- dosagecountsABfixedwide$dos0+dosagecountsABfixedwide$dos1+
+              dosagecountsABfixedwide$dos2
+            dosagecountsABfixedwide$prophet <- dosagecountsABfixedwide$dos1/dosagecountsABfixedwide$total
+            dosagecountsABfixedwide$propA <- dosagecountsABfixedwide$dos2/dosagecountsABfixedwide$total
+            dosagecountsABfixedwide$propB <- dosagecountsABfixedwide$dos0/dosagecountsABfixedwide$total
+
+            setkey(dosagecountsABfixedwide, clone)
+            setkey(sc, clone)
+            mdosagecountsABfixedwide <- merge(sc, dosagecountsABfixedwide)
+            save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_D82019.Rdata")
+
+        #We see that 2 of 23 individuals look like AxB F1 hybrids.
+
 
 ### Next lets subset the F1 hybrids to keep one individual per superclone, preferably a high read depth individual
 ### Let's also keep one A and one B from D8 2017, also high read depth individuals

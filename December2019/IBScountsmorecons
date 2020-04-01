@@ -1,0 +1,88 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(gdsfmt)
+  library(SNPRelate)
+  library(data.table)
+  library(ggplot2)
+  library(foreach)
+  library(lattice)
+  library(tidyr)
+  library(SeqArray)
+
+### args ###
+############
+  args=commandArgs(trailingOnly=TRUE)
+  varA=args[1]
+
+### set working directory
+  setwd("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC")
+
+### open GDS file
+  genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+### Load SuperClone file
+  sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+  sc <- sc[Nonindependent==0 & Species=="pulex"]
+
+### Load LD-pruned SNP-set
+  load("finalsetsnpset01pulex_20200207.Rdata")
+  seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+  snps <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+    chr = seqGetData(genofile, "chromosome"),
+    pos = seqGetData(genofile, "position"))
+
+### Pull out individuals from a specific superclone
+  ids <- sc$clone[sc$Nonindependent==0 & sc$Species=="pulex" & sc$SC==varA]
+  seqSetFilter(genofile, sample.id=ids)
+
+### Pull out genotypes
+  het <- t(seqGetData(genofile, "$dosage"))
+  het <- as.data.table(het)
+
+  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+  het$variant.ids <- seqGetData(genofile, "variant.id")
+
+  hetlong <- melt(het, measure.vars=ids, variable.name="clone", value.name="dosage")
+
+  genoclone <- hetlong[, .N, by=list(variant.ids, dosage)]
+
+#Remove NAs
+  genoclone <- genoclone[dosage!="NA"]
+
+#Transform to wide format
+  genoclonewide <- dcast(genoclone, variant.ids ~ dosage, value.var="N")
+  colnames(genoclonewide) <- c("variant.id", "dos0", "dos1", "dos2")
+  genoclonewide[is.na(dos0),dos0:=0]
+  genoclonewide[is.na(dos1),dos1:=0]
+  genoclonewide[is.na(dos2),dos2:=0]
+
+  genoclonewide$total <- genoclonewide$dos0+genoclonewide$dos1+genoclonewide$dos2
+  genoclonewide$prophet <- genoclonewide$dos1/genoclonewide$total
+  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5]
+
+  seqSetFilter(genofile, variant.id=sitestouse)
+
+#Now make table of genotypes for all individuals of the superClone
+
+  obs.geno <- cbind(snps[1:length(sitestouse)], as.data.frame(t(seqGetData(genofile, "$dosage"))))
+  setnames(obs.geno, names(obs.geno)[grepl("V[0-9]*", names(obs.geno))], seqGetData(genofile, "sample.id"))
+  obs.geno <- melt(obs.geno, id.vars=c("variant.id", "chr", "pos"), variable.name="clone", value.name="obsGeno")
+
+#Remove missing genotypes
+  obs.geno  <- obs.geno[!is.na(obsGeno)]
+
+#Count occurrence of each genotype for each clone
+  countgc <- obs.geno[, .N, by=list(clone, obsGeno)]
+  countwide <- dcast(countgc, clone ~ obsGeno, value.var="N")
+  colnames(countwide) <- c("clone", "obsaltgc", "obshet", "obsrefgc")
+  countwide[is.na(obsrefgc),obsrefgc:=0]
+  countwide[is.na(obshet),obshet:=0]
+  countwide[is.na(obsaltgc),obsaltgc:=0]
+  countwide$SC <- c(varA)
+
+  write.csv(countwide, file=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/IBSindobs_", varA, ".csv", sep=""), quote=F, row.names=F)
+
+
+  write.table(PulexSCsover4dt, file="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/PulexSCover4", quote=F, row.names=F, col.names=F)

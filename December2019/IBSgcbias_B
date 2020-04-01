@@ -1,0 +1,174 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(gdsfmt)
+  library(SNPRelate)
+  library(data.table)
+  library(ggplot2)
+  library(foreach)
+  library(lattice)
+  library(tidyr)
+  library(SeqArray)
+
+### args ###
+############
+  args=commandArgs(trailingOnly=TRUE)
+  varA=args[1]
+
+### set working directory
+  setwd("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC")
+
+### open GDS file
+  genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+  snps <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+    chr = seqGetData(genofile, "chromosome"),
+    pos = seqGetData(genofile, "position"))
+
+### Load SuperClone file
+  sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+  sc <- sc[Nonindependent==0 & Species=="pulex"]
+
+### Load LD-pruned SNP-set
+  load("finalsetsnpset01pulex_20200207.Rdata")
+  seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+  snpsB <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+    chr = seqGetData(genofile, "chromosome"),
+    pos = seqGetData(genofile, "position"))
+
+  all <-  (seqGetData(genofile, "allele"))
+  alldt <- as.data.table(all)
+  refalt <- separate(alldt, all, c("ref", "alt"), sep=",")
+  snpsB$ref <- refalt$ref
+  snpsB$alt <- refalt$alt
+
+#Alternatively use non-LD pruned SNP file
+  snpsvar <- fread("snpsvarpulexpresentinhalf_table_20200207")
+  colnames(snpsvar) <- c("oldvariant.id", "chr", "pos", "olddp")
+  setkey(snpsvar, chr, pos)
+  setkey(snps, chr, pos)
+  msnps <- merge(snpsvar, snps)
+  snpsids <- msnps$variant.id
+  seqSetFilter(genofile, variant.id=snpsids)
+
+
+### Pull out individuals from a specific superclone
+  seqResetFilter(genofile)
+  seqSetFilter(genofile, variant.id=finalsetsnpset01)
+  ids <- sc$clone[sc$Nonindependent==0 & sc$Species=="pulex" & sc$SC==varA]
+  seqSetFilter(genofile, sample.id=ids)
+
+### Pull out genotypes
+  het <- t(seqGetData(genofile, "$dosage"))
+  het <- as.data.table(het)
+
+  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+  het$variant.ids <- seqGetData(genofile, "variant.id")
+
+  hetlong <- melt(het, measure.vars=ids, variable.name="clone", value.name="dosage")
+
+  dp <- t((seqGetData(genofile, "annotation/format/DP"))$data)
+  dp <- as.data.table(dp)
+
+  colnames(dp) <- c(seqGetData(genofile, "sample.id"))
+  dp$variant.ids <- seqGetData(genofile, "variant.id")
+
+  dplong <- melt(dp, measure.vars=ids, variable.name="clone", value.name="dp")
+
+  setkey(hetlong, variant.ids, clone)
+  setkey(dplong, variant.ids, clone)
+  hetlongrd <- merge(hetlong, dplong)
+
+### Set low rd to missing
+  hetlongrd$dosageB <- ifelse(hetlongrd$dp > 9, hetlongrd$dosage, "NA")
+
+  genoclone <- hetlongrd[, .N, by=list(variant.ids, dosageB)]
+
+#Remove NAs
+  genoclone <- genoclone[dosageB!="NA"]
+
+#Transform to wide format
+  genoclonewide <- dcast(genoclone, variant.ids ~ dosageB, value.var="N")
+  colnames(genoclonewide) <- c("variant.id", "dos0", "dos1", "dos2")
+  genoclonewide[is.na(dos0),dos0:=0]
+  genoclonewide[is.na(dos1),dos1:=0]
+  genoclonewide[is.na(dos2),dos2:=0]
+
+  genoclonewide$total <- genoclonewide$dos0+genoclonewide$dos1+genoclonewide$dos2
+  genoclonewide$prophet <- genoclonewide$dos1/genoclonewide$total
+  maxtot <- max(genoclonewide$total)
+  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5 & (maxtot-genoclonewide$total)/maxtot > 0.5 &
+    genoclonewide$total-genoclonewide$dos1 > 1]
+
+  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5 & (maxtot-genoclonewide$total)/maxtot > 0.5 &
+    genoclonewide$total-genoclonewide$dos1 > 1]
+
+
+
+  setkey(genoclonewide, variant.id)
+  setkey(snps, variant.id)
+  mgenoclonewide <- merge(genoclonewide, snps)
+  mgenoclonewide$refalt <- paste(mgenoclonewide$ref,mgenoclonewide$alt, sep="_")
+  mgenoclonewide$gcsite <- ifelse(mgenoclonewide$prophet>0.5 & mgenoclonewide$prophet < 1, 1, 0)
+  gctable <- table(mgenoclonewide$refalt, mgenoclonewide$gcsite)
+  gctabledt <- as.data.table(gctable)
+  colnames(gctabledt) <- c("refalt", "gcsite", "Num")
+  gctabledtwide <- dcast(gctabledt, refalt ~ gcsite, value.var="Num")
+  colnames(gctabledtwide) <- c("refalt", "nongc", "gc")
+  gctabledtwide$propgc <- gctabledtwide$gc/(gctabledtwide$gc+gctabledtwide$nongc)
+
+
+  #sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5]
+  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5 & genoclonewide$total-genoclonewide$dos1 > 1]
+
+  seqSetFilter(genofile, variant.id=sitestouse)
+
+
+  obs.geno <- cbind(snps[1:length(sitestouse)], as.data.frame(t(seqGetData(genofile, "$dosage"))))
+  setnames(obs.geno, names(obs.geno)[grepl("V[0-9]*", names(obs.geno))], seqGetData(genofile, "sample.id"))
+  obs.geno <- melt(obs.geno, id.vars=c("variant.id", "chr", "pos", "ref", "alt"), variable.name="clone", value.name="obsGeno")
+
+  obs.geno$refalt <- paste(obs.geno$ref, obs.geno$alt, sep="_")
+  genoclone <- obs.geno[, .N, by=list(variant.id, obsGeno, refalt)]
+  genoclone <- genoclone[obsGeno!="NA"]
+  genoclonewide <- dcast(genoclone, variant.id~obsGeno, value.var="N")
+  colnames(genoclonewide) <- c("variant.id", "dos0", "dos1", "dos2")
+  genoclonewide[is.na(dos0),dos0:=0]
+  genoclonewide[is.na(dos1),dos1:=0]
+  genoclonewide[is.na(dos2),dos2:=0]
+  setkey(genoclonewide, variant.id)
+  genoclonesub <- data.table(variant.id=genoclone$variant.id, refalt=genoclone$refalt)
+  genoclonesub <- unique(genoclonesub)
+  mgenoclonewide <- merge(genoclonewide, genoclonesub)
+  refalt <- separate(mgenoclonewide, refalt, c("ref", "alt"), sep="_")
+  refaltsub <- refalt[refalt$dos0==0 | refalt$dos2==0]
+  refaltsub$As <- ifelse(refaltsub$ref=="A" & refaltsub$dos2>0, 1, ifelse(refaltsub$alt=="A" & refaltsub$dos0>0, 1, 0))
+  refaltsub$Cs <- ifelse(refaltsub$ref=="C" & refaltsub$dos2>0, 1, ifelse(refaltsub$alt=="C" & refaltsub$dos0>0, 1, 0))
+  refaltsub$Gs <- ifelse(refaltsub$ref=="G" & refaltsub$dos2>0, 1, ifelse(refaltsub$alt=="G" & refaltsub$dos0>0, 1, 0))
+  refaltsub$Ts <- ifelse(refaltsub$ref=="T" & refaltsub$dos2>0, 1, ifelse(refaltsub$alt=="T" & refaltsub$dos0>0, 1, 0))
+
+
+  tmptable <- table(obs.geno$refalt, obs.geno$obsGeno)
+  tmptable <- as.data.table(tmptable)
+  colnames(tmptable) <- c("refalt", "obsGeno", "Num")
+  tmptablewide <- dcast(tmptable, refalt~obsGeno, value.var="Num")
+  colnames(tmptablewide) <- c("refalt", "gchomalt", "het", "gchomref")
+  tmptablewidesub <- tmptablewide[refalt!="A_T" & refalt!="C_G" & refalt!="G_C" & refalt!="T_A"]
+  refalt <- separate(tmptablewidesub, refalt, c("ref", "alt"), sep="_")
+  refalt$Cs <- ifelse(refalt$ref=="C", refalt$gchomref, ifelse(refalt$alt=="C", refalt$gchomalt, 0))
+  refalt$As <- ifelse(refalt$ref=="A", refalt$gchomref, ifelse(refalt$alt=="A", refalt$gchomalt, 0))
+  refalt$Gs <- ifelse(refalt$ref=="G", refalt$gchomref, ifelse(refalt$alt=="G", refalt$gchomalt, 0))
+  refalt$Ts <- ifelse(refalt$ref=="T", refalt$gchomref, ifelse(refalt$alt=="T", refalt$gchomalt, 0))
+  refalt$Asalt <- ifelse(refalt$alt=="A", refalt$gchomalt, 0)
+  refalt$Csalt <- ifelse(refalt$alt=="C", refalt$gchomalt, 0)
+  refalt$Gsalt <- ifelse(refalt$alt=="G", refalt$gchomalt, 0)
+  refalt$Tsalt <- ifelse(refalt$alt=="T", refalt$gchomalt, 0)
+
+
+  (seqGetData(genofile, "allele"))
+  ad <- seqGetData(genofile, var.name="annotation/format/AD", .useraw=FALSE)
+  ad.ref = expand.grid(as.matrix(ad$data[,c(1:(2*length(snps$pos)))%%2==1], ncol=length(snps$pos)))[,1]
+  ad.alt = expand.grid(as.matrix(ad$data[,c(1:(2*length(snps$pos)))%%2==0], ncol=length(snps$pos)))[,1]
+  snp.id <- rep(snps$variant.ids, each=length(seqGetData(gdsfile=genofile, var.name="sample.id", .useraw=FALSE)))
+  gt.dt <- data.table(snp.id=snp.id, sample.id=sample.id, GT=geno, ref.rd=ad.ref, alt.rd=ad.alt)
