@@ -33,26 +33,21 @@
 #done
 
 # index bgzippped files
-  for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz; do
-    #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
-    echo "File -> $f"
-    tabix \
-    -p vcf \
-    -f \
-    ${f}
-  done
+#  for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz; do
+#    #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
+#    echo "File -> $f"
+#    tabix \
+#    -p vcf \
+#    -f \
+#    ${f}
+#  done
 
+  bcftools \
+  merge \
+  -l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list \
+  -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.bcf \
+  -O b \
+  --threads 20
 
-
-  # merge
-    ls /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
-
-    bcftools \
-    merge \
-    -l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list \
-    -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.bcf \
-    -O b \
-    --threads 20
-
-  # index
-    bcftools index --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.bcf
+# index
+  bcftools index --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.bcf
