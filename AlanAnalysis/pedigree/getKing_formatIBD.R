@@ -1,3 +1,5 @@
+# ijob -c1 -p standard -A berglandlab
+
 #module load intel/18.0 intelmpi/18.0 R/3.6.0; R
 
 ### libraries
@@ -10,11 +12,25 @@
 
 ### clone metadata file
   sc <- fread("/project/berglandlab/Karen/MappingDec2019/CloneInfoFilePulexandObtusa_withmedrd_update20200324")
+
+  sc <- sc[Nonindependent==0]
+
   sc[,SC.uniq:=SC]
   sc[SC=="OO", SC.uniq:=paste(SC, SCnum, sep="")]
 
-  sc.ag <- sc[Species=="pulex",list(clone=clone[which.max(medrd)][1]), list(SC.uniq)]
+### hard filtering of SC
+  sc <- sc[SC!="OO"]
+
+  sc.ag <- sc[Species=="pulex", list(clone=clone[which.max(medrd)][1], year=year[which.min(year)][1]), list(SC.uniq)]
+  sc.ag[,age:=max(sc.ag$year) - year + 1]
   table(sc.ag$SC.uniq)
+
+### write age file
+  ages <- data.table(FID=sc.ag$clone, IID=sc.ag$clone, age=sc.ag$age)
+
+  write.table(ages,
+              file="/scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ag.delim",
+                          quote=F, row.names=F, sep="\t")
 
 ### filtered SNP set
   snps <- fread("/project/berglandlab/Karen/MappingDec2019/finalsetsnpset01pulex_table_20200207")

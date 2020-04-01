@@ -1,17 +1,27 @@
 # Get data in right place
-  1. copyBams.sh
-  2. bams2phase.sh
-  3. path2bams
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyBams.sh`
+
+# these are some index files created by scripts for slurm. I don't remember exactly which scripts make these files.
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/bams2phase.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/path2bams`
 
 # Run Whatshapp to generate read-backed phase-sets
-  1. DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh`
 
 # merge individual vcfs
-  1. 
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh`
 
+# shapeit4
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh`
 
+  ### poking about
+    module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
+    bcftools view Scaffold_2373_HRSCAF_2879.whatshapp.shapeit.bcf | grep -v "##" | less -S
 
+# duoHMM
+  wget https://mathgen.stats.ox.ac.uk/genetics_software/duohmm/duohmm_v0.1.7.tar.gz
 
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/duoHMM.sh`
 
 
 
