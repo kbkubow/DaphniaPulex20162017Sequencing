@@ -1,0 +1,371 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(gdsfmt)
+  library(SNPRelate)
+  library(data.table)
+  library(ggplot2)
+  library(foreach)
+  library(lattice)
+  library(tidyr)
+  library(SeqArray)
+  library(cowplot)
+
+### Load Observed IBS file
+  inputobsfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/", pattern="IBSindobs_")
+  #obs <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/IBSindobs_R.csv")
+  totalibsobs <- foreach(i=1:length(inputobsfiles), .combine="rbind")%do%{
+    f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/", inputobsfiles[i], sep="")
+    obs <- fread(f)
+    obs
+  }
+
+### Load simulated IBS files
+  inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimE/", pattern="IBSindsim_")
+
+  totalibssim <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
+    f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimE/", inputfiles[i], sep="")
+    sim <- fread(f)
+    sim
+  }
+
+  totalibssim$totalgc <- totalibssim$dos0 + totalibssim$dos2
+  totalibssim$total <- totalibssim$dos0 + totalibssim$dos2 + totalibssim$dos1
+  totalibsobs$totalobsgc <- totalibsobs$obsaltgc + totalibsobs$obsrefgc
+
+  totalibssim.ag <- totalibssim[,list(meansimaltgc = mean(dos0, na.rm=TRUE), meansimhet=mean(dos1, na.rm=TRUE),
+    meansimrefgc=mean(dos2, na.rm=TRUE), meansimtotgc=mean(totalgc, na.rm=TRUE), meantotalsites=mean(total, na.rm=TRUE)), list(clone, SC, afs)]
+
+  setkey(totalibssim.ag, clone, SC)
+  setkey(totalibsobs, clone, SC)
+  mIBSsimvsobs <- merge(totalibssim.ag, totalibsobs)
+
+  mIBSsimvsobs$excesstot <- mIBSsimvsobs$totalobsgc-mIBSsimvsobs$meansimtotgc
+  mIBSsimvsobs$proprealtot <- (mIBSsimvsobs$totalobsgc-mIBSsimvsobs$meansimtotgc)/mIBSsimvsobs$totalobsgc
+
+#  totestgc <- (mean(mIBSsimvsobs$propinctot))*(mean(mIBSsimvsobs$meansimtotgc))
+
+  #What is influence of read depth?
+
+  sc <- fread("CloneInfoFilePulexandObtusa_withmedrd_20200207")
+
+  setkey(sc, clone, SC)
+  setkey(mIBSsimvsobs, clone, SC)
+  mIBSsimvsobsclone <- merge(mIBSsimvsobs, sc)
+
+  ggplot(data=mIBSsimvsobsclone, aes(x=medrd, y=proprealtot)) + geom_point()
+  ggplot(data=mIBSsimvsobsclone, aes(x=medrd, y=excesstot)) + geom_point()
+
+  ggplot(data=mIBSsimvsobsclone, aes(x=as.factor(SC), y=excesstot)) + geom_point()
+
+
+  totestgcmean <- (mean(mIBSsimvsobs$propinctot))*(mean(mIBSsimvsobs$meansimtotgc))
+  totestgcmed <- (median(mIBSsimvsobs$propinctot))*(median(mIBSsimvsobs$meansimtotgc))
+
+  temp <- unlist(strsplit(mIBSsimvsobsclone$clone, split="_"))
+  mat <- matrix(temp, ncol=4, byrow=TRUE)
+  matdat <- as.data.table(mat)
+  mIBSsimvsobsclone$population <- matdat$V3
+  mIBSsimvsobsclone$year <- matdat$V2
+
+  ggplot(data=mIBSsimvsobsclone, aes(x=as.factor(year), y=excesstot)) + geom_point()
+  ggplot(data=mIBSsimvsobsclone[year=="2017"], aes(x=medrd, y=excesstot)) + geom_point()
+
+### Load in 2N mutations counts
+  inputobsmutfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobsmut/", pattern="IBSindobsmut_2N_")
+  totalibsobsmut <- foreach(i=1:length(inputobsmutfiles), .combine="rbind")%do%{
+    f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobsmut/", inputobsmutfiles[i], sep="")
+    obs <- fread(f)
+    obs
+  }
+
+  ggplot(data=totalibsobsmut, aes(x=as.factor(SC), y=obshet)) + geom_point()
+  ggplot(data=totalibsobsmut[SC!="H"], aes(x=as.factor(SC), y=obshet)) + geom_point()
+
+  sc <- fread("CloneInfoFilePulexandObtusa_withmedrd_20200207")
+
+  setkey(sc, clone, SC)
+  setkey(totalibsobsmut, clone, SC)
+  totalibsobsmutclone <- merge(totalibsobsmut, sc)
+
+  ggplot(data=totalibsobsmutclone[SC!="H" & medrd > 5], aes(x=as.factor(SC), y=obshet)) + geom_point()
+  ggplot(data=totalibsobsmutclone[SC!="H" & medrd > 9], aes(x=as.factor(SC), y=obshet)) + geom_point()
+  ggplot(data=totalibsobsmutclone[SC!="H" & medrd > 14], aes(x=as.factor(SC), y=obshet)) + geom_point()
+
+  temp <- unlist(strsplit(totalibsobsmutclone$clone, split="_"))
+  mat <- matrix(temp, ncol=4, byrow=TRUE)
+  matdat <- as.data.table(mat)
+  totalibsobsmutclone$population <- matdat$V3
+  totalibsobsmutclone$year <- matdat$V2
+
+  mIBSsimvsobsclonesub <- data.table(clone=mIBSsimvsobsclone$clone, excesstot=mIBSsimvsobsclone$excesstot)
+  setkey(totalibsobsmutclone, clone)
+  setkey(mIBSsimvsobsclonesub, clone)
+  mm <- merge(mIBSsimvsobsclonesub, totalibsobsmutclone)
+
+  ggplot(data=totalibsobsmutclone[SC=="B" & medrd > 0 & clone!="April_2017_DCat_5"], aes(x=as.factor(year), y=obshet)) + geom_point()
+  ggplot(data=totalibsobsmutclone[SC=="B" & medrd > 5 & clone!="April_2017_DCat_5"], aes(x=as.factor(year), y=obshet)) + geom_point()
+  ggplot(data=totalibsobsmutclone[SC=="B" & medrd > 9 & clone!="April_2017_DCat_5"], aes(x=as.factor(year), y=obshet)) + geom_point()
+
+  ggplot(data=totalibsobsmutclone, aes(x=medrd, y=obshet, color=SC)) + geom_point()
+  ggplot(data=totalibsobsmutclone[SC!="H"], aes(x=medrd, y=obshet, color=SC)) + geom_point()
+
+  DBunk_108 <- ggplot(data=totalibssim[clone=="April_2017_DBunk_108"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_DBunk_108"], color="red")
+  DBunk_149 <- ggplot(data=totalibssim[clone=="April_2017_DBunk_149"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_DBunk_149"], color="red")
+  DBunk_151 <- ggplot(data=totalibssim[clone=="April_2017_DBunk_151"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_DBunk_151"], color="red")
+  DBunk_253 <- ggplot(data=totalibssim[clone=="April_2017_DBunk_253"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_DBunk_253"], color="red")
+  DBunk_314 <- ggplot(data=totalibssim[clone=="April_2017_DBunk_314"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_DBunk_314"], color="red")
+  DBunk_6 <- ggplot(data=totalibssim[clone=="April_2017_DBunk_6"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_DBunk_6"], color="red")
+  DBunk_106 <- ggplot(data=totalibssim[clone=="Spring_2017_DBunk_106"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2017_DBunk_106"], color="red")
+  DBunk_277 <- ggplot(data=totalibssim[clone=="Spring_2017_DBunk_277"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2017_DBunk_277"], color="red")
+  DBunk_298 <- ggplot(data=totalibssim[clone=="Spring_2017_DBunk_298"], aes(x=totalgc)) + geom_histogram() +
+    geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2017_DBunk_298"], color="red")
+
+    plot_grid(DBunk_108, DBunk_149, DBunk_151, DBunk_253, DBunk_314, DBunk_6, DBunk_106, DBunk_277, DBunk_298)
+
+  setkey(obs, clone)
+  setkey(totalibssim, clone)
+  m <- merge(totalibssim, obs)
+
+
+
+  totalibssim.ag <- totalibssim[,list(meanrefgc = mean(refgc, na.rm=TRUE),
+    meanaltgc = mean(altgc, na.rm=TRUE), meantotalgc = mean(totalgc, na.rm=TRUE)), list(clone) ]
+
+  setkey(totalibssim.ag, clone)
+  setkey(obs, clone)
+  simobs <- merge(totalibssim.ag, obs)
+
+  simobs$obstotalgc <- simobs$obsaltgc+simobs$obsrefgc
+  simobs$excesstotalgc <- simobs$obstotalgc-simobs$meantotalgc
+  simobs$excessrefgc <- simobs$obsrefgc-simobs$meanrefgc
+  simobs$excessaltgc <- simobs$obsaltgc-simobs$meanaltgc
+
+
+  ### Load Observed IBS file
+    obs <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/IBSindobs_K.csv")
+
+  ### Load simulated IBS files
+    inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", pattern="IBSindsim_K_")
+
+    totalibssim <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
+      f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", inputfiles[i], sep="")
+      sim <- fread(f)
+      sim
+    }
+
+    totalibssim$totalgc <- totalibssim$refgc + totalibssim$altgc
+    obs$totalobsgc <- obs$obsaltgc + obs$obsrefgc
+
+    DBunk_Male5 <- ggplot(data=totalibssim[clone=="April29_2018_DBunk_Male5"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="April29_2018_DBunk_Male5"], color="red")
+    D8_46 <- ggplot(data=totalibssim[clone=="March20_2018_D8_46"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_D8_46"], color="red")
+    DBunk_1 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_1"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_1"], color="red")
+    DBunk_12 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_12"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_12"], color="red")
+    DBunk_13 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_13"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_13"], color="red")
+    DBunk_15 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_15"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_15"], color="red")
+    DBunk_17 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_17"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_17"], color="red")
+    DBunk_20 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_20"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_20"], color="red")
+    DBunk_28 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_28"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_28"], color="red")
+    DBunk_30 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_30"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_30"], color="red")
+    DBunk_9 <- ggplot(data=totalibssim[clone=="March20_2018_DBunk_9"], aes(x=totalgc)) + geom_histogram() +
+      geom_vline(xintercept = obs$totalobsgc[obs$clone=="March20_2018_DBunk_9"], color="red")
+
+      plot_grid(DBunk_Male5, D8_46, DBunk_1, DBunk_12, DBunk_13, DBunk_15, DBunk_17, DBunk_20, DBunk_28, DBunk_30, DBunk_9)
+
+
+
+      #!/usr/bin/env Rscript
+
+      ### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(cowplot)
+
+      ### Load Observed IBS file
+        obs <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/IBSindobs_C.csv")
+
+      ### Load simulated IBS files
+        inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", pattern="IBSindsim_C_April")
+
+        totalibssim <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
+          f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", inputfiles[i], sep="")
+          sim <- fread(f)
+          sim
+        }
+
+        totalibssim$totalgc <- totalibssim$refgc + totalibssim$altgc
+        obs$totalobsgc <- obs$obsaltgc + obs$obsrefgc
+
+
+        D8_125 <- ggplot(data=totalibssim[clone=="April_2017_D8_125"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_125"], color="red")
+        D8_143 <- ggplot(data=totalibssim[clone=="April_2017_D8_143"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_143"], color="red")
+        D8_17 <- ggplot(data=totalibssim[clone=="April_2017_D8_17"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_17"], color="red")
+        D8_210 <- ggplot(data=totalibssim[clone=="April_2017_D8_210"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_210"], color="red")
+        D8_32 <- ggplot(data=totalibssim[clone=="April_2017_D8_32"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_32"], color="red")
+        D8_47 <- ggplot(data=totalibssim[clone=="April_2017_D8_47"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_47"], color="red")
+        D8_58 <- ggplot(data=totalibssim[clone=="April_2017_D8_58"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_58"], color="red")
+        D8_91 <- ggplot(data=totalibssim[clone=="April_2017_D8_91"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_91"], color="red")
+        D8_130 <- ggplot(data=totalibssim[clone=="April_2017_D8_130"], aes(x=totalgc)) + geom_histogram() +
+          geom_vline(xintercept = obs$totalobsgc[obs$clone=="April_2017_D8_130"], color="red")
+
+          plot_grid(D8_125, D8_143, D8_17, D8_210, D8_32, D8_47, D8_58, D8_91, D8_130)
+
+
+          #!/usr/bin/env Rscript
+
+          ### libraries
+            library(gdsfmt)
+            library(SNPRelate)
+            library(data.table)
+            library(ggplot2)
+            library(foreach)
+            library(lattice)
+            library(tidyr)
+            library(SeqArray)
+            library(cowplot)
+
+          ### Load Observed IBS file
+            obs <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/IBSindobs_D.csv")
+
+          ### Load simulated IBS files
+            inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", pattern="IBSindsim_D")
+
+            totalibssim <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
+              f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", inputfiles[i], sep="")
+              sim <- fread(f)
+              sim
+            }
+
+            totalibssim$totalgc <- totalibssim$refgc + totalibssim$altgc
+            obs$totalobsgc <- obs$obsaltgc + obs$obsrefgc
+
+
+          D10_46 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_46"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_46"], color="red")
+          D10_49 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_49"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_49"], color="red")
+          D10_50<- ggplot(data=totalibssim[clone=="Fall_2016_D10_50"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_50"], color="red")
+          D10_57 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_57"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_57"], color="red")
+          D10_62 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_62"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_62"], color="red")
+          D10_63 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_63"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_63"], color="red")
+          D10_67 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_67"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_67"], color="red")
+          D10_70 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_70"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_70"], color="red")
+          D10_74 <- ggplot(data=totalibssim[clone=="Fall_2016_D10_74"], aes(x=totalgc)) + geom_histogram() +
+            geom_vline(xintercept = obs$totalobsgc[obs$clone=="Fall_2016_D10_74"], color="red")
+
+          plot_grid(D10_46, D10_49, D10_50, D10_57, D10_62, D10_63, D10_67, D10_70, D10_74)
+
+            D10.1 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.1"], aes(x=totalgc)) + geom_histogram() +
+              geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.1"], color="red")
+            D10.3 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.3"], aes(x=totalgc)) + geom_histogram() +
+              geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.3"], color="red")
+            D10.4 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.4"], aes(x=totalgc)) + geom_histogram() +
+              geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.4"], color="red")
+            D10.5 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.5"], aes(x=totalgc)) + geom_histogram() +
+              geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.5"], color="red")
+            D10.6 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.6"], aes(x=totalgc)) + geom_histogram() +
+              geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.6"], color="red")
+
+              plot_grid(D10.1, D10.3, D10.4, D10.5, D10.6)
+
+
+              #!/usr/bin/env Rscript
+
+              ### libraries
+                library(gdsfmt)
+                library(SNPRelate)
+                library(data.table)
+                library(ggplot2)
+                library(foreach)
+                library(lattice)
+                library(tidyr)
+                library(SeqArray)
+                library(cowplot)
+
+              ### Load Observed IBS file
+                obs <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobs/IBSindobs_H.csv")
+
+              ### Load simulated IBS files
+                inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", pattern="IBSindsim_H")
+
+                totalibssim <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
+                  f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/", inputfiles[i], sep="")
+                  sim <- fread(f)
+                  sim
+                }
+
+                totalibssim$totalgc <- totalibssim$refgc + totalibssim$altgc
+                obs$totalobsgc <- obs$obsaltgc + obs$obsrefgc
+
+
+              D8.1 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.1"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.1"], color="red")
+              D8.10 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.10"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.10"], color="red")
+              D8.12<- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.12"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.12"], color="red")
+              D8.14 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.14"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.14"], color="red")
+              D8.18 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.18"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.18"], color="red")
+              D8.21 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.21"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.21"], color="red")
+              D8.28 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.28"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.28"], color="red")
+              D8.29 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.29"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.29"], color="red")
+              D8.3 <- ggplot(data=totalibssim[clone=="Spring_2016_D8_8.3"], aes(x=totalgc)) + geom_histogram() +
+                geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D8_8.3"], color="red")
+
+              plot_grid(D8.1, D8.10, D8.12, D8.14, D8.18, D8.21, D8.28, D8.29, D8.3)
+
+                D10.1 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.1"], aes(x=totalgc)) + geom_histogram() +
+                  geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.1"], color="red")
+                D10.3 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.3"], aes(x=totalgc)) + geom_histogram() +
+                  geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.3"], color="red")
+                D10.4 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.4"], aes(x=totalgc)) + geom_histogram() +
+                  geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.4"], color="red")
+                D10.5 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.5"], aes(x=totalgc)) + geom_histogram() +
+                  geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.5"], color="red")
+                D10.6 <- ggplot(data=totalibssim[clone=="Spring_2016_D10_10.6"], aes(x=totalgc)) + geom_histogram() +
+                  geom_vline(xintercept = obs$totalobsgc[obs$clone=="Spring_2016_D10_10.6"], color="red")
+
+                  plot_grid(D10.1, D10.3, D10.4, D10.5, D10.6)

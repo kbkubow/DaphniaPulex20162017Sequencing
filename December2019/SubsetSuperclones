@@ -1,0 +1,244 @@
+#!/usr/bin/env Rscript
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+#Load genotype file
+        genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+#Load superclone file
+        sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+
+#Load SNP file
+        load("finalsetsnpset01pulex_20200207.Rdata")
+        seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+        snps <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+          chr = seqGetData(genofile, "chromosome"),
+          pos = seqGetData(genofile, "position"))
+
+#Remove non-independent individuals and obtusa from superclone file
+        scsub <- sc[Nonindependent==0 & Species=="pulex"]
+        scids <- scsub$clone
+        seqSetFilter(genofile, sample.id=scids)
+
+#Pull out read depth info
+        dp <- t((seqGetData(genofile, "annotation/format/DP"))$data)
+        dp <- as.data.table(dp)
+
+        colnames(dp) <- c(seqGetData(genofile, "sample.id"))
+        dp$variant.ids <- seqGetData(genofile, "variant.id")
+
+        dplong <- melt(dp, measure.vars=scids, variable.name="clone", value.name="dp")
+
+        dplong.ag <- dplong[,list(medrd = median(dp, na.rm=TRUE)), list(clone) ]
+
+        setkey(sc, clone)
+        setkey(dplong.ag, clone)
+        msc <- merge(sc, dplong.ag)
+
+        write.table(msc, file="CloneInfoFilePulexandObtusa_withmedrd_20200207", sep="\t", row.names=FALSE, quote=FALSE)
+
+#OK, let's select one individual from each superclone with the highest median readdepth
+
+    # First let's separate the unique individuals and superclones
+        supers <- msc[SC!="OO"]
+        uniques <- msc[SC=="OO"]
+
+    # Pull out a list of unique superclones
+        setkey(supers, SC)
+        scs <- unique(supers$SC)
+
+    # Ok, now let's loop through and grab the individual with max read depth from each superclone
+        supersub <- foreach(i=1:length(scs), .combine="rbind")%do%{
+          s <- scs[i]
+          supertmp <- supers[SC==s]
+          m <- max(supertmp$medrd)
+          tmp2 <- supertmp[medrd==m]
+          tmp3 <- tmp2[sample(nrow(tmp2), 1), ]
+          tmp3
+        }
+    # OK, add uniques back in
+        superclonesubset <- rbind(supersub, uniques)
+
+    # Would be nice to add back in some count info, let's see how we can do this
+    # First lets calculate some count info, would be nice to have overall counts, but also by pond/year
+    # Let's start with overall count
+
+      totalabundance <- msc[, .N, by=list(SC)]
+      totalabundancenoOO <- totalabundance[SC!="OO"]
+      colnames(totalabundancenoOO) <- c("SC", "totabund")
+      setkey(totalabundancenoOO, SC)
+      setkey(superclonesubset, SC)
+      superclonesubsettotabund <- merge(superclonesubset, totalabundancenoOO, all.x=TRUE)
+      superclonesubsettotabund[is.na(totabund),totabund:=1]
+
+      save(superclonesubsettotabund, file="superclonesubsettotabund_20200207.Rdata")
+
+    # Woohoo! Now the more complicated part. How about add in abundance by year and population, don't worry about season for now.
+
+      abundancebypondyear <- msc[, .N, by=list(SC, population, year)]
+    #Hmm, not sure of the best way to add this in to the subset file, maybe won't for now.
+
+  ### How about we try a PCA using the subset
+
+  library(gdsfmt)
+  library(SNPRelate)
+  library(data.table)
+  library(ggplot2)
+  library(foreach)
+  library(lattice)
+  library(tidyr)
+  library(SeqArray)
+  library(tidyverse)
+
+#Load genotype file
+  genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+# Load superclone files and set filter for subswet
+  sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+
+  load("superclonesubsettotabund_20200207.Rdata")
+  scsubsetids <- as.character(superclonesubsettotabund$clone)
+  seqSetFilter(genofile, sample.id=scsubsetids)
+
+#Load LD pruned snp set and set filter
+  load("finalsetsnpset01pulex_20200207.Rdata")
+  seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+# Run PCA
+### set some global parameters
+			maf <- 0.001
+			missing.rate <- 0.15
+			threads <- 10
+
+  pca <- snpgdsPCA(genofile, snp.id=finalsetsnpset01, sample.id=scsubsetids, autosome.only=FALSE, maf=maf,
+        missing.rate=missing.rate, num.thread=threads)
+  #Working space: 520 samples, 355,506 SNVs
+
+  pc.percent <- pca$varprop*100
+  head(round(pc.percent, 2))
+  #23.15  9.81  7.95  7.32  4.24  3.97
+
+  tab <- data.frame(clone = pca$sample.id,
+    EV1 = pca$eigenvect[,1],
+    EV2 = pca$eigenvect[,2],
+    stringsAsFactors = FALSE)
+  head(tab)
+
+  temp <- unlist(strsplit(tab$clone, split="_"))
+  mat <- matrix(temp, ncol=4, byrow=TRUE)
+  matdat <- as.data.table(mat)
+  tab$population <- matdat$V3
+  tab$year <- matdat$V2
+  tab$season <- matdat$V1
+  tab$popseason <- paste(tab$population,"_",tab$season, sep="")
+  tab$season2 <- ifelse(tab$season=="April", "Spring", tab$season)
+  tab$seasonyear <- paste(tab$year,"_",tab$season2, sep="")
+
+  tab <- as.data.table(tab)
+
+  ggplot(data=tab, aes(x=EV1, y=EV2, color=popseason)) + geom_point()
+
+### Now let's focus in on Dorset
+  tabtouse <- tab[population!="W1" & population!="W6" & population!="D10"]
+  NoD10orW <- tabtouse$clone
+
+  pca <- snpgdsPCA(genofile, snp.id=finalsetsnpset01, sample.id=NoD10orW, autosome.only=FALSE, maf=maf,
+        missing.rate=missing.rate, num.thread=threads)
+  #Working space: 165 samples, 80,352 SNVs
+
+  pc.percent <- pca$varprop*100
+  head(round(pc.percent, 2))
+  #8.27 5.87 5.07 3.65 3.50 3.12
+
+  tab <- data.frame(clone = pca$sample.id,
+    EV1 = pca$eigenvect[,1],
+    EV2 = pca$eigenvect[,2],
+    stringsAsFactors = FALSE)
+  head(tab)
+
+  temp <- unlist(strsplit(tab$clone, split="_"))
+  mat <- matrix(temp, ncol=4, byrow=TRUE)
+  matdat <- as.data.table(mat)
+  tab$population <- matdat$V3
+  tab$year <- matdat$V2
+  tab$season <- matdat$V1
+  tab$popseason <- paste(tab$population,"_",tab$season, sep="")
+  tab$season2 <- ifelse(tab$season=="April", "Spring", tab$season)
+  tab$seasonyear <- paste(tab$year,"_",tab$season2, sep="")
+
+  tab <- as.data.table(tab)
+
+  ggplot(data=tab, aes(x=EV1, y=EV2, color=popseason)) + geom_point()
+
+  # There is clearly one outlier individual. Need to look into what is up with this one at some point. March15_2019_DBunk_MomPE4
+
+  tabtouse <- tab[clone!="March15_2019_DBunk_MomPE4"]
+  noD10orWorOutlier <- tabtouse$clone
+
+  pca <- snpgdsPCA(genofile, snp.id=finalsetsnpset01, sample.id=noD10orWorOutlier, autosome.only=FALSE, maf=maf,
+        missing.rate=missing.rate, num.thread=threads)
+  #Working space: 164 samples, 76,091 SNVss
+
+  pc.percent <- pca$varprop*100
+  head(round(pc.percent, 2))
+  #8.68 5.38 3.88 3.71 3.31 2.66
+
+  tab <- data.frame(clone = pca$sample.id,
+    EV1 = pca$eigenvect[,1],
+    EV2 = pca$eigenvect[,2],
+    stringsAsFactors = FALSE)
+  head(tab)
+
+  tab <- as.data.table(tab)
+
+  setkey(tab, clone)
+  superclonesubsettotabund$year <- as.character(superclonesubsettotabund$year)
+  setkey(superclonesubsettotabund, clone)
+  mtab <- merge(tab, superclonesubsettotabund)
+
+  ggplot(data=mtab[population=="D8"], aes(x=EV1, y=EV2, color=as.factor(SC))) + geom_point()
+
+  sc$population <- ifelse(sc$population=="Dcat", "DCat", sc$population)
+  scsuper <- sc[SC!="OO"]
+  abundancebypondyearsc <- scsuper[, .N, by=list(SC, population, year)]
+
+  mtabsuper <- mtab[SC!="OO"]
+
+  abundancebypondyearsc$year <- as.character(abundancebypondyearsc$year)
+  setkey(abundancebypondyearsc, SC)
+  setkey(mtabsuper, SC)
+  mmtabsuper <- merge(abundancebypondyearsc, mtabsuper)
+
+  scunique <- sc[SC=="OO"]
+  abundancebypondyearscunique <- scunique[, .N, by=list(SC, population, year)]
+  abundancebypondyearscunique$N <- c(1)
+  mtabunique <- mtab[SC=="OO"]
+
+  abundancebypondyearscunique$year <- as.character(abundancebypondyearscunique$year)
+  setkey(abundancebypondyearscunique, SC, population, year)
+  setkey(mtabunique, SC, population, year)
+  mmtabunique <- merge(abundancebypondyearscunique, mtabunique)
+
+
+  abundancebypondyear <- sc[, .N, by=list(SC, population, year)]
+  abundancebypondyear$N <- ifelse(abundancebypondyear$SC=="OO", 1, abundancebypondyear$N)
+
+  setkey(mtab, SC, population, year)
+  abundancebypondyear$year <- as.character(abundancebypondyear$year)
+  setkey(abundancebypondyear, SC, population, year)
+  mmtab <- merge(mtab, abundancebypondyear)
+
+  ggplot(data=mmtab[population=="D8" & EV2 < 0.2], aes(x=EV1, y=EV2, color=as.factor(SC))) + geom_point(aes(size=N))
+
+
+### Three clear outlier clones in D82016
