@@ -1,25 +1,21 @@
-#!/usr/bin/env bash
-#
-#
-#SBATCH -J primus # A single job name for the array
-#SBATCH --ntasks-per-node=1 # one core
-#SBATCH -N 1 # on one node
-#SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 6:00:00 # Running time of 15 minutes
-#SBATCH --mem 9G # Memory request of 4GGB
-#SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/primus.%A_%a.out # Standard output
-#SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/primus.%A_%a.err # Standard error
-#SBATCH -p standard
-#SBATCH --account berglandlab
 
+cp /mnt/sammas_storage/bergland-lab/alan/PRIMUS_v1.9.0.tgz /mnt/internal_1/primus/.
+cp /mnt/sammas_storage/bergland-lab/alan/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim /mnt/internal_1/primus/.
 
-### run primus: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pedigree/primus.sh
+wd=/mnt/internal_1/primus/PRIMUS_v1.9.0/bin/
 
+#rm -fr /mnt/internal_1/primus/primusOut/*
+cd /mnt/internal_1/primus/primusOut/
 
-module load perl
-
-${wd}/run_PRIMUS.pl \
--i FILE=/scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim \
+nohup ${wd}/run_PRIMUS.pl \
+-i FILE=/mnt/internal_1/primus/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim \
 IBD0=7 IBD1=8 IBD2=9 PI_HAT=10 \
--o /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
+--max_gen_gap 2 \
+-o /mnt/internal_1/primus/primusOut/ \
 -v 3 &
+
+
+scp bergland@bergland-lab.bio.virginia.edu:/mnt/internal_1/primus/primusOut/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim_network2.dot .
+
+
+scp bergland@bergland-lab.bio.virginia.edu:/mnt/internal_1/primus/primusOut/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim_network1/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim_network1_5.ps ~/.
