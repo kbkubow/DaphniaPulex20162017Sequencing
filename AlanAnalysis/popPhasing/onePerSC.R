@@ -44,5 +44,3 @@
       o <- bcfs[bcfs.use]
       write.table(o, file=paste("/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/", chr.i, ".list", sep=""), quote=F, row.names=F, col.names=F)
     }
-
-  

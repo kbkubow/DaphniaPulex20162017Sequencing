@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 #SBATCH -J popPhasing_shapeit4 # A single job name for the array
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=20 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
