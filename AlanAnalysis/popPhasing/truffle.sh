@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 # ijob -c1 -p standard -A berglandlab
-### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh
+### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/truffle.sh
 ### sacct -u aob2x -j 10259348
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.10096702_1.err
 
@@ -33,7 +33,7 @@ module load samtools htslib bcftools/1.9
   twd="/scratch/aob2x/daphnia_hwe_sims/popPhase/truffle"
 
   ${twd}/truffle \
-  --vcf /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.vcf.gz \
+  --vcf /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.pulexOnly.vcf.gz \
   --maf 0.05 \
   --cpu 20  \
   --segments
