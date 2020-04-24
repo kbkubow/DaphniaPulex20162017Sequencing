@@ -16,7 +16,11 @@
     2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh`
 
 # E. shapeit4
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh`
+  ### Run shapeit on each chromosome separatley
+    1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh`
+
+  ### concatenate resulting VCFs
+    2.
 
 # F. KING to get basic relationships; is based on observed (not imputed) data; identifies parent offspring pairs
   ### concatenate whatshapp VCF files, rename chromosomes, convert bcf to plink

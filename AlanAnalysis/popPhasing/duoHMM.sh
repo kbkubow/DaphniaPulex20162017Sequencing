@@ -14,7 +14,6 @@
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
 ### sacct -u aob2x -j 10127549
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.10041462_12.err
-## sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
 #module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
 #
 #
@@ -51,4 +50,5 @@ java -jar ${gh_wd}/GenotypeHarmonizer.jar \
 
 ${duohmm_wd}/duohmm \
 -H Scaffold_2158_HRSCAF_2565.whatshapp.shapeit.shapeit2 \
--O /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.whatshapp.shapeit.shapeit2.duohmm
+-O /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.whatshapp.shapeit.shapeit2.duohmm \
+-R 

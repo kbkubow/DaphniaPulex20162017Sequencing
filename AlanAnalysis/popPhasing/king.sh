@@ -52,7 +52,7 @@ plink \
 --out /scratch/aob2x/daphnia_hwe_sims/popPhase/kingOut/12chrs.whatshapp.onePerSC.renameChr.updateids.updateparents
 
 
-scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/popPhase/kingOut/12chrs.whatshapp.onePerSC.renameChr.updateparents.txt .
+scp aob2x@rivanna.hpc.virginia.edu:ruffle12chrs.whatshapp.onePerSC.renameChr.updateparents.txt .
 
 
 
