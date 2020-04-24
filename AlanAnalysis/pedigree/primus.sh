@@ -16,17 +16,61 @@
 ### run primus: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pedigree/primus.sh
 ### sacct -j 10077999
 
-module load perl
+### convert vcf file
+module load plink/1.90b6.16 bcftools/1.9
+
+
+### rename chrs
+bcftools \
+annotate \
+--rename-chrs /scratch/aob2x/daphnia_hwe_sims/pedigree/chr_rename.delim \
+-O b \
+-o /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune.bcf \
+/scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune.vcf
+
+
+
+plink \
+--bcf /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune.bcf \
+--make-bed \
+--maf 0.001 \
+--make-founders \
+--double-id \
+--allow-extra-chr \
+--out /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune
+
+
+plink \
+--bfile /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune \
+--genome \
+--out /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune
+
+less -S /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune.genome
 
 wd=/scratch/aob2x/daphnia_hwe_sims/pedigree/PRIMUS_v1.9.0/bin
 
 
 # rm -fr /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
-cd /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
+mkdir /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/clean/out
 
 ${wd}/run_PRIMUS.pl \
--i FILE=/scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd_king.delim \
-IBD0=7 IBD1=8 IBD2=9 PI_HAT=10 \
--o /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/
---age_file /scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ag.delim \
+--file /scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune \
+--genome \
+--age_file /scratch/aob2x/daphnia_hwe_sims/pedigree/snprelatre_output.ages.delim \
+-o /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/clean/out \
 -v 3
+
+
+
+
+
+
+
+
+${wd}/run_PRIMUS.pl \
+-i FILE=/scratch/aob2x/daphnia_hwe_sims/pedigree/clean/onePerSC.LDprune.genome \
+IBD0=7 IBD1=8 IBD2=9 PI_HAT=10 \
+-o /scratch/aob2x/daphnia_hwe_sims/pedigree/primusOut/clean/out \
+--degree_rel_cutoff 1 \
+--max_gen_gap 2 \
+-v 2
