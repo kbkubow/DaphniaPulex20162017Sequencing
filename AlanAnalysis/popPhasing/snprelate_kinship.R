@@ -382,17 +382,25 @@ d
 ## cp /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/snprelate_ibd.Rdata /nv/vol186/bergland-lab/alan/snprelate_ibd.Rdata
 
 
+
+
+
+
+
+
+
+##### IBD analysis
 ### libraries
   library(data.table)
   library(FamAgg)
 
 ### load
-  load("/mnt/sammas_storage/bergland-lab/alan/snprelate_ibd.Rdata")
+  load("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/snprelate_ibd.Rdata")
 
 ### format IBD & kinship table for PRIMUS
   # king
     king.rel <- king$kinship
-    king.rel[upper.tri(king.rel)] <- NA
+    king.rel[lower.tri(king.rel)] <- NA
     dimnames(king.rel) <- list(king$sample.id, king$sample.id)
 
     king.dt <- as.data.table(melt(king.rel))
@@ -404,6 +412,35 @@ d
     king.dt[,i:=1:dim(king.dt)[1]]
     king.dt[,ID1:=as.character(ID1)]
     king.dt[,ID2:=as.character(ID2)]
+
+
+### load truffle data
+  truf.ibd <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/12chrs.whatshapp.onePerSC.renameChr.vcf.ibd.ibd")
+
+
+### merge
+  setkey(king.dt, ID1, ID2)
+  setkey(truf.ibd, ID1, ID2)
+
+  m <- merge(king.dt, truf.ibd)
+
+
+
+  save(m, file="~/king_ibd.Rdata")
+
+
+
+library(ggplot2)
+library(data.table)
+
+load("king_ibd.Rdata")
+
+ggplot(data=m, aes(x=IBD0, y=kinship, color=rel)) + geom_point()
+
+
+
+
+
 
 ### find 1-degree families
   clones <- unique(c(king.dt$ID1, king.dt$ID2))
