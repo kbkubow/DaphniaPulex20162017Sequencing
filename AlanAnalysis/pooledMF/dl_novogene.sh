@@ -10,9 +10,11 @@
 #SBATCH -p standard
 #SBATCH --account biol8083
 
+# sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/dl_novogene.sh
+
 cd /project/berglandlab/alan/
 
-wget \
---user=X202SC20051465-Z01_06_04_20_7ML7 -\
--password='AEMvQ95U' \
+wget -r \
+--user=X202SC20051465-Z01_06_04_20_7ML7 \
+--password=AEMvQ95U \
 ftp://128.120.88.251/
