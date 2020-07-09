@@ -11,7 +11,7 @@
 #SBATCH --account biol8083
 
 # sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/dl_novogene.sh
-
+# sacct -j 12634777
 cd /project/berglandlab/alan/
 
 wget -r \
