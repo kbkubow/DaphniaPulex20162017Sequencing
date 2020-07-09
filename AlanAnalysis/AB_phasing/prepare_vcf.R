@@ -1,5 +1,5 @@
 #ijob -c1 -p standard -A berglandlab
-#module load intel/18.0 intelmpi/18.0 R/3.6.0; R
+#module load intel/18.0 intelmpi/18.0 R/3.6.3; R
 
 ### libraries
   library(data.table)
@@ -31,24 +31,26 @@
   ab.fd[!is.na(af.A),A.geno := unlist(sapply(ab.fd[!is.na(af.A)]$af.A, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
   ab.fd[!is.na(af.B),B.geno := unlist(sapply(ab.fd[!is.na(af.B)]$af.B, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
 
+  ac.inform <- ac.fd[(A.geno==0 & C.geno==2) | (A.geno==1 & C.geno==0) | (A.geno==0 & C.geno==1)]
+
 
 ### 2. Identify F1s
   seqResetFilter(genofile)
-  seqSetFilter(genofile, variant.id=snp.dt$id)
+  seqSetFilter(genofile, variant.id=ac.inform$id)
 
   genomat <- seqGetData(genofile, "$dosage")
 
   het.count <- foreach(i=1:dim(genomat)[1], .combine="rbind")%do%{
     print(paste(i, dim(genomat)[1], sep=" / "))
 
-    tmp <- ab.fd
+    tmp <- ac.inform
     tmp[,geno:=genomat[i,]]
-    nLoci <- dim(tmp[!is.na(A.geno) & !is.na(B.geno) & !is.na(geno)])[1]
-    tmp.ag <- tmp[!is.na(A.geno) & !is.na(B.geno),list(nRR=sum(geno==2, na.rm=T),
+    nLoci <- dim(tmp[!is.na(A.geno) & !is.na(C.geno) & !is.na(geno)])[1]
+    tmp.ag <- tmp[!is.na(A.geno) & !is.na(C.geno),list(nRR=sum(geno==2, na.rm=T),
                                                       nRA=sum(geno==1, na.rm=T),
                                                       nAA=sum(geno==0, na.rm=T),
                                                       n=sum(!is.na(geno))),
-                                                  list(A.geno=abs(A.geno-2), B.geno=abs(B.geno-2))]
+                                                  list(A.geno=abs(A.geno-2), C.geno=abs(C.geno-2))]
     tmp.ag[,fRR:=nRR/n]
     tmp.ag[,fRA:=nRA/n]
     tmp.ag[,fAA:=nAA/n]
@@ -57,12 +59,12 @@
     tmp.ag
   }
 
-  f1.set <- het.count[n>1000][A.geno==0 & B.geno==2 & fRA>.9]$sample.id
+  f1.set <- het.count[n>1000][A.geno==0 & C.geno==2 & fRA>.9]$sample.id
 
 ### 3. make majority rule F1s, A & B
   setkey(sc, clone)
-  sc.f1.ag <- sc[J(f1.set)][SC!="OO",.N,list(SC)]
-  sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "B")))[order(N, decreasing=T)]
+  sc.f1.ag <- sc[J(f1.set)][SC!="OO" & SC!="AxCF1",.N,list(SC)]
+  sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "C")))[order(N, decreasing=T)]
 
   nF1s <- 4
 
@@ -70,7 +72,7 @@
     #i<-1
     print(i)
     seqResetFilter(genofile)
-    seqSetFilter(genofile, sample.id=sc[SC==sc.f1.ag$SC[i]]$clone, variant.id=snp.dt$id)
+    seqSetFilter(genofile, sample.id=sc[SC==sc.f1.ag$SC[i]]$clone, variant.id=ac.inform$id)
 
     tmp <- data.table(af=seqAlleleFreq(genofile))
     #tmp <- cbind(tmp, snp.dt)
@@ -81,11 +83,11 @@
   }
   setnames(f1.cons, c(1:dim(f1.cons)[2]), sc.f1.ag[1:(2+nF1s)]$SC)
 
-  proto.vcf <- cbind(snp.dt, f1.cons)
+  proto.vcf <- cbind(ac.inform, f1.cons)
 
-  vcf <- data.table('#CHROM'=snp.dt$chr,
-                    POS=snp.dt$pos,
-                    ID=paste("snp", snp.dt$id, sep="_"),
+  vcf <- data.table('#CHROM'=ac.inform$chr,
+                    POS=ac.inform$pos,
+                    ID=paste("snp", ac.inform$id, sep="_"),
                     REF=seqGetData(genofile, "$ref"),
                     ALT=seqGetData(genofile, "$alt"),
                     QUAL=".",
@@ -96,19 +98,19 @@
 
 ### 4. write VCF file & PED file
   seqSetFilter(genofile, variant.id=1)
-  seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.vcf", info.var=character(0), fmt.var=character(0),
+  seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.vcf", info.var=character(0), fmt.var=character(0),
     verbose=TRUE)
-  system("grep '##' /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.vcf > /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf")
+  system("grep '##' /scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.vcf > /scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.header.vcf")
 
-  write.table(vcf, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.vcf", sep="\t", append=T, col.names=T, quote=F, row.names=F)
+  write.table(vcf, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.header.vcf", sep="\t", append=T, col.names=T, quote=F, row.names=F)
 
   ped <- data.table(fam="family1",
                     iid=names(f1.cons)[-c(1,2)],
-                    pid="B",
+                    pid="C",
                     mid="A",
                     foo="N", bar="A")
 
-  write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.ped")
+  write.table(ped, sep="\t", quote=F, row.names=F, col.names=F, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.header.ped")
 
 
 
