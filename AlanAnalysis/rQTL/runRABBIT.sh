@@ -49,3 +49,21 @@ EOF
 
 # Run RABBIT
   math -noprompt -script /scratch/aob2x/daphnia_hwe_sims/trioPhase/rabbit_m/${chromosome}.${clone}.RABBIT.m
+
+
+ rabbit_csv="/scratch/aob2x/AxC_RABBIT/rabbitOut/Scaffold_2373_HRSCAF_2879.AxB_R4_P17_B.csv"
+ haplotypes_out_file="/scratch/aob2x/AxC_RABBIT/rabbitOut/Scaffold_2373_HRSCAF_2879.AxB_R4_P17_B.haps"
+ echo -e "chromosome\tstart\tstop\tpar1\tpar2" \
+   > "${haplotypes_out_file}"
+
+ # if nonrecombinant (i.e. no rabbit-generated output, only manuala output),
+ # parse manual output to make nonrecombinant haplotype map file
+ nLines=$(wc -l $rabbit_csv | awk '{print $1}')
+ if [[ ${nLines} -eq 1 ]]; then
+     par=$(awk '{print $3}' $rabbit_csv)
+     chromosome=$(echo $rabbit_csv | cut -d "." -f 2)
+     echo -e "${chromosome}\t1\t25000000\t${par}\t${par}" >> "${haplotypes_out_file}"
+ else
+
+ python /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parseHaplotypes.py \
+ ${rabbit_csv} >> "${haplotypes_out_file}"
