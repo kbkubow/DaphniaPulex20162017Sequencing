@@ -1,7 +1,10 @@
 import re
 import sys
-filename = sys.argv[1]
-ind_id, chromosome = filename.split(".")[0:2]
+filestem = sys.argv[1]
+#filestem="Scaffold_2373_HRSCAF_2879.AxB_R4_P17_B.csv"
+filename="/scratch/aob2x/AxC_RABBIT/rabbitOut/" + filestem
+chromosome, ind_id = filestem.split(".")[0:2]
+
 def getLines(filename):
    mylines = []
    with open(filename, 'r') as infile:
@@ -26,9 +29,9 @@ def getDiplotypes(mylines):
 def getNucleotidePositions(mylines):
    positions = []
    for line in mylines:
-       if line.startswith('SNP'):
+       if line.startswith('marker'):
            #return [x.split('_')[0:2] for x in line.rstrip().split(', ')] if returning Chromosome and position
-           return [int(x.split('_')[1]) for x in line.rstrip().split(', ')[1:]] #exclude 1st item in line because it's simply 'SNP'
+           return [int(x.split('_')[0]) for x in line.rstrip().split(', ')[1:]] #exclude 1st item in line because it's simply 'SNP'
 
 def getSampleDiplotypes(mylines, viterbiLine):
    paths = {}
@@ -69,7 +72,9 @@ diplotypes = getDiplotypes(mylines)
 # Get nucleotide positions from SNP ID
 positions = getNucleotidePositions(mylines)
 # Get the viterbi path from RABBIT output
+
 paths = getSampleDiplotypes(mylines, viterbiLine)
+
 phasedPaths = phasePaths(paths)
 chromosomeLength = int(positions[-1])
 convertedPaths = convertToPositions(phasedPaths)
