@@ -2,7 +2,7 @@ import re
 import sys
 filestem = sys.argv[1]
 #filestem="Scaffold_2373_HRSCAF_2879.AxB_R4_P17_B.csv"
-filename="/scratch/aob2x/AxC_RABBIT/rabbitOut/" + filestem
+filename="/scratch/aob2x/daphnia_hwe_sims/trioPhase/rabbitOut" + filestem
 chromosome, ind_id = filestem.split(".")[0:2]
 
 def getLines(filename):
