@@ -20,7 +20,7 @@ def getDiplotypes(mylines):
    pattern = re.compile('^diplotype[0-9]+')
    for line in mylines:
        if re.match(pattern, line):
-           diplotype, parentCodes, founders = line.split(', ')
+           diplotype, parentCodes, founders = line.split(',')
            diplotype = diplotype.split('diplotype')[-1]
            founders = founders.split('---')
            diplotypes[int(diplotype)] = founders
@@ -31,12 +31,12 @@ def getNucleotidePositions(mylines):
    for line in mylines:
        if line.startswith('marker'):
            #return [x.split('_')[0:2] for x in line.rstrip().split(', ')] if returning Chromosome and position
-           return [int(x.split('_')[0]) for x in line.rstrip().split(', ')[1:]] #exclude 1st item in line because it's simply 'SNP'
+           return [int(x.split('_')[0]) for x in line.rstrip().split(',')[1:]] #exclude 1st item in line because it's simply 'SNP'
 
 def getSampleDiplotypes(mylines, viterbiLine):
    paths = {}
    for i in range(viterbiLine, len(mylines)):
-       sample, path = mylines[i].rstrip().split(', ')
+       sample, path = mylines[i].rstrip().split(',')
        path = path.split('-')
        paths[sample] = path
    return paths
