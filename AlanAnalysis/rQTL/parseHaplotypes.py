@@ -80,4 +80,4 @@ chromosomeLength = int(positions[-1])
 convertedPaths = convertToPositions(phasedPaths)
 for i in convertedPaths:
    for j in convertedPaths[i]:
-       print '\t'.join([chromosome] + [str(x) for x in j[0]]) + '\t' + '\t'.join([str(x) for x in j[1]])
+       print '\t'.join([ind_id] + [chromosome] + [str(x) for x in j[0]]) + '\t' + '\t'.join([str(x) for x in j[1]])
