@@ -1,8 +1,9 @@
 import re
 import sys
 filestem = sys.argv[1]
+dir = sys.argv[2]
 #filestem="Scaffold_9199_HRSCAF_10755.all.csv"
-filename="/scratch/aob2x/" + filestem
+filename=dir + filestem
 chromosome, ind_id = filestem.split(".")[0:2]
 
 def getLines(filename):
