@@ -13,13 +13,13 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-
+# sacct -j 13242118
 
 module load intel/18.0 intelmpi/18.0 R/3.6.3
-module load mathematica/11.1.1
+module load mathematica
 module load parallel
 
-#SLURM_ARRAY_TASK_ID=2
+#SLURM_ARRAY_TASK_ID=5
 
 wd="/scratch/aob2x/daphnia_hwe_sims"
 datadir="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase"
@@ -43,7 +43,7 @@ print """SetDirectory["%s"]""" % "${RABBITpackageLocation}"
 print """Needs["MagicReconstruct\`"]"""
 print """Needs["MagicMap\`"]"""
 print """SetDirectory["%s"]""" % "${datadir}"
-print """popScheme = popScheme="ped.ped" """
+print """popScheme ="ped.ped" """
 print 'model = "%s"' % "${RABBITmodel}"
 print 'estfun = "%s"' % "${RABBITestfun}"
 print 'inputfile = "%s"' % "${chr}.all.in"
@@ -63,4 +63,4 @@ math -script ${datadir}/${chr}.RABBIT.m
 ### convert paths
 python /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parseHaplotypes.py \
 ${chr}.all.csv \
-/scratch/aob2x/ >> ${chr}.all.haps
+${datadir}/ >> ${chr}.all.haps
