@@ -29,59 +29,78 @@
   vcf <- merge(vcf, vcf.ag)
   vcf[,cm:=(POS/(maxPos+1)) * 100]
 
+
+
+### set wd
+  setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
+
+### load SuperClone=
+  sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+
 ### which F1s?
   f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.delim")
 
 ### open GDS
   genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds")
 
+### make snp.dt
+  snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
+                       pos=seqGetData(genofile, "position"),
+                       id=seqGetData(genofile, "variant.id"),
+                       numAlleles=seqNumAllele(genofile),
+                       key="chr")
+
   getOutput <- function(ind.i, chr.i) {
 
     #ind.i="AxB_R4_P17_B"; chr.i="Scaffold_2373_HRSCAF_2879"
-    seqSetFilter(genofile, sample.id=ind.i, variant.id=vcf[chr==chr.i]$id)
+    seqSetFilter(genofile,
+                sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
+                            sc[SC=="C"][which.max(medrd)]$clone,
+                            ind.i),
+                variant.id=snp.dt[J(chr.i)][numAlleles==2]$id)
 
-    #genomat <- seqGetData(genofile, "$dosage_alt")
+    genomat <- as.data.table(t(seqGetData(genofile, "$dosage")))
+    setnames(genomat, seqGetData(genofile, "sample.id"))
 
-    #genomat[is.na(genomat)] <- "NN"
-    #genomat[genomat=="0"] <- "11"
-    #genomat[genomat=="1"] <- "12"
-    #genomat[genomat=="2"] <- "22"
+    setnames(genomat, sc[SC=="A"][which.max(medrd)]$clone, "A")
+    setnames(genomat, sc[SC=="C"][which.max(medrd)]$clone, "C")
+    setnames(genomat, ind.i, "ind")
 
-   #genomat[genomat=="0"] <- "1N"
-   #genomat[genomat=="1"] <- sample(c("1N","2N"), length(genomat[genomat=="1"]), replace=T)
-   #genomat[genomat=="2"] <- "2N"
-   admat <- seqGetData(genofile, "annotation/format/AD")
-   refrd <- admat$data[,seq(1, dim(admat$data)[2], by=2)]
-   altrd <- admat$data[,seq(1, dim(admat$data)[2], by=2)+1]
+    genomat[,id:=as.character(seqGetData(genofile, "variant.id"))]
+    genomat <- merge(genomat, vcf[,c("id", "A", "C", "Acode", "Ccode", "cm", "chr"), with=F], by="id")
 
-   genomat <- matrix(paste(refrd, altrd, sep="|"), nrow=1)
+    #table(genomat$C.x, genomat$C.y)
+    genomat[,ind.orig:=ind]
+    genomat[,ind:=as.character(ind)]
 
-   f1.genomat <- cbind(matrix(seqGetData(genofile, "sample.id"), ncol=1), genomat)
+    genomat[ind=="0", ind:="1N"]
+    genomat[ind=="1", ind:=sample(c("1N","2N"), length(ind), replace=T)]
+    genomat[ind=="2", ind:= "2N"]
+    genomat[is.na(ind), ind:= "NN"]
 
-  ### merge parents and offspring
-  #  parent.genomat <- cbind(matrix(c("A1", "A2", "C1", "C2"), ncol=1),
-  #                          t(as.matrix(vcf[chr==chr.i,c("A1", "A2", "C1", "C2"), with=F])))
-#
-  parent.genomat <- cbind(matrix(c("A", "C"), ncol=1),
-                        t(as.matrix(vcf[chr==chr.i,c("Acode", "Ccode"), with=F])))
+    table(genomat$ind, genomat$ind.orig)
+    table(genomat$Acode, genomat$A.x)
 
+    table(genomat$Acode, genomat$Ccode, genomat$ind)
 
-    gm <- rbind(parent.genomat, f1.genomat)
 
   ### make header info
 
-    marker <- matrix(c("marker", vcf[chr==chr.i]$id), nrow=1)
-    chr <- matrix(c("chromosome", as.numeric(as.factor(vcf[chr==chr.i]$chr))), nrow=1)
-    pos <- matrix(c("pos(cM)", vcf[chr==chr.i]$cm), nrow=1)
+    marker <- matrix(c("marker", genomat$id), nrow=1)
+    chr <- matrix(c("chromosome", as.numeric(as.factor(genomat$chr))), nrow=1)
+    pos <- matrix(c("pos(cM)", genomat$cm), nrow=1)
 
     header <- do.call("rbind", list(marker, chr, pos))
 
-    gmh <- rbind(header, gm)
+    data <- cbind(matrix(c("A", "C", ind.i), ncol=1), t(as.matrix(genomat[,c("Acode", "Ccode", "ind")])))
+
+    gmh <- rbind(header, data)
 
 
   ### write output, per chromosome per individual
-    out.fn <- paste("/scratch/aob2x/daphnia_hwe_sims/trioPhase/rabbitIn/", chr.i, ".", ind.i, ".in", sep="")
-    #out.fn <- paste("/scratch/aob2x/", chr.i, ".", ind.i, ".in", sep="")
+    #out.fn <- paste("/scratch/aob2x/daphnia_hwe_sims/trioPhase/rabbitIn/", chr.i, ".", ind.i, ".in", sep="")
+
+    out.fn <- paste("/scratch/aob2x/", chr.i, ".", ind.i, ".in", sep="")
 
     writeLines( paste("#founders,",2, sep=""),
                  con=out.fn
