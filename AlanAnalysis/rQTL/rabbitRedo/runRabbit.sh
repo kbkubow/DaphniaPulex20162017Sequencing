@@ -11,21 +11,22 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
+
 ### run as
-# sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-# sacct -j 13242156
-#
+# sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
+# sacct -j 13242343
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13242218_3.out
 
 
 module load intel/18.0 intelmpi/18.0 R/3.6.3
 module load mathematica
 module load parallel
 
-#SLURM_ARRAY_TASK_ID=5
+#SLURM_ARRAY_TASK_ID=1
 
 wd="/scratch/aob2x/daphnia_hwe_sims"
 datadir="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase"
-chr=$( grep "^${SLURM_ARRAY_TASK_ID}" ${datadir}/chrs.csv | cut -f2 -d',' )
+chr=$( grep "^${SLURM_ARRAY_TASK_ID}," ${datadir}/chrs.csv | cut -f2 -d',' )
 echo $chr
 
 ### generate RABBIT input data
@@ -33,8 +34,11 @@ Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/format
 
 
 ### format RABBIT script file
+echo "make mathematica input"
 sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/template.m > \
 ${datadir}/${chr}.m
+
+ls ${datadir}/${chr}.m
 
 
 ### Run RABBIT impute & reconstruct
