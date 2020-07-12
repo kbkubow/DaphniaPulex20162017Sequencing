@@ -13,7 +13,9 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-# sacct -j 13242118
+# sacct -j 13242156
+#
+
 
 module load intel/18.0 intelmpi/18.0 R/3.6.3
 module load mathematica
@@ -31,34 +33,12 @@ Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/format
 
 
 ### format RABBIT script file
-RABBITpackageLocation="/scratch/aob2x/daphnia_hwe_sims/RABBIT/RABBIT_Packages/"
-RABBITmodel="jointModel"
-RABBITestfun="origViterbiDecoding"
-generations_for_RABBIT=1
-topDirectory="/scratch/aob2x/daphnia_hwe_sims/trioPhase"
-
-# Generate mathematica script for RABBIT
-python - <<EOF > ${datadir}/${chr}.RABBIT.m
-print """SetDirectory["%s"]""" % "${RABBITpackageLocation}"
-print """Needs["MagicReconstruct\`"]"""
-print """Needs["MagicMap\`"]"""
-print """SetDirectory["%s"]""" % "${datadir}"
-print """popScheme ="ped.ped" """
-print 'model = "%s"' % "${RABBITmodel}"
-print 'estfun = "%s"' % "${RABBITestfun}"
-print 'inputfile = "%s"' % "${chr}.all.in"
-print 'resultFile = "%s.txt"' % "${chr}.out"
-print """magicImpute[inputfile, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True]"""
-print 'imputed = "%s"' % "${chr}.out_ImputedGenotype.csv"
-print """magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]"""
-print """summaryFile = StringDrop[resultFile, -4] <> ".csv" """
-print """saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]"""
-print 'Exit'
-EOF
+sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/template.m > \
+${datadir}/${chr}.m
 
 
 ### Run RABBIT impute & reconstruct
-math -script ${datadir}/${chr}.RABBIT.m
+math -script ${datadir}/${chr}.m
 
 ### convert paths
 python /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parseHaplotypes.py \
