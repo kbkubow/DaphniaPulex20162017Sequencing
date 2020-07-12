@@ -5,31 +5,7 @@
 ### libraries
   library(data.table)
   library(SeqArray)
-
-### load parents and format parental haplotypes
-  vcf <- fread("/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.header.phase.noNA.vcf", skip="#CHROM", na.strings="./.")
-  vcf[,A:=tstrsplit(A, ":")[[1]]]
-  vcf[,C:=tstrsplit(C, ":")[[1]]]
-
-  vcf[,A1:=as.numeric(tstrsplit(A, "\\||\\/")[[1]]) + 1]
-  vcf[,A2:=as.numeric(tstrsplit(A, "\\||\\/")[[2]]) + 1]
-  vcf[,C1:=as.numeric(tstrsplit(C, "\\||\\/")[[1]]) + 1]
-  vcf[,C2:=as.numeric(tstrsplit(C, "\\||\\/")[[2]]) + 1]
-
-  vcf[,Acode:=paste(A1, A2, sep="")]
-  vcf[,Ccode:=paste(C1, C2, sep="")]
-
-  vcf[,id:=tstrsplit(ID, "_")[[2]]]
-  setnames(vcf, "#CHROM", "chr")
-
-  vcf.ag <- vcf[,list(maxPos=max(POS)), list(chr)]
-  setkey(vcf, chr)
-  setkey(vcf.ag, chr)
-
-  vcf <- merge(vcf, vcf.ag)
-  vcf[,cm:=(POS/(maxPos+1)) * 100]
-
-
+  library(foreach)
 
 ### set wd
   setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
@@ -50,9 +26,97 @@
                        numAlleles=seqNumAllele(genofile),
                        key="chr")
 
+### make large input file
+  chr.i="Scaffold_9199_HRSCAF_10755"
+  seqSetFilter(genofile,
+              sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
+                          sc[SC=="C"][which.max(medrd)]$clone,
+                          f1s$cloneid),
+              variant.id=snp.dt[J(chr.i)][numAlleles==2]$id)
+
+  genomat <- as.data.table(t(seqGetData(genofile, "$dosage")))
+  setnames(genomat, seqGetData(genofile, "sample.id"))
+
+  setnames(genomat, sc[SC=="A"][which.max(medrd)]$clone, "A")
+  setnames(genomat, sc[SC=="C"][which.max(medrd)]$clone, "C")
+
+  genomat[,id:=seqGetData(genofile, "variant.id")]
+
+  genomat <- genomat[(A!=0 & C!=2) | (A!=2 & C!=0)]
+
+  genomat <- genomat[sample(c(1:dim(genomat)[1]), 1000)]
+  genomat <- genomat[order(id)]
+
+  parents <- foreach(ind.i=c("A", "C"), .combine="rbind")%do%{
+    tmp <- t(as.matrix(genomat[,ind.i, with=F]))
+    tmp[tmp=="2"] <- "22"
+    tmp[tmp=="1"] <- "12"
+    tmp[tmp=="0"] <- "11"
+
+    cbind(matrix(ind.i, ncol=1), tmp)
+  }
+
+  offspring <- foreach(ind.i=f1s$cloneid, .combine="rbind", .errorhandling="remove")%do%{
+    tmp <- t(as.matrix(genomat[,ind.i, with=F]))
+    tmp[tmp=="2"] <- "2N"
+    tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
+    tmp[tmp=="0"] <- "1N"
+    tmp[is.na(tmp)] <- "NN"
+    cbind(matrix(ind.i, ncol=1), tmp)
+  }
+
+  marker <- matrix(c("marker", genomat$id), nrow=1)
+  #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
+  #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
+  chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(genomat)[1])), nrow=1)
+  pos <- matrix(c("chromosome", seq(from=0, to=100, length.out=dim(genomat)[1])), nrow=1)
+
+  header <- do.call("rbind", list(marker, chr, pos))
+
+  out <- do.call("rbind", list(header, parents, offspring))
+
+
+
+  out.fn <- paste("/scratch/aob2x/", chr.i, ".all.in", sep="")
+
+  writeLines( paste("#founders,",2, sep=""),
+               con=out.fn
+             )
+  options(scipen=999)
+
+   write.table(out,
+               file=out.fn,
+               quote=FALSE,
+               row.names=FALSE,
+               col.names=FALSE,
+               sep=",",
+               na="NA",
+               append=TRUE)
+
+
+
+
+
+
+  genomat[ind=="0", ind:="2N"] ### I think this is wrong shoudl be 1N, and other 2N
+  genomat[ind=="1", ind:=sample(c("1N","2N"), length(ind), replace=T)]
+  genomat[ind=="2", ind:= "1N"]
+  genomat[is.na(ind), ind:= "NN"]
+
+
+
+
+
+
+
+
+
+
+
+
   getOutput <- function(ind.i, chr.i) {
 
-    #ind.i="AxB_R4_P17_B"; chr.i="Scaffold_2373_HRSCAF_2879"
+    #ind.i="March20_2018_D8_18030"; chr.i="Scaffold_9199_HRSCAF_10755"
     seqSetFilter(genofile,
                 sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
                             sc[SC=="C"][which.max(medrd)]$clone,
@@ -73,15 +137,16 @@
     genomat[,ind.orig:=ind]
     genomat[,ind:=as.character(ind)]
 
-    genomat[ind=="0", ind:="1N"]
+    genomat[ind=="0", ind:="2N"] ### I think this is wrong shoudl be 1N, and other 2N
     genomat[ind=="1", ind:=sample(c("1N","2N"), length(ind), replace=T)]
-    genomat[ind=="2", ind:= "2N"]
+    genomat[ind=="2", ind:= "1N"]
     genomat[is.na(ind), ind:= "NN"]
 
     table(genomat$ind, genomat$ind.orig)
     table(genomat$Acode, genomat$A.x)
 
     table(genomat$Acode, genomat$Ccode, genomat$ind)
+    table(genomat$C, genomat$A, genomat$ind)
 
 
   ### make header info
@@ -92,7 +157,7 @@
 
     header <- do.call("rbind", list(marker, chr, pos))
 
-    data <- cbind(matrix(c("A", "C", ind.i), ncol=1), t(as.matrix(genomat[,c("Acode", "Ccode", "ind")])))
+    data <- cbind(matrix(c("C", "A", ind.i), ncol=1), t(as.matrix(genomat[,c("Ccode", "Acode", "ind")])))
 
     gmh <- rbind(header, data)
 
@@ -118,7 +183,7 @@
    }
 
 
-   foreach(chr.i=unique(vcf$chr))%do%{
+   foreach(chr.i=unique(snp.dt$chr))%do%{
      foreach(ind.i=f1s$cloneid)%do%{
        message(paste(chr.i, ind.i, sep=" / "))
        getOutput(ind.i, chr.i)
