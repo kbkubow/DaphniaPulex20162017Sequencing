@@ -1,7 +1,7 @@
 import re
 import sys
 filestem = sys.argv[1]
-#filestem="Scaffold_2373_HRSCAF_2879.AxB_R4_P17_B.csv"
+#filestem="Scaffold_9199_HRSCAF_10755.all.csv"
 filename="/scratch/aob2x/" + filestem
 chromosome, ind_id = filestem.split(".")[0:2]
 
@@ -65,6 +65,9 @@ def convertToPositions(phasedPaths):
        convertedPaths[path] = segments
    return convertedPaths
 
+
+
+
 mylines, viterbiLine = getLines(filename)
 #viterbiPath = [int(x) for x in mylines[viterbiLine].split()[1].split("-")]
 # Get dictionary of all possible diplotype pairs and their numeric code
@@ -78,6 +81,8 @@ paths = getSampleDiplotypes(mylines, viterbiLine)
 phasedPaths = phasePaths(paths)
 chromosomeLength = int(positions[-1])
 convertedPaths = convertToPositions(phasedPaths)
+
 for i in convertedPaths:
    for j in convertedPaths[i]:
-       print '\t'.join([ind_id] + [chromosome] + [str(x) for x in j[0]]) + '\t' + '\t'.join([str(x) for x in j[1]])
+       print i,
+       print '\t'.join([chromosome] + [str(x) for x in j[0]]) + '\t' + '\t'.join([str(x) for x in j[1]])
