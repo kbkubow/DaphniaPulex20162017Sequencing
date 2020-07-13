@@ -3,21 +3,21 @@ SetDirectory["/scratch/aob2x/daphnia_hwe_sims/RABBIT/RABBIT_Packages/"]
 Needs["MagicReconstruct`"]
 Needs["MagicMap`"]
 
-SetDirectory["/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase"]
-popScheme="ped.ped"
+SetDirectory["/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm"]
+popScheme="ped.2.ped"
 ngroup = 1
 model = "jointModel"
 estfun = "origViterbiDecoding"
 inputfile = "STEM.all.in"
 resultFile = "STEM.all.out"
 
-#magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True]
+magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True]
 
 imputed = "STEM.all.out_ImputedGenotype.csv"
-#
-#magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
-#summaryFile = StringDrop[resultFile, -4] <> ".csv"
-#saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]
+
+magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
+summaryFile = StringDrop[resultFile, -4] <> ".csv"
+saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]
 
 
 estfun = "origPosteriorDecoding"

@@ -3,6 +3,7 @@
 ### makes rabbit input
   args = commandArgs(trailingOnly=TRUE)
   chr.i <- as.character(args[1])
+  maxcM <- as.numeric(args[2])
   #chr.i <- "Scaffold_9199_HRSCAF_10755"
 
 ### libraries
@@ -84,7 +85,7 @@
   #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
   #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
   chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(genomat)[1])), nrow=1)
-  pos <- matrix(c("chromosome", seq(from=0, to=100, length.out=dim(genomat)[1])), nrow=1)
+  pos <- matrix(c("chromosome", seq(from=0, to=maxcM, length.out=dim(genomat)[1])), nrow=1)
 
   header <- do.call("rbind", list(marker, chr, pos))
 
@@ -92,7 +93,7 @@
 
 
 
-  out.fn <- paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/", chr.i, ".all.in", sep="")
+  out.fn <- paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_", maxcM, "cm/", chr.i, ".all.in", sep="")
 
   writeLines( paste("#founders,",2, sep=""),
                con=out.fn

@@ -14,8 +14,8 @@
 
 ### run as
 # sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-# sacct -j 13242361
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13242218_3.out
+# sacct -j 13247208
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13247110_2.out
 
 
 module load intel/18.0 intelmpi/18.0 R/3.6.3
