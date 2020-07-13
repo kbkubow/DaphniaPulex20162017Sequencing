@@ -21,9 +21,9 @@ imputed = "STEM.all.out_ImputedGenotype.csv"
 
 
 estfun = "origPosteriorDecoding"
-resultFile = "Scaffold_9199_HRSCAF_10755.all.out.post"
+resultFile = "STEM.all.out.post"
 magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
-summaryFile = StringDrop[resultFile, -4] <> ".csv"
+summaryFile = StringDrop[resultFile, -5] <> ".post.csv"
 saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]
 
 Exit
