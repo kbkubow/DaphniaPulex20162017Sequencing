@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-# sacct -j 13242343
+# sacct -j 13242361
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13242218_3.out
 
 
