@@ -13,7 +13,7 @@ resultFile = "STEM.all.out"
 
 #magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True]
 
-#imputed = "STEM.all.out_ImputedGenotype.csv"
+imputed = "STEM.all.out_ImputedGenotype.csv"
 #
 #magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
 #summaryFile = StringDrop[resultFile, -4] <> ".csv"
