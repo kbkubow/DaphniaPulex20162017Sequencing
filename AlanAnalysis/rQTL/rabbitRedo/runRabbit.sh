@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-# sacct -j 13247208
+# sacct -j 13247676
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13247110_2.out
 
 
@@ -23,14 +23,14 @@ module load mathematica
 module load parallel
 
 #SLURM_ARRAY_TASK_ID=1
-
+cm=10
 wd="/scratch/aob2x/daphnia_hwe_sims"
-datadir="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase"
+datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_${cm}cm
 chr=$( grep "^${SLURM_ARRAY_TASK_ID}," ${datadir}/chrs.csv | cut -f2 -d',' )
-echo $chr
+echo $chr $datadir
 
 ### generate RABBIT input data
-Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/formatData.R ${chr}
+Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/formatData.R ${chr} ${cm}
 
 
 ### format RABBIT script file
