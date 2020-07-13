@@ -11,10 +11,17 @@ estfun = "origViterbiDecoding"
 inputfile = "STEM.all.in"
 resultFile = "STEM.all.out"
 
-magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True]
+#magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True]
 
-imputed = "STEM.all.out_ImputedGenotype.csv"
+#imputed = "STEM.all.out_ImputedGenotype.csv"
+#
+#magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
+#summaryFile = StringDrop[resultFile, -4] <> ".csv"
+#saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]
 
+
+estfun = "origPosteriorDecoding"
+resultFile = "Scaffold_9199_HRSCAF_10755.all.out.post"
 magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
 summaryFile = StringDrop[resultFile, -4] <> ".csv"
 saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]

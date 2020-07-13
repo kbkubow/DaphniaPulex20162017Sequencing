@@ -29,9 +29,9 @@
                        numAlleles=seqNumAllele(genofile),
                        key="chr")
 
-  snp.dt.ag <- snp.dt[,.N,chr]
-  write.table(snp.dt.ag, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/chrs.csv", quote=F, row.names=T, col.names=F, sep=",")
-  
+  #snp.dt.ag <- snp.dt[,.N,chr]
+  #write.table(snp.dt.ag, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/chrs.csv", quote=F, row.names=T, col.names=F, sep=",")
+
 ### make large input file
 
   seqSetFilter(genofile,
