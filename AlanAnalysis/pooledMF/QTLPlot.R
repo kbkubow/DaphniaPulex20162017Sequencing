@@ -53,6 +53,7 @@
 
     peaks[,i:=unlist(sapply(c(1:dim(peaks)[1]), findPeak))]
 
+    write.csv(peaks, "~/peaks.csv", quote=F, row.names=F)
 
   ### determine i for each position in Gprime plot
     setkey(gprime, CHROM, POS)

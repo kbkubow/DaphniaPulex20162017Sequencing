@@ -20,15 +20,36 @@ ijob -c1 -p standard -A berglandlab
   cat /scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.vcf | grep -v "##" | head -n10 | awk '{print NF}'
 
 
+  bcftools \
+  view \
+  -q 0.01:minor \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/12chrs.whatshapp.onePerSC.renameChr.bcf > \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/12chrs.whatshapp.onePerSC.renameChr.vcf
+
 
 ### run truffle
   truffle_wd=/scratch/aob2x/daphnia_hwe_sims/pedigree/truffle
   cd $truffle_wd
 
   ${truffle_wd}/truffle \
-  --vcf /scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.vcf  \
+  --vcf /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/12chrs.whatshapp.onePerSC.renameChr.vcf \
   --cpu 4 \
-  --maf 0.01 \
-  --missing 0.05 \
   --mindist 0 \
-  --out /scratch/aob2x/daphnia_hwe_sims/pedigree/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.12chr.LDprune.renameChr.ibd
+  --out /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/12chrs.whatshapp.onePerSC.renameChr.vcf.ibd
+
+cp /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/12chrs.whatshapp.onePerSC.renameChr.vcf.ibd.ibd \
+/nv/vol186/bergland-lab/alan/.
+
+
+library(data.table)
+library(GWASTools)
+library(SeqArray)
+library(SNPRelate)
+
+ibd <- fread("/mnt/sammas_storage/bergland-lab/alan/12chrs.whatshapp.onePerSC.renameChr.vcf.ibd.ibd")
+
+ibdPlot(k0=ibd$IBD0, k1=ibd$IBD1, relation=ibdAssignRelatedness(k0=ibd$IBD0, k1=ibd$IBD1))
+
+
+, relation=NULL, color=NULL,
+        rel.lwd=2, rel.draw=c("FS", "Deg2", "Deg3"), ...)
