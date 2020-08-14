@@ -1,0 +1,71 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(data.table)
+  library(foreach)
+  library(ggplot2)
+  library(ggbeeswarm)
+  library(tidyverse)
+
+### Read in KING output file
+  kinship <- fread("plink.genome_nosubset")
+
+### Read in SC file
+  #sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc <- fread("./../KingRelate/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc <- sc[Species=="pulex" & Nonindependent==0]
+
+  ### Add SC info to king output
+    scsubA <- data.table(IID1=sc$clone, SCA=sc$SC, medrdA=sc$medrd)
+    scsubB <- data.table(IID2=sc$clone, SCB=sc$SC, medrdB=sc$medrd)
+    setkey(kinship, IID2)
+    setkey(scsubB, IID2)
+    tmpm <- merge(kinship, scsubB)
+    setkey(tmpm, IID1)
+    setkey(scsubA, IID1)
+    kinshipsc <- merge(tmpm, scsubA)
+
+     subA <- kinshipsc[medrdA > 9 & medrdB >9]
+     subB <- subA[, c("FID1", "IID1", "FID2", "IID2", "RT", "EZ", "Z0", "Z1", "Z2", "PI_HAT", "PHE", "DST", "PPC", "RATIO"), with=FALSE]
+     write.table(subB, file="medrd10.nosubset.genome", sep="\t", row.names=FALSE, quote=FALSE)
+
+  ### Add in year and population info
+    temp <- unlist(strsplit(as.character(kinshipsc$IID1), split="_"))
+    mat <- matrix(temp, ncol=4, byrow=TRUE)
+    matdat <- as.data.table(mat)
+    kinshipsc$populationA <- matdat$V3
+    kinshipsc$yearA <- matdat$V2
+
+    temp <- unlist(strsplit(as.character(kinshipsc$IID2), split="_"))
+    mat <- matrix(temp, ncol=4, byrow=TRUE)
+    matdat <- as.data.table(mat)
+    kinshipsc$populationB <- matdat$V3
+    kinshipsc$yearB <- matdat$V2
+
+    subC <- kinshipsc[medrdA > 9 & medrdB> 9 & populationA=="D8" & populationB=="D8"]
+    subD <- subC[, c("FID1", "IID1", "FID2", "IID2", "RT", "EZ", "Z0", "Z1", "Z2", "PI_HAT", "PHE", "DST", "PPC", "RATIO"), with=FALSE]
+    write.table(subD, file="medrd10.nosubset.D8only.genome", sep="\t", row.names=FALSE, quote=FALSE)
+
+
+    kinshipsc$pondcompare <- paste(kinshipsc$populationA, kinshipsc$populationB, sep="_")
+    kinshipsc$SCcompare <- paste(kinshipsc$SCA, kinshipsc$SCB, sep="_")
+    kinshipsc$clone <- ifelse(kinshipsc$SCA!="OO" & kinshipsc$SCB!="OO" &
+      kinshipsc$SCA!="G" & kinshipsc$SCB!="G" &
+      kinshipsc$SCA==kinshipsc$SCB, 1, 0)
+
+   min(kinshipsc$Z2[kinshipsc$clone==1])
+   0.52
+   max(kinshipsc$Z1[kinshipsc$clone==1])
+   0.4752
+   max(kinshipsc$Z0[kinshipsc$clone==1])
+   0.0129
+   min(kinshipsc$PI_HAT[kinshipsc$clone==1])
+   0.7576
+
+   missedclones <- kinshipsc[clone!=1 & PI_HAT > 0.7575 & Z0 < 0.0130 & Z1 < 0.4753 & Z2 > 0.519]
+   missedclonesB <- kinshipsc[clone!=1 & PI_HAT > 0.75 & Z2 > 0.5]
+
+   # April_2017_D8_214 appears to belong to superclone C (original B)
+   # March20_2018_DBunk_5 appears to belong to superclone K
+   # Spring_2016_D8_8.31 appears to belong to superclone ZZ
+   # Based on the KING output and the PLINK IBD output, these are the only three I would add into superclones.

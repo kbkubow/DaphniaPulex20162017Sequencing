@@ -11,13 +11,13 @@
               library(SeqArray)
               library(tidyverse)
 
-      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
 
 ### Load LD pruned SNP set
-      load("finalsetsnpset01pulex_20200121.Rdata")
+      load("finalsetsnpset01pulex_20200207.Rdata")
 
 ### Load superclone file
-      sc <- fread("CloneInfoFilePulexOnly_20200128.txt")
+      sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
       scids <- sc$clone
 
       seqSetFilter(genofile, sample.id=scids)
@@ -66,3 +66,14 @@
 
          ## write out the table
      write.table(out.dt, "gtProbabilities.txt", col.names=T, row.names=F, sep="\t", quote=FALSE)
+
+### Now looking at reference allele bias
+
+  #Keep only heterozygous SNPs from gt.dt
+    gt.dthet <- gt.dt[GT==1]
+    gt.dthet$totalrd <- gt.dthet$ref.rd+gt.dthet$alt.rd
+    gt.dthet$ref_freq <- gt.dthet$ref.rd/gt.dthet$totalrd
+    ggplot(data=gt.dthet, aes(x=ref_freq)) + geom_histogram()
+    ggplot(data=gt.dthet[totalrd > 9], aes(x=ref_freq)) + geom_histogram()
+
+    #Bias ranges from 0.499-0.514 (no read depth filtering to read depth filtered).

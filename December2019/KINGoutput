@@ -1,0 +1,139 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(data.table)
+  library(foreach)
+  library(ggplot2)
+  library(ggbeeswarm)
+  library(tidyverse)
+
+### Read in KING output file
+  kinship <- fread("king.kin")
+
+### Read in SC file
+  #sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc <- fread("CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc <- sc[Species=="pulex" & Nonindependent==0]
+
+### Add SC info to king output
+  scsubA <- data.table(ID1=sc$clone, SCA=sc$SC, medrdA=sc$medrd)
+  scsubB <- data.table(ID2=sc$clone, SCB=sc$SC, medrdB=sc$medrd)
+  setkey(kinship, ID2)
+  setkey(scsubB, ID2)
+  tmpm <- merge(kinship, scsubB)
+  setkey(tmpm, ID1)
+  setkey(scsubA, ID1)
+  kinshipsc <- merge(tmpm, scsubA)
+
+### Add in year and population info
+  temp <- unlist(strsplit(as.character(kinshipsc$ID1), split="_"))
+  mat <- matrix(temp, ncol=4, byrow=TRUE)
+  matdat <- as.data.table(mat)
+  kinshipsc$populationA <- matdat$V3
+  kinshipsc$yearA <- matdat$V2
+
+  temp <- unlist(strsplit(as.character(kinshipsc$ID2), split="_"))
+  mat <- matrix(temp, ncol=4, byrow=TRUE)
+  matdat <- as.data.table(mat)
+  kinshipsc$populationB <- matdat$V3
+  kinshipsc$yearB <- matdat$V2
+
+  kinshipsc$pondcompare <- paste(kinshipsc$populationA, kinshipsc$populationB, sep="_")
+  kinshipsc$SCcompare <- paste(kinshipsc$SCA, kinshipsc$SCB, sep="_")
+  kinshipsc$clone <- ifelse(kinshipsc$SCA!="OO" & kinshipsc$SCB!="OO" &
+    kinshipsc$SCA!="G" & kinshipsc$SCB!="G" &
+    kinshipsc$SCA==kinshipsc$SCB, 1, 0)
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="C" & kinshipsc$ID1=="April_2017_D8_214" |
+    kinshipsc$SCB=="C" & kinshipsc$ID1=="April_2017_D8_214" |
+    kinshipsc$SCA=="C" & kinshipsc$ID2=="April_2017_D8_214" |
+    kinshipsc$SCB=="C" & kinshipsc$ID2=="April_2017_D8_214", 2, kinshipsc$clone)
+
+  ggplot(data=kinshipsc[Kinship > 0.2 & medrdA > 9 & medrdB > 9], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+  ggplot(data=kinshipsc[Kinship > 0.2], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+
+  PO1 <- kinshipsc[Kinship > 0.3 & Kinship < 0.375 & IBS0 < 0.0019]
+  PO2 <- kinshipsc[Kinship > 0.25 & Kinship < 0.3 & IBS0 < 0.0020]
+  PO3 <- kinshipsc[Kinship > 0.2 & Kinship < 0.25 & IBS0 < 0.0032]
+  LikelyClones <- kinshipsc[Kinship > 0.375 & IBS0 < 0.00025]
+  LikelyClonesB <- kinshipsc[Kinship > 0.35 & IBS0 < 0.00025]
+  LikelyClonesMissed <- LikelyClonesB[clone!=1 & medrdA > 4 & medrdB > 4]
+
+  PO <- rbind(PO1, PO2, PO3)
+
+  PO1 <- kinshipsc[Kinship > 0.3 & Kinship < 0.375 & IBS0 < 0.0019]
+  PO2 <- kinshipsc[Kinship > 0.25 & Kinship < 0.3 & IBS0 < 0.0020]
+  PO3 <- kinshipsc[Kinship > 0.2 & Kinship < 0.25 & IBS0 < 0.0032]
+
+
+
+
+  kinshipsc <- kinshipsc[populationA!="DOil" & populationA!="Dramp" & populationB!="DOil" & populationB!="Dramp"]
+  kinshipsc$withinpond <- ifelse(kinshipsc$populationA==kinshipsc$populationB, 1, 0)
+  ggplot(data=kinshipsc, aes(x=as.factor(pondcompare), y=Kinship, color=as.factor(withinpond))) + geom_beeswarm()
+
+### From looking at a graph of Kinship by IBS0, we can see clear groupings falling out. One of these is the line
+### along the bottom that appears to respond to clones (individuals from the same clonal lineage.
+  # April_2017_D8_214 appears to belong to superclone C (original B)
+  # March20_2018_DBunk_5 appears to belong to superclone K
+  # Spring_2016_D8_8.24 appears to belong to superclone H
+  # Spring_2016_D8_8.31 appears to belong to superclone Z
+  # Spring_2016_D8_8.23 appears to belong to superclone C (original B)
+  # April_2017_DCat_10 appears to belong to superclone B
+
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="C" & kinshipsc$ID1=="April_2017_D8_214" |
+    kinshipsc$SCB=="C" & kinshipsc$ID1=="April_2017_D8_214" |
+    kinshipsc$SCA=="C" & kinshipsc$ID2=="April_2017_D8_214" |
+    kinshipsc$SCB=="C" & kinshipsc$ID2=="April_2017_D8_214", 2, kinshipsc$clone)
+
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="K" & kinshipsc$ID1=="March20_2018_DBunk_5" |
+    kinshipsc$SCB=="K" & kinshipsc$ID1=="March20_2018_DBunk_5" |
+    kinshipsc$SCA=="K" & kinshipsc$ID2=="March20_2018_DBunk_5" |
+    kinshipsc$SCB=="K" & kinshipsc$ID2=="March20_2018_DBunk_5", 3, kinshipsc$clone)
+
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="H" & kinshipsc$ID1=="Spring_2016_D8_8.24" |
+    kinshipsc$SCB=="H" & kinshipsc$ID1=="Spring_2016_D8_8.24" |
+    kinshipsc$SCA=="H" & kinshipsc$ID2=="Spring_2016_D8_8.24" |
+    kinshipsc$SCB=="H" & kinshipsc$ID2=="Spring_2016_D8_8.24", 4, kinshipsc$clone)
+
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="Z" & kinshipsc$ID1=="Spring_2016_D8_8.31" |
+    kinshipsc$SCB=="Z" & kinshipsc$ID1=="Spring_2016_D8_8.31" |
+    kinshipsc$SCA=="Z" & kinshipsc$ID2=="Spring_2016_D8_8.31" |
+    kinshipsc$SCB=="Z" & kinshipsc$ID2=="Spring_2016_D8_8.31", 5, kinshipsc$clone)
+
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="C" & kinshipsc$ID1=="Spring_2016_D8_8.23" |
+    kinshipsc$SCB=="C" & kinshipsc$ID1=="Spring_2016_D8_8.23" |
+    kinshipsc$SCA=="C" & kinshipsc$ID2=="Spring_2016_D8_8.23" |
+    kinshipsc$SCB=="C" & kinshipsc$ID2=="Spring_2016_D8_8.23", 6, kinshipsc$clone)
+
+  kinshipsc$clone <- ifelse(kinshipsc$SCA=="B" & kinshipsc$ID1=="April_2017_DCat_10" |
+    kinshipsc$SCB=="B" & kinshipsc$ID1=="April_2017_DCat_10" |
+    kinshipsc$SCA=="B" & kinshipsc$ID2=="April_2017_DCat_10" |
+    kinshipsc$SCB=="B" & kinshipsc$ID2=="April_2017_DCat_10", 7, kinshipsc$clone)
+
+    LikelyClonesMissedB <- LikelyClonesMissed[ID1!="April_2017_D8_214" & ID2!="April_2017_D8_214" & ID1!="March20_2018_DBunk_5" & ID2!="March20_2018_DBunk_5"]
+    LikelyClonesMissedC <- LikelyClonesMissedB[ID1!="April_2017_DCat_10" & ID2!="April_2017_DCat_10" & ID1!="Spring_2016_D8_8.23" & ID2!="Spring_2016_D8_8.23"]
+    LikelyClonesMissedD <- LikelyClonesMissedC[ID1!="Spring_2016_D8_8.24" & ID2!="Spring_2016_D8_8.24" & ID1!="Spring_2016_D8_8.31" & ID2!="Spring_2016_D8_8.31"]
+
+  ggplot(data=kinshipsc[N_SNP > 451535 & Kinship > 0.19], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+  ggplot(data=kinshipsc[N_SNP > 451535 & Kinship > 0.3], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+
+  ggplot(data=kinshipsc[N_SNP > 451535 & Kinship > 0.3], aes(x=Kinship, y=IBS0, color=as.factor(clone))) +
+    geom_point() + facet_wrap(~clone)
+
+  ggplot(data=kinshipsc[N_SNP > 451535 & Kinship > 0.3], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+  ggplot(data=kinshipsc[N_SNP > 451535 & Kinship > 0.19], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+  ggplot(data=kinshipsc[N_SNP > 490000 & Kinship > 0.19], aes(x=Kinship, y=IBS0, color=as.factor(clone))) + geom_point()
+
+
+
+  msc$pondcompare <- str_replace(msc$pondcompare, "D8_D10", "D10_D8")
+  msc$pondcompare <- str_replace(msc$pondcompare, "DBunk_D10", "D10_DBunk")
+  msc$pondcompare <- str_replace(msc$pondcompare, "DCat_D10", "D10_DCat")
+  msc$pondcompare <- str_replace(msc$pondcompare, "DBunk_D8", "D8_DBunk")
+  msc$pondcompare <- str_replace(msc$pondcompare, "DCat_D8", "D8_DCat")
+  msc$pondcompare <- str_replace(msc$pondcompare, "W1_D8", "D8_W1")
+  msc$pondcompare <- str_replace(msc$pondcompare, "W6_D8", "D8_W6")
+  msc$pondcompare <- str_replace(msc$pondcompare, "W1_DBunk", "DBunk_W1")
+  msc$pondcompare <- str_replace(msc$pondcompare, "W6_DBunk", "DBunk_W6")
+  msc.ag <- msc[,list(meanIBS=mean(Kinship)),
+    list(pondcompare, window, chr, start, stop)]
