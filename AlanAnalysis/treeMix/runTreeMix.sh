@@ -20,5 +20,7 @@ module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
 -i /scratch/aob2x/treemixIn.pond_species.gz \
 -k 500 \
 -m 2 \
--o /scratch/aob2x/treemixIn.pond_species \
+-o /scratch/aob2x/treemixOut.pond_species \
 -root pulicaria_Pond21
+
+tar zcvf ~/treemixOut.tar.gz /scratch/aob2x/treemixOut.pond_species*
