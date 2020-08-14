@@ -11,16 +11,22 @@
 #SBATCH --account berglandlab
 
 # sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/treeMix/runTreeMix.sh
-# sacct -j 14267973
+# sacct -j 14268216
 
 module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
 
 
-~/treemix/src/treemix \
+#~/treemix/src/treemix \
+#-i /scratch/aob2x/treemixIn.pond_species.gz \
+#-k 500 \
+#-m 2 \
+#-o /scratch/aob2x/treemixOut.pond_species \
+#-root pulicaria_Pond21
+#
+
+~/treemix/src/threepop \
 -i /scratch/aob2x/treemixIn.pond_species.gz \
--k 500 \
--m 2 \
--o /scratch/aob2x/treemixOut.pond_species \
--root pulicaria_Pond21
+-k 500 >
+/scratch/aob2x/treemixOut.pond_species.treePop
 
 tar zcvf ~/treemixOut.tar.gz /scratch/aob2x/treemixOut.pond_species*
