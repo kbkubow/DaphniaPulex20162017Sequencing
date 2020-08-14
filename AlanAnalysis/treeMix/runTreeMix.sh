@@ -26,7 +26,7 @@ module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
 
 ~/treemix/src/threepop \
 -i /scratch/aob2x/treemixIn.pond_species.gz \
--k 500 >
+-k 500 > \
 /scratch/aob2x/treemixOut.pond_species.treePop
 
 tar zcvf ~/treemixOut.tar.gz /scratch/aob2x/treemixOut.pond_species*
