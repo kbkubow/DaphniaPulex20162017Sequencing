@@ -10,7 +10,8 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-
+# sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/treeMix/runTreeMix.sh
+# sacct -j 14267973
 
 module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
 
@@ -18,5 +19,6 @@ module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
 ~/treemix/src/treemix \
 -i /scratch/aob2x/treemixIn.pond_species.gz \
 -k 500 \
+-m 2 \
 -o /scratch/aob2x/treemixIn.pond_species \
 -root pulicaria_Pond21
