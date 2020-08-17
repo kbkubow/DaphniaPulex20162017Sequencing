@@ -1,6 +1,6 @@
 ### Run Treemix on Daphnia samples
-#module load intel/18.0 intelmpi/18.0 R/3.6.3; R
-
+#module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
+ # module load
 
 ### libraries
 	library(data.table)
@@ -17,6 +17,7 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
 
 ### load metadata file
   samps <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+  samps[,set:=paste(Species, population, sep="_")]
 
 ### functions
 	### write treemix data
@@ -55,15 +56,31 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
 
 ### What is relationship between species/populations
 
-		### define sets
-			samps[,set:=paste(Species, population, sep="_")]
+	### write data
+		writeTreeMix(samps=samps, filestem="pond_species")
+
+	### run threepop
+		#ret <- system("/home/aob2x/treemix/src/threepop -i /scratch/aob2x/treemixIn.pond_species.gz -k 500", intern=T)
 
 
-		### write data
-			writeTreeMix(samps=samps, filestem="pond_species")
 
-		### run threepop
-			ret <- system("threepop -i /mnt/spicy_2/treemix_daps/A_B_DBunk.gz -k 50", intern=T)
+  #./treemix \
+  #-i /scratch/aob2x/treemixIn.pond_species.gz \
+  #-k 500 \
+  #-o /scratch/aob2x/treemixIn.pond_species \
+  #-root pulicaria_Pond21
+
+
+
+### plot
+
+  source("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanAnalysis/treeMix/plotting_funcs.R")
+
+  plot_tree(stem="~/scratch/aob2x/treemixOut.pond_species")
+  plot_resid(stem="~/scratch/aob2x/treemixOut.pond_species")
+
+
+
 
 			ret <- system("threepop -i /mnt/spicy_2/treemix_daps/A_B_DCat.gz -k 5000", intern=T)
 			ret3 <- system("threepop -i /mnt/spicy_2/treemix_daps/A_B_DBunk_D10.gz -k 500", intern=T)
@@ -85,5 +102,5 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
 			writeTreeMix(samps=samps, filestem="A_B_DBunk_D10_W")
 
 		### run threepop & fourpop
-			ret3 <- system("threepop -i /mnt/spicy_2/treemix_daps/A_B_DBunk_D10_W.gz -k 500", intern=T)
+			ret3 <- system("~threepop -i /mnt/spicy_2/treemix_daps/A_B_DBunk_D10_W.gz -k 500", intern=T)
 			ret4 <- system("fourpop -i /mnt/spicy_2/treemix_daps/A_B_DBunk_D10_W.gz -k 500", intern=T)
