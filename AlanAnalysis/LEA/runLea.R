@@ -1,4 +1,5 @@
 library(LEA)
+
 dap.snmf <- snmf("/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno",
     K=c(1:10),
     project = "new",
