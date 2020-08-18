@@ -13,7 +13,8 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
 	genofile <- seqOpen("MapJune2020_ann.seq.gds", readonly=TRUE)
 
 ### snpFilter file
-  snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
+  #snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
+	load("dpfiltsnps_20200623.Rdata")
 
 ### load metadata file
   samps <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
@@ -30,7 +31,7 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
 
 				seqSetFilter(genofile,
 							sample.id=samps[set==s,list(clone=clone[which.max(medrd)]), list(SC)]$clone,
-              variant.id=snpFilter$variant.ids)
+              variant.id=dpfiltsnps$variant.ids)
 
 
 				dosage <- seqGetData(genofile, "$dosage")
