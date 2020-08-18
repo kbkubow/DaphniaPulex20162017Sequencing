@@ -13,7 +13,8 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
 	genofile <- seqOpen("MapJune2020_ann.seq.gds", readonly=TRUE)
 
 ### snpFilter file
-  snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
+  #snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
+	load("dpfiltsnps_20200623.Rdata")
 
 ### load metadata file
   samps <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
@@ -26,7 +27,7 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
   samps.ag <- rbind(samps.ag.sc, samps.ag.oo)
 
 ### write vcf file as input for LEA
-  seqSetFilter(genofile, variant.id=snpFilter$variant.ids, sample.id=samps.ag$clone)
+  seqSetFilter(genofile, variant.id=dpfiltsnps$variant.ids, sample.id=samps.ag$clone)
 
   seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/daps4lea.vcf", info.var=character(0), fmt.var=character(0), use_Rsamtools=TRUE,
     verbose=TRUE)
