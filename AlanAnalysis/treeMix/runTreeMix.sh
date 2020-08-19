@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 # sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/treeMix/runTreeMix.sh
-# sacct -j 14395003
+# sacct -j 14407101
 
 module load intel/20.0 intelmpi/20.0 gsl/2.4 boost/1.68.0
 
