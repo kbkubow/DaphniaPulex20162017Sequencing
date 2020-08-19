@@ -1,4 +1,4 @@
-
+#module load intel/18.0  intelmpi/18.0 gsl/2.4 R/3.6.3 boost/1.60.0; R
 
 #### post process
 library(LEA)
@@ -6,6 +6,9 @@ library(foreach)
 library(data.table)
 
 load(file="/scratch/aob2x/daphnia_hwe_sims/dap.snmf.Rdata")
+
+
+
 
 q.list <- foreach(k=1:10)%do%{
 	Q(dap.snmf, K = k)

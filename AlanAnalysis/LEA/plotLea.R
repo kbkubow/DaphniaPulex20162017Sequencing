@@ -79,14 +79,18 @@
     ggplot(k.i, aes(x=ord, y=value, fill=as.factor(variable))) +
     geom_bar(position="stack", stat="identity", width = 1) +
     facet_grid(~set, scale="free_x", space="free") +
-    geom_text(data=k[Species=="pulicaria"], aes(x=ord, y=1, label="*"), size=2) +
-    geom_text(data=k[Species=="obtusa"], aes(x=ord, y=1, label="$"), size=2) +
+    geom_text(data=k.i[Species=="pulicaria"], aes(x=ord, y=1, label="*"), size=2) +
+    geom_text(data=k.i[Species=="obtusa"], aes(x=ord, y=1, label="$"), size=2) +
+    geom_text(data=k.i[SC=="A"], aes(x=ord, y=1.1, label="A"), size=5) +
+    geom_text(data=k.i[SC=="C"], aes(x=ord, y=1.1, label="C"), size=5) +
+
     theme(strip.text.x = element_text(angle=90),
           panel.spacing = unit(.2, "lines"),
           axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) +
     scale_x_continuous(expand = c(0,0)) +
-    xlab("")
+    xlab("") +
+    guides(fill=FALSE)
 
   }
 
