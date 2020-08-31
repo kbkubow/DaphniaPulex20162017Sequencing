@@ -13,8 +13,8 @@
 
 
 ### run as
-# sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/runRabbit.sh
-# sacct -j 13247689
+# sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
+# sacct -j 14754352
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13247686_1.err
 
 
@@ -30,12 +30,12 @@ chr=$( grep "^${SLURM_ARRAY_TASK_ID}," ${datadir}/chrs.csv | cut -f2 -d',' )
 echo $chr $datadir
 
 ### generate RABBIT input data
-Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/formatData.R ${chr} ${cm}
+Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatData.R ${chr} ${cm}
 
 
 ### format RABBIT script file
 echo "make mathematica input"
-sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbitRedo/template.m > \
+sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
 ${datadir}/${chr}.m
 
 ls ${datadir}/${chr}.m
@@ -45,6 +45,6 @@ ls ${datadir}/${chr}.m
 math -script ${datadir}/${chr}.m
 
 ### convert paths
-python /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parseHaplotypes.py \
-${chr}.all.csv \
-${datadir}/ >> ${chr}.all.haps
+ python /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parseHaplotypes.py \
+ ${chr}.all.csv \
+ ${datadir}/ >> ${chr}.all.haps
