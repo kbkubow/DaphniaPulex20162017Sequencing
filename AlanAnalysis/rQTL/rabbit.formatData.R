@@ -4,7 +4,7 @@
   args = commandArgs(trailingOnly=TRUE)
   chr.i <- as.character(args[1])
   maxcM <- as.numeric(args[2])
-  #chr.i <- "Scaffold_9199_HRSCAF_10755"
+  #chr.i <- "Scaffold_9199_HRSCAF_10755"; maxcM=10
 
 ### libraries
   library(data.table)
@@ -59,7 +59,7 @@
   ### most informative
     genomat <- genomat[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1)]
     setkey(genomat, id)
-    genomat <- genomat[J(sample(genomat$id, 5000))]
+    #genomat <- genomat[J(sample(genomat$id, 5000))]
     genomat <- genomat[order(id)]
 
     #table(genomat$A, genomat$C)
@@ -109,3 +109,24 @@
                sep=",",
                na="NA",
                append=TRUE)
+
+
+
+### make ped file
+ped.out <- paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_", maxcM, "cm/", chr.i, ".ped", sep="")
+
+writeLines( paste("Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
+             con=out.fn
+           )
+
+f1s[,id:=3]
+f1s[,fc:="1-2"]
+
+ write.table(f1s,
+             file=ped.out,
+             quote=FALSE,
+             row.names=FALSE,
+             col.names=FALSE,
+             sep=",",
+             na="NA",
+             append=TRUE)
