@@ -113,17 +113,17 @@
 
 
 ### make ped file
-ped.out <- paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_", maxcM, "cm/", chr.i, ".ped", sep="")
+ped.fn <- paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_", maxcM, "cm/", chr.i, ".ped", sep="")
 
-writeLines( paste("Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
-             con=out.fn
+writeLines( "Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
+             con=ped.fn
            )
 
 f1s[,id:=3]
 f1s[,fc:="1-2"]
 
  write.table(f1s,
-             file=ped.out,
+             file=ped.fn,
              quote=FALSE,
              row.names=FALSE,
              col.names=FALSE,
