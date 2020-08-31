@@ -1,0 +1,571 @@
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] 892737827
+[1] "*************************************"
+[1] "*          create.dataset            *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)                 177
+        -L (number of loci)                        510805
+        -s (seed random init)                      892737827
+        -r (percentage of masked data)             0.05
+        -x (genotype file in .geno format)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -o (output file in .geno format)           /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+
+ Write genotype file with masked data, /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+[1] "*************************************"
+[1] "* sNMF K = 1  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          1
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K1/run1/daps4lea_r1.1.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K1/run1/daps4lea_r1.1.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+
+Least-square error: 21524926.366749
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K1/run1/daps4lea_r1.1.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K1/run1/daps4lea_r1.1.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      1
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K1/run1/daps4lea_r1.1.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K1/run1/daps4lea_r1.1.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.40651
+Cross-Entropy (masked data):	 0.425785
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 2  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          2
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K2/run1/daps4lea_r1.2.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K2/run1/daps4lea_r1.2.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[===================]
+Number of iterations: 51
+
+Least-square error: 20351707.654052
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K2/run1/daps4lea_r1.2.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K2/run1/daps4lea_r1.2.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      2
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K2/run1/daps4lea_r1.2.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K2/run1/daps4lea_r1.2.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.376868
+Cross-Entropy (masked data):	 0.4015
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 3  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          3
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K3/run1/daps4lea_r1.3.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K3/run1/daps4lea_r1.3.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[=============]
+Number of iterations: 35
+
+Least-square error: 19546640.448105
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K3/run1/daps4lea_r1.3.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K3/run1/daps4lea_r1.3.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      3
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K3/run1/daps4lea_r1.3.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K3/run1/daps4lea_r1.3.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.348905
+Cross-Entropy (masked data):	 0.382687
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 4  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          4
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K4/run1/daps4lea_r1.4.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K4/run1/daps4lea_r1.4.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[========]
+Number of iterations: 22
+
+Least-square error: 19001521.764097
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K4/run1/daps4lea_r1.4.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K4/run1/daps4lea_r1.4.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      4
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K4/run1/daps4lea_r1.4.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K4/run1/daps4lea_r1.4.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.337317
+Cross-Entropy (masked data):	 0.374572
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 5  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          5
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K5/run1/daps4lea_r1.5.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K5/run1/daps4lea_r1.5.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[==========]
+Number of iterations: 28
+
+Least-square error: 18586341.623083
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K5/run1/daps4lea_r1.5.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K5/run1/daps4lea_r1.5.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      5
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K5/run1/daps4lea_r1.5.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K5/run1/daps4lea_r1.5.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.328631
+Cross-Entropy (masked data):	 0.369419
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 6  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          6
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K6/run1/daps4lea_r1.6.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K6/run1/daps4lea_r1.6.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[=====================]
+Number of iterations: 56
+
+Least-square error: 18301934.459708
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K6/run1/daps4lea_r1.6.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K6/run1/daps4lea_r1.6.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      6
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K6/run1/daps4lea_r1.6.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K6/run1/daps4lea_r1.6.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.324032
+Cross-Entropy (masked data):	 0.368371
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 7  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          7
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K7/run1/daps4lea_r1.7.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K7/run1/daps4lea_r1.7.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[===========================]
+Number of iterations: 71
+
+Least-square error: 18026952.501474
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K7/run1/daps4lea_r1.7.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K7/run1/daps4lea_r1.7.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      7
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K7/run1/daps4lea_r1.7.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K7/run1/daps4lea_r1.7.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.318087
+Cross-Entropy (masked data):	 0.366868
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 8  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          8
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K8/run1/daps4lea_r1.8.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K8/run1/daps4lea_r1.8.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[============================]
+Number of iterations: 75
+
+Least-square error: 17672343.698089
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K8/run1/daps4lea_r1.8.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K8/run1/daps4lea_r1.8.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      8
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K8/run1/daps4lea_r1.8.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K8/run1/daps4lea_r1.8.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.309995
+Cross-Entropy (masked data):	 0.368641
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 9  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          9
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K9/run1/daps4lea_r1.9.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K9/run1/daps4lea_r1.9.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[======================================]
+Number of iterations: 101
+
+Least-square error: 17402320.355712
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K9/run1/daps4lea_r1.9.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K9/run1/daps4lea_r1.9.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      9
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K9/run1/daps4lea_r1.9.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K9/run1/daps4lea_r1.9.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.304179
+Cross-Entropy (masked data):	 0.366669
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
+[1] "*************************************"
+[1] "* sNMF K = 10  repetition 1      *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)             177
+        -L (number of loci)                    510805
+        -K (number of ancestral pops)          10
+        -x (input file)                        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        -q (individual admixture file)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K10/run1/daps4lea_r1.10.Q
+        -g (ancestral frequencies file)        /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K10/run1/daps4lea_r1.10.G
+        -i (number max of iterations)          200
+        -a (regularization parameter)          10
+        -s (seed random init)                  892737827
+        -e (tolerance error)                   1E-05
+        -p (number of processes)               10
+        - diploid
+
+Read genotype file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno:		OK.
+
+
+Main algorithm:
+	[                                                                           ]
+	[===============]
+Number of iterations: 41
+
+Least-square error: 17196405.856345
+Write individual ancestry coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K10/run1/daps4lea_r1.10.Q:		OK.
+Write ancestral allele frequency coefficient file /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K10/run1/daps4lea_r1.10.G:	OK.
+
+[1] "*************************************"
+[1] "*    cross-entropy estimation       *"
+[1] "*************************************"
+summary of the options:
+
+        -n (number of individuals)         177
+        -L (number of loci)                510805
+        -K (number of ancestral pops)      10
+        -x (genotype file)                 /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno
+        -q (individual admixture)          /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K10/run1/daps4lea_r1.10.Q
+        -g (ancestral frequencies)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/K10/run1/daps4lea_r1.10.G
+        -i (with masked genotypes)         /sfs/lustre/bahamut/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf/masked/daps4lea_I.geno
+        - diploid
+
+Cross-Entropy (all data):	 0.300773
+Cross-Entropy (masked data):	 0.383396
+The project is saved into :
+  
+
+To load the project, use:
+ project = load.snmfProject("")
+
+To remove the project, use:
+ remove.snmfProject("")
+
