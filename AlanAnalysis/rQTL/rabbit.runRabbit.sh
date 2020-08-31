@@ -45,6 +45,6 @@ ls ${datadir}/${chr}.m
 math -script ${datadir}/${chr}.m
 
 ### convert paths
- python /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parseHaplotypes.py \
+ python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.parseHaplotypes.py \
  ${chr}.all.csv \
  ${datadir}/ >> ${chr}.all.haps
