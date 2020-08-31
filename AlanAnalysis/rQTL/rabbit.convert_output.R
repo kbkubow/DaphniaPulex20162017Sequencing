@@ -9,14 +9,34 @@
   genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds")
 
 ### load hap data
-  haps.files <- list.files(path="/scratch/aob2x/AxC_RABBIT/rabbitOut", pattern="*haps")
+  haps.files <- list.files(path="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/", pattern="*haps")
+
   haps <- foreach(fi=haps.files, .combine="rbind")%do%{
     #fi <- haps.files[1]
-    tmp <- fread(paste("/scratch/aob2x/AxC_RABBIT/rabbitOut", fi, sep="/"))
-    tmp[,cloneid:=tstrsplit(fi, "\\.")[[2]]]
+    message(fi)
+    tmp <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/", fi, sep="/"))
+    tmp[,cloneid:=tstrsplit(V1, " ")[[1]]]
+    tmp[,chr:=tstrsplit(V1, " ")[[2]]]
+    tmp[,allele1:=tstrsplit(V4, "\\|")[[1]]]
+    tmp[,allele2:=tstrsplit(V4, "\\|")[[2]]]
+
     tmp
   }
-  seqSetFilter(genofile, unique(haps$V2))
+  haps[V4=="A_m|C_m", encode:=1]
+  haps[V4=="A_p|C_m", encode:=2]
+  haps[V4=="A_m|C_p", encode:=3]
+  haps[V4=="A_p|C_p", encode:=4]
+
+
+
+
+
+
+
+
+
+  seqSetFilter(genofile, unique(haps$chr))
+
   dt <- data.table(V2=seqGetData(genofile, "variant.id"), startPos=seqGetData(genofile, "position"))
   haps <- merge(haps, dt, by="V2")
 
@@ -34,10 +54,6 @@
   haps[V5=="C1", allele2:="C"]
 
   haps[,diplo:=apply(cbind(haps$allele1, haps$allele2), 1, function(x) paste(sort(x), collapse=""))]
-  haps[diplo=="AC", encode:=1]
-  haps[diplo=="BC", encode:=2]
-  haps[diplo=="AD", encode:=3]
-  haps[diplo=="BD", encode:=4]
 
   prop.table(table(haps$V1, haps$diplo))
 

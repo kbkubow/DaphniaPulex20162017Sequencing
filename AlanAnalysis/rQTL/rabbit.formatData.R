@@ -14,7 +14,7 @@
 ### set wd
   setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
 
-### load SuperClone=
+### load SuperClone
   sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
 
 ### which F1s?
@@ -24,13 +24,19 @@
 ### open GDS
   genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
 
+### load in filter file
+  snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
+
 ### make snp.dt
   snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
                        pos=seqGetData(genofile, "position"),
                        id=seqGetData(genofile, "variant.id"),
                        numAlleles=seqNumAllele(genofile),
                        key="chr")
+  setkey(snpFilter, chr, pos)
+  setkey(snp.dt, chr, pos)
 
+  snp.dt <- merge(snpFilter, snp.dt)
   #snp.dt.ag <- snp.dt[,.N,chr]
   #write.table(snp.dt.ag, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/chrs.csv", quote=F, row.names=T, col.names=F, sep=",")
 
@@ -57,7 +63,7 @@
     #genomat <- genomat[order(id)]
 
   ### most informative
-    genomat <- genomat[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1)]
+    genomat <- genomat[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1) | (A==1 & C==1)]
     setkey(genomat, id)
     #genomat <- genomat[J(sample(genomat$id, 5000))]
     genomat <- genomat[order(id)]
