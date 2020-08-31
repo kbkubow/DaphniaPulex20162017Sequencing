@@ -11,7 +11,7 @@
   library(foreach)
   library(data.table)
   library(ggplot2)
-  library(pophelper)
+  #library(pophelper)
   library(cowplot); theme_set(theme_cowplot())
 
 ### load datda
@@ -20,130 +20,86 @@
   load("~/snmf_out.Rdata")
 
 ### which K?
-  ggplot(data=ce.dt, aes(x=k, y=ce, group=run, color=as.factor(run))) + geom_line()
-  ce.dt[k<10][which.min(ce)]
+#  ggplot(data=ce.dt, aes(x=k, y=ce, group=run, color=as.factor(run))) + geom_line()
+#
+#  ce.dt.ag <- ce.dt[,list(mu=median(ce), sd=sd(ce), n=length(ce)), list(k)]
+#
+#  ggplot() +
+#  geom_point(data=ce.dt, aes(x=k, y=ce), fill="grey", alpha=.5) +
+#  geom_line(data=ce.dt.ag, aes(x=k, y=mu)) +
+#  geom_point(data=ce.dt[k==ce.dt.ag[which.min(mu)]$k][order(ce)][1], aes(x=k, y=ce), color="red")
+#
+#  ce.dt[which.min(ce)]
 
-### extract Q matrix
-  processQ <- function(k, samp, run, orderby) {
-    #k<-8; run=8; samp=samps$clone; orderby="set"
-  	qi<-as.data.table(q.list[[k]][[run]])
-  	qi <- as.data.table(qi)
-  	qi[,gr:=apply(qi, 1, which.max)]
-  	qi[,samp:=samp]
-  	qil <- melt(qi, measure.vars=paste("V", 1:k, sep=""))
-    setnames(qil, "samp", "clone")
-    qil <- merge(qil, samps, by="clone")
-    qil[set=="pulex_Dcat", set:="pulex_DCat"]
-
-
-
-    if(orderby=="gr") {
-    	qil.ag <- foreach(gr.i=unique(qil$gr), .combine="rbind")%do%{
-    		qil.sub <- qil[gr==gr.i][variable==paste("V", gr.i, sep="")]
-    		qil.sub[,ord:=rank(value, ties.method="first")]
-    		qil.sub
-    	}
-    } else if(orderby=="set") {
-      qil.ag <- foreach(set.i=unique(qil$set), .combine="rbind")%do%{
-        #set.i<-"pulex_D8"
-        qil.temp <- qil[set==set.i]
-        qil.temp.ave <- qil.temp[,list(mu=mean(value)), list(variable)]
-
-
-        qil.temp.ag <- qil.temp[,list(gr=unique(gr), max=max(value)), list(clone)]
-        keycol <-c("gr", "max")
-        setorderv(qil.temp.ag, keycol)
-        qil.temp.ag[,ord:=c(1:dim(qil.temp.ag)[1])]
-        qil.temp.ag
-      }
-    }
-
-  	setkey(qil, clone)
-  	setkey(qil.ag, clone)
-
-  	qil <- merge(qil, qil.ag)
-  	qil[,ordf:=factor(ord, levels=sort(unique(ord)))]
-    qil[,set:=factor(set,
-                    levels=c("obtusa_DBunk",
-                            "pulicaria_Pond22",
-                            "pulex_W6",
-                            "pulex_W1",
-                            "pulex_D10",
-                            "pulex_D8",
-                            "pulex_DBunk",
-                            "pulex_DCat",
-                            "pulex_DOil",
-                            "pulex_Dramp"))]
-  	return(qil)
-  }
-
-  plotQ <- function(k.i) {
-
-    ggplot(k.i, aes(x=ord, y=value, fill=as.factor(variable))) +
-    geom_bar(position="stack", stat="identity", width = 1) +
-    facet_grid(~set, scale="free_x", space="free") +
-    geom_text(data=k.i[SC=="A"], aes(x=ord, y=1.1, label="A"), size=5) +
-    geom_text(data=k.i[SC=="C"], aes(x=ord, y=1.1, label="C"), size=5) +
-
-    theme(strip.text.x = element_text(angle=90),
-          panel.spacing = unit(.2, "lines"),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank()) +
-    scale_x_continuous(expand = c(0,0)) +
-    xlab("") +
-    guides(fill=FALSE)
-
-  }
-
-  plotQ.sp <- function(k.i) {
-    k.i[SC=="A",col:="A"]
-    k.i[SC=="C",col:="C"]
-    setorderv(k.i, "col")
-
-    puli.k <- k.i[Species=="pulicaria"][which.max(value)]$variable
-    obt.k <- k.i[Species=="obtusa"][which.max(value)]$variable
-
-    puli.plot <- ggplot(data=k.i[variable==puli.k], aes(x=set, y=log10(value), color=col)) +
-    geom_jitter(width = 0.25) +
-    #geom_jitter(data=k.i[variable==puli.k][SC=="A"], aes(x=set, y=log10(value)), color="blue", size=1, width = 0.25) +
-    #geom_jitter(data=k.i[variable==puli.k][SC=="C"], aes(x=set, y=log10(value)), color="red", size=1, width = 0.25) +
-    coord_flip() +
-    labs(title=puli.k) +
-    theme(legend.position="none")
-
-    obt.plot <- ggplot(data=k.i[variable==obt.k], aes(x=set, y=log10(value), color=col)) +
-    geom_jitter(width = 0.25) +
-    #geom_jitter(data=k.i[variable==puli.k][SC=="A"], aes(x=set, y=log10(value)), color="blue", size=1, width = 0.25) +
-    #geom_jitter(data=k.i[variable==puli.k][SC=="C"], aes(x=set, y=log10(value)), color="red", size=1, width = 0.25) +
-    coord_flip() +
-    labs(title=obt.k) +
-    theme(legend.position="none")
-
-
-    puli.plot | obt.plot
-
-  }
-
+### source functions
+  source("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanAnalysis/LEA/plotLeaFuncs.R")
 
 
 ### summary plot
-  ce.dt[k==8][which.min(ce)]
 
-  k.i<-8; run.i<-8
-  kr <- processQ(k=k.i, run=run.i, samp=samps$clone, orderby="set")
-  q.plot <- plotQ(kr)
-  out.plot <- plotQ.sp(kr)
-  ce.plot <-   ggplot(data=ce.dt, aes(x=k, y=ce, group=run, color=as.factor(run))) +
-               geom_line() +
-               geom_point(data=ce.dt[k==k.i][run==run.i], aes(x=k, y=ce), size=3, color="black") +
-               theme(legend.position="none")
+  ### based on average
+    ce.dt.ag <- ce.dt[,list(mu=median(ce), sd=sd(ce), n=length(ce)), list(k)]
+    ce.dt.ag[which.min(mu)]
+    ce.dt[k==8][which.min(ce)]
+    k.i<-8; run.i<-30
+
+  ### absolute lowest
+    ce.dt[which.min(ce)]
+    k.i<-11; run.i<-21
+
+  ### process data
+    kr <- processQ(k=k.i, run=run.i, samp=samps$clone, orderby="set2", n=3)
+
+    plotQ(kr)
+
+  ### hybrids
+    kr.ac <- kr[SC%in%c("A", "C")][,c("variable", "SC", "value"), with=F]
+    kr.f1 <- kr[AxCF1Hybrid==1][,c("variable", "clone", "value"), with=F]
+
+    #kr.ac.f1 <- merge(kr.ac, kr.f1, by="variable")
+
+    #kr.ac.f1[,exp:=A/2 + C/2]
+
+    ggplot() +
+    geom_point(data=kr.f1, aes(x=variable, y=value)) +
+    geom_point(data=kr.ac, aes(x=variable, y=value), color="red")
+
+
+
+  ### make mega-plot
+
+    q.plot <- plotQ(kr)
+    out.plot <- plotQ.sp(kr)
+
+
+    ce.plot <-   ggplot() +
+                 geom_line(data=ce.dt, aes(x=k, y=ce, group=run), color="grey", alpha=.75) +
+                 geom_line(data=ce.dt.ag, aes(x=k, y=mu), size=1) +
+                 geom_point(data=ce.dt[k==ce.dt.ag[which.min(mu)]$k][order(ce)][1], aes(x=k, y=ce), size=3, color="black") +
+                 theme(legend.position="none")
+
+    q.plot / ( out.plot | ce.plot)
+
+
+
+
+
+
+
+
+
+
 
 
 layout <- "
 AAAAAAAA
 ##BBBBCC
 "
-  q.plot / ( out.plot | ce.plot) +
+
+
+
+
+  +
   plot_layout(design = layout)
 
 

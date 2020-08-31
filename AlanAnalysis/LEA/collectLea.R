@@ -10,7 +10,7 @@ projectDir = "/scratch/aob2x/daphnia_hwe_sims/daps4lea.snmf"
 
 ce = cross.entropy(dap.snmf, K = 2, run = 2)
 
-ce.dt <- foreach(k=1:10, .combine="rbind", .errorhandling="remove")%do%{
+ce.dt <- foreach(k=1:20, .combine="rbind", .errorhandling="remove")%do%{
 	runs <- list.files(paste(projectDir, "/K", k, sep=""))
 	foreach(r=runs, .combine="rbind", .errorhandling="remove")%do%{
 		print(paste(k, r, sep=" / "))
@@ -21,7 +21,7 @@ ce.dt <- foreach(k=1:10, .combine="rbind", .errorhandling="remove")%do%{
 	}
 }
 
-q.list <- foreach(k=1:10, .errorhandling="remove")%do%{
+q.list <- foreach(k=1:20, .errorhandling="remove")%do%{
 	runs <- list.files(paste(projectDir, "/K", k, sep=""))
 	foreach(r=runs, .errorhandling="remove")%do%{
 		print(paste(k, r, sep=" / "))
