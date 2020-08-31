@@ -4,7 +4,7 @@ Needs["MagicReconstruct`"]
 Needs["MagicMap`"]
 
 SetDirectory["/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm"]
-popScheme="ped.2.ped"
+popScheme="STEM.ped"
 ngroup = 1
 model = "jointModel"
 estfun = "origViterbiDecoding"
