@@ -5,7 +5,7 @@
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 1:00:00 # Running time of 1 hours
-#SBATCH --mem 12G # Memory request of 8 GB
+#SBATCH --mem 24G # Memory request of 8 GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.%A_%a.err # Standard error
 #SBATCH -p standard
@@ -14,8 +14,12 @@
 
 ### run as
 # sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 14754352
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.13247686_1.err
+# sacct -j 14761054
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
+# sbatch --array=3 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
+# sacct -j 14767258
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14767258_3.err
+
 
 
 module load intel/18.0 intelmpi/18.0 R/3.6.3

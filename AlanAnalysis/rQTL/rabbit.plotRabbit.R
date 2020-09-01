@@ -80,6 +80,9 @@ setkey(snp.dt, id)
 
   write.csv(m, file="/project/berglandlab/alan/AxC_F1.csv", quote=F, row.names=F)
 
+
+
+
 ### plot
 
   plotOut <- ggplot() +
