@@ -1,0 +1,293 @@
+### libraries
+  library(qtl)
+  library(data.table)
+  library(ggplot2)
+  library(patchwork)
+  library(lme4)
+
+############################
+#### Prep the input data ###
+############################
+
+### load data and convert: [M]arkers, [H]eader
+  f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/AxC.csv") ### Comes from `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.R`
+  f1s[,marker:=paste(chr.x, id, sep="_")]
+  f1s[,diplo:=as.numeric(as.factor(founder))]
+  setkey(f1s, marker)
+
+  ### down sample?
+    tmp <- data.table(marker=sample(unique(f1s$marker), 6000, replace=F))
+    setkey(tmp, marker)
+    f1s.sub <- f1s[J(tmp)]
+    setkey(f1s.sub, id)
+
+  ### no?
+    f1s.sub <- f1s
+
+  markers<- dcast(f1s.sub , clone ~ id, value.var=list("diplo"))
+  markers[1:5,1:4]
+
+
+  chrs <- f1s.sub[,list(chr=unique(chr.x), pos=unique(pos)), id]
+
+  header <- as.data.table(rbind(c("", chrs$chr), c("", chrs$pos)))
+  setnames(header, names(header), names(markers))
+
+  markers[1:5,1:4]
+  header[1:2,1:4]
+
+  mh <- rbind(header, markers)
+  mh[1:5,1:4]
+
+######################
+### phenotype data ###
+
+# Load file
+ males <- fread("MaleCensus.csv")
+ sc <- fread("/Users/kbkubow/Box Sync/Daphnia/InitialManuscript/SupercloneFiles/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+ sconeliter <- sc[OneLiterPheno==1]
+ sconeliter$SCB <- ifelse(sconeliter$LabGenerated==0 & sconeliter$SC!="OO", sconeliter$SC, sconeliter$clone)
+ sconeliter$Clone <- sconeliter$clone
+​
+ setkey(males, Clone)
+ setkey(sconeliter, Clone)
+ mmales <- merge(males, sconeliter)
+ mmales$propmale <- mmales$Males/mmales$NewTotal
+ mmales$propmalenoneo <- mmales$Males/(mmales$NewTotal-mmales$Neos)
+​
+ #Try glmer
+​
+   eppB <- epp[fill>=0]
+   mmalesB <- mmales[propmale>0]
+   #t1 <- glmer(propmale~1+(1|Replicate)+(1|Clone)+(1|SCB), data=mmales, family=(binomial), weights=NewTotal)
+   #t2 <- glmer(fill~1+(1|Rep)+(1|Clone), data=eppB, family=binomial(), weights=TotalEppB)
+​
+   #t1 <- glmer(propmale~1+(1|SCB:Clone:Replicate), data=mmalesB, family=(binomial), weights=NewTotal)
+   #t2 <- glmer(propmale~1+(1|Clone:Replicate), data=mmalesB, family=(binomial), weights=NewTotal)
+​
+   t1 <- glmer(propmale~1+(1|Clone:Replicate) + (1|SCB), data=mmales, family=(binomial), weights=NewTotal)
+   t2 <- glmer(propmale~1+(1|Clone:Replicate), data=mmales, family=(binomial), weights=NewTotal)
+​
+​
+   anova(t1, t2)
+​
+   Data: mmales
+   Models:
+   t2: propmale ~ 1 + (1 | Clone:Replicate)
+   t1: propmale ~ 1 + (1 | Clone:Replicate) + (1 | SCB)
+      npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)
+   t2    2 623.61 629.08 -309.81   619.61
+   t1    3 598.62 606.82 -296.31   592.62 26.996  1  2.038e-07 ***
+​
+​
+   malesresid <- data.table(SCB=dimnames(ranef(t1)[[2]])[[1]] ,
+                     malesresid=ranef(t1)[[2]][,1] + fixef(t1))
+​
+   males.ag <- mmales[,list(meanmalesbyclone=mean(propmale)),
+     list(Clone, SCB)]
+​
+   malesbySCB.ag <- males.ag[,list(meanmalesbySCB=mean(meanmalesbyclone)),
+     list(SCB)]
+​
+     popsize.ag <- mmales[,list(meantotal=mean(NewTotal)),
+       list(SCB)]
+​
+​
+   setkey(males.ag, SCB)
+   setkey(malesresid, SCB)
+   m <- merge(males.ag, malesresid)
+​
+   ggplot(data=m, aes(x=meanmales, y=malesresid)) + geom_point()
+​
+   setkey(popsize.ag, SCB)
+   setkey(malesresid, SCB)
+   m2 <- merge(popsize.ag, malesresid)
+​
+   ggplot(data=m2, aes(x=meantotal, y=malesresid)) + geom_point()
+​
+​
+   setkey(m2pheno, SCB)
+   setkey(malesresid, SCB)
+   m3 <- merge(m2pheno, malesresid)
+​
+   ggplot(data=m3, aes(x=embresid, y=malesresid)) + geom_point()
+​
+​
+​
+   epp <- fread("EphippiaFinal.csv")
+   sc <- fread("/Users/kbkubow/Box Sync/Daphnia/InitialManuscript/SupercloneFiles/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+   sconeliter <- sc[OneLiterPheno==1]
+   sconeliter$SCB <- ifelse(sconeliter$LabGenerated==0 & sconeliter$SC!="OO", sconeliter$SC, sconeliter$clone)
+   sconeliter$Clone <- sconeliter$clone
+​
+   setkey(epp, Clone)
+   setkey(sconeliter, Clone)
+   mepp <- merge(epp, sconeliter)
+   epp <- mepp
+​
+ # Add new variables
+   epp$TotalEppB <- epp$TotalEpp*2
+   epp$fill <- epp$TotalEmbCorr/epp$TotalEppB
+   epp$fullid <- paste(epp$Clone,epp$Rep,sep="_")
+   epp$Rep <- as.factor(epp$Rep)
+   epp$Clone <- as.factor(epp$Clone)
+   epp$Dayssince1stDate <- as.factor(epp$Dayssince1stDate)
+   epp$SCB <- as.factor(epp$SCB)
+​
+   epp.ag <- epp[,list(meaneppbyclone=mean(TotalEpp)),
+     list(Clone, SCB)]
+​
+   eppbySCB.ag <- epp.ag[,list(meaneppbySCB=mean(meaneppbyclone)),
+     list(SCB)]
+​
+   emb.ag <- epp[,list(meanembbyclone=mean(TotalEmbCorr)),
+     list(Clone, SCB)]
+​
+   embbySCB.ag <- emb.ag[,list(meanembbySCB=mean(meanembbyclone)),
+     list(SCB)]
+​
+   setkey(eppbySCB.ag, SCB)
+   setkey(embbySCB.ag, SCB)
+   mmmeans <- merge(eppbySCB.ag, embbySCB.ag)
+   setkey(mmmeans, SCB)
+   setkey(malesbySCB.ag, SCB)
+   m2means <- merge(mmmeans, malesbySCB.ag, all.x=TRUE)
+   save(m2means, file="m2means.Rdata")
+​
+   t3 <- glmer(fill~1+(1|Dayssince1stDate)+(1|Clone:Rep)+(1|SCB), data=eppB, family=(binomial), weights=TotalEppB)
+   t4 <- glmer(fill~1+(1|Dayssince1stDate)+(1|Clone:Rep), data=eppB, family=(binomial), weights=TotalEppB)
+​
+   anova(t3, t4)
+​
+   embresid <- data.table(SCB=dimnames(ranef(t3)[[2]])[[1]] ,
+                     embresidB=ranef(t3)[[2]][,1] + fixef(t3))
+​
+   setkey(m3, SCB)
+   setkey(embresid, SCB)
+   m4 <- merge(m3, embresid)
+​
+   ggplot(data=m4, aes(x=embresid, embresidB)) + geom_point()
+​
+​
+   t5 <- glmer(TotalEpp~1+(1|Dayssince1stDate)+(1|Clone:Rep)+(1|SCB), data=epp, family=(poisson))
+   t6 <- glmer(TotalEpp~1+(1|Dayssince1stDate)+(1|Clone:Rep), data=epp, family=(poisson))
+​
+   anova(t5, t6)
+​
+   eppresid <- data.table(SCB=dimnames(ranef(t5)[[2]])[[1]] ,
+                     eppresidB=ranef(t5)[[2]][,1] + fixef(t5))
+​
+   setkey(m4, SCB)
+   setkey(eppresid, SCB)
+   m5 <- merge(m4, eppresid)
+​
+   setkey(eppresid, SCB)
+   setkey(embresid, SCB)
+   setkey(malesresid, SCB)
+   mpheno <- merge(eppresid, embresid, all.x=TRUE)
+   setkey(mpheno, SCB)
+   mphenoupdate <- merge(mpheno, malesresid, all.x=TRUE)
+​
+   save(mphenoupdate, file="mphenoupdate_20200824.Rdata")
+​
+   ggplot(data=mphenoupdate, aes(x=malesresid, embresidB)) + geom_point()
+​
+
+
+
+
+### set up [P]henotype data
+  ### This uses the raw data
+    # load(file="~/m3epp.Rdata")
+    # phenos <- m3epp.ag[Type=="AxCF1", c("mu.epp", "mu.fill", "Clone"), with=F]
+
+    # phenos[Clone=="D818111", Clone:="April5_2018_D8_18111"]
+    # phenos[Clone=="D818106", Clone:="April5_2018_D8_18106"]
+    # phenos[Clone=="D818025", Clone:="March20_2018_D8_18025"]
+    # phenos[Clone=="D818028", Clone:="March20_2018_D8_18028"]
+    # phenos[Clone=="D818030", Clone:="March20_2018_D8_18030"]
+    # phenos[Clone=="D818010", Clone:="March20_2018_D8_18010"]
+
+    # setnames(phenos, "Clone", "clone")
+
+  ### This uses the BLUP phenotypes, extracted from the rQTL file that Karen had made
+    AxCF1 <- read.cross("csv","","~/AxCF1genoandphenoreconstruct_sub3.csv", genotypes=NULL)
+    AxCF1$pheno
+
+    phenos <- as.data.table(AxCF1$pheno)
+    setnames(phenos, "CloneID", "clone")
+
+    ### ---> Tack in new phenotype data here
+
+### merge to make rQTL file
+  setkey(phenos, "clone")
+  setkey(mh, "clone")
+
+  mhp <- merge(phenos, mh, all.y=T)
+
+  setcolorder(mhp, c("eppresid", "embresid", "SCB", "clone", names(markers)[-1]))
+
+  mhp[1:5,1:4]
+  dim(mhp)
+
+  write.csv(mhp, file="~/mhp.csv", quote=F, row.names=F, na="")
+
+### Run rQTL
+  ### read cross object
+    AxCF1 <- read.cross("csv","","~/mhp.csv", crosstype="4way", genotypes=NULL)
+
+  ### marker regression
+
+    mr1 <- scanone(AxCF1, pheno.col=1, method="mr")
+    mr2 <- scanone(AxCF1, pheno.col=2, method="mr")
+
+    mr1.dt <- as.data.table(mr1)
+    mr2.dt <- as.data.table(mr2)
+
+### Load pooled data
+    load("~/peaks.Rdata")
+    peaks <- fread("/Users/alanbergland/peaks.csv")
+
+    setnames(peaks, "CHROM", "chr")
+    setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
+
+### plot
+    eppresid.plot <- ggplot() +
+    #geom_hline(yintercept=summary(perm)[2]) +
+    geom_vline(data=peaks, aes(xintercept=posMaxGprime), linetype="dashed") +
+    geom_line(data=mr1.dt, aes(x=pos, y=lod, color=chr), size=1) +
+    facet_grid(.~chr, scales="free_x") +
+    theme(strip.text.x = element_text(size = 8),
+          axis.text.x = element_text(angle = 90, size=.5), legend.position = "none") +
+    ggtitle("epp.resid")
+
+
+    #setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
+    Gprime.plot <- ggplot(data=gprime, aes(x=pos, y=Gprime, color=chr)) +
+    geom_vline(data=peaks, aes(xintercept=posMaxGprime), linetype="dashed") +
+    geom_line(size=.75) +
+    facet_grid(.~chr, scales="free_x") +
+    theme(strip.text.x = element_text(size = 8),
+          axis.text.x = element_text(angle = 90, size=.5), legend.position = "none") +
+    ggtitle("pooledWild")
+
+    embresid.plot <- ggplot() +
+    #geom_hline(yintercept=summary(perm)[2]) +
+    geom_vline(data=peaks, aes(xintercept=posMaxGprime), linetype="dashed") +
+    geom_line(data=mr2.dt, aes(x=pos, y=lod, color=chr), size=1) +
+    facet_grid(.~chr, scales="free_x") +
+    theme(strip.text.x = element_text(size = 8),
+          axis.text.x = element_text(angle = 90, size=.5), legend.position = "none") +
+    ggtitle("emb.resid")
+
+
+### final plot
+  eppresid.plot / Gprime.plot / embresid.plot
+
+
+### save
+  tar czvf rQTL.inputFiles.tar.gz \
+  ~/AxC_F1.csv \
+  ~/AxCF1genoandphenoreconstruct_sub3.csv \
+  ~/peaks.Rdata \
+  /Users/alanbergland/peaks.csv

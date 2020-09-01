@@ -67,9 +67,9 @@
 
   load(file="/project/berglandlab/ppl.Rdata")
 
-  #setnames(ppl, "variable", "id")
+  setnames(ppl, "variable", "id")
   #ppl[,id:=as.numeric(as.character(id))]
-  ppl.ag <- ppl[,list(founder=geno[which.max(value2)]), list(id, clone, chr=chr.x)]
+  ppl.ag <- ppl[,list(founder=geno[which.max(value2)]), list(id, clone, chr=chr)]
 
   setkey(ppl.ag, id)
   setkey(snp.dt, id)
