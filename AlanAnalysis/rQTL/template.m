@@ -3,7 +3,7 @@ SetDirectory["/scratch/aob2x/daphnia_hwe_sims/RABBIT/RABBIT_Packages/"]
 Needs["MagicReconstruct`"]
 Needs["MagicMap`"]
 
-SetDirectory["/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm"]
+SetDirectory["/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/STEM"]
 popScheme="STEM.ped"
 ngroup = 1
 model = "jointModel"
