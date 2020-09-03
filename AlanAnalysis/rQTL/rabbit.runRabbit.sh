@@ -13,8 +13,8 @@
 
 
 ### run as
-# sbatch --array=1-12%1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 14761054
+# sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
+# sacct -j 14808979
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
 # sbatch --array=3 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
 # sacct -j 14767931
@@ -32,6 +32,9 @@ wd="/scratch/aob2x/daphnia_hwe_sims"
 datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_${cm}cm
 chr=$( grep "^${SLURM_ARRAY_TASK_ID}," ${datadir}/chrs.csv | cut -f2 -d',' )
 echo $chr $datadir
+
+### make dir
+mkdir -p ${wd}/Rabbit_phase_${cm}cm/${chr}
 
 ### generate RABBIT input data
 Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatData.R ${chr} ${cm}

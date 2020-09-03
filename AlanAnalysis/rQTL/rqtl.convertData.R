@@ -1,8 +1,10 @@
+# module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3; R
+
 ### libraries
   library(qtl)
   library(data.table)
-  library(ggplot2)
-  library(patchwork)
+  #library(ggplot2)
+  #library(patchwork)
   library(lme4)
 
 ############################
@@ -39,22 +41,192 @@
   mh <- rbind(header, markers)
   mh[1:5,1:4]
 
-######################
-### phenotype data ###
+########################
+### [P]henotype data ###
+########################
+  ### Load SC data
+    sc <- fread("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020//Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
 
-# Load file
- males <- fread("MaleCensus.csv")
- sc <- fread("/Users/kbkubow/Box Sync/Daphnia/InitialManuscript/SupercloneFiles/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
- sconeliter <- sc[OneLiterPheno==1]
- sconeliter$SCB <- ifelse(sconeliter$LabGenerated==0 & sconeliter$SC!="OO", sconeliter$SC, sconeliter$clone)
- sconeliter$Clone <- sconeliter$clone
-​
- setkey(males, Clone)
- setkey(sconeliter, Clone)
- mmales <- merge(males, sconeliter)
- mmales$propmale <- mmales$Males/mmales$NewTotal
- mmales$propmalenoneo <- mmales$Males/(mmales$NewTotal-mmales$Neos)
-​
+  ## Male rates
+    ### load raw male phenotype data
+      males <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/MaleCensus.csv")
+      #males <- fread("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rqtl.convertData.R")
+
+    ### some renaming
+     sconeliter <- sc[OneLiterPheno==1]
+     sconeliter$SCB <- ifelse(sconeliter$LabGenerated==0 & sconeliter$SC!="OO", sconeliter$SC, sconeliter$clone)
+     sconeliter$Clone <- sconeliter$clone
+
+    ### tidy
+     setkey(males, Clone)
+     setkey(sconeliter, Clone)
+     mmales <- merge(males, sconeliter)
+     mmales$propmale <- mmales$Males/mmales$NewTotal
+     mmales$propmalenoneo <- mmales$Males/(mmales$NewTotal-mmales$Neos)
+
+     male <- mmales[,c("Clone", "Replicate", "Males", "NewTotal", "propmale", "SCB"), with=F]
+
+     ### tack in whether it has been genotyped yet
+       f1s.use <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.onlyPheno.delim")
+       #f1s.use <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.allF1s.delim")
+
+       setnames(f1s.use, "cloneid", "Clone")
+       f1s.use[,geno:=T]
+
+       setkey(mmales, "Clone")
+       setkey(f1s.use, "Clone")
+       mmales <- merge(mmales, f1s.use, all.x=T, all.y=T)
+
+  ## Epphipia fill rates and production
+    ### load raw epphiphial fill data
+     epp <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/EphippiaFinal.csv")
+     sconeliter <- sc[OneLiterPheno==1]
+     sconeliter$SCB <- ifelse(sconeliter$LabGenerated==0 & sconeliter$SC!="OO", sconeliter$SC, sconeliter$clone)
+     sconeliter$Clone <- sconeliter$clone
+
+     setkey(epp, Clone)
+     setkey(sconeliter, Clone)
+     mepp <- merge(epp, sconeliter)
+     epp <- mepp
+
+   # Add new variables
+     epp$TotalEppB <- epp$TotalEpp*2
+     epp$fill <- epp$TotalEmbCorr/epp$TotalEppB
+     epp$fullid <- paste(epp$Clone,epp$Rep,sep="_")
+     epp$Rep <- as.factor(epp$Rep)
+     epp$Clone <- as.factor(epp$Clone)
+     epp$Dayssince1stDate <- as.factor(epp$Dayssince1stDate)
+     epp$SCB <- as.factor(epp$SCB)
+
+     setkey(epp, "Clone")
+     setkey(f1s.use, "Clone")
+     epp <- merge(epp, f1s.use, all.x=T, all.y=T)
+
+
+### summaries and merging
+  ### male
+    mmales.ag <- mmales[,list(nClones=length(unique(Clone)),
+                              anySeq=any(geno),
+                              clone=Clone[geno==T][!is.na(Clone)][1],
+                              propmale=sum(Males)/sum(NewTotal),
+                              propmalenoneo=sum(Males)/sum(NewTotal-Neos),
+                              nMales=mean(Males),
+                              nDaps=mean(NewTotal),
+                              nNeo=mean(Neos)),
+                         list(SCB,
+                              population, AxCF1Hybrid)][!is.na(SCB)]
+
+
+    epp.ag <- epp[,list(nClones=length(unique(Clone)),
+                              anySeq=any(geno),
+                              fill=mean(fill, na.rm=T),
+                              fill.se=sd(fill, na.rm=T)/sqrt(sum(TotalEppB)),
+                              epp=mean(TotalEppB, na.rm=T)),
+                         list(SCB, population, AxCF1Hybrid)][!is.na(SCB)]
+
+
+
+### averages and BLUPs
+  ### averages
+      epp.ag[SCB=="A", gr:="A"]
+      epp.ag[SCB=="C", gr:="C"]
+      epp.ag[(grepl("AxB", SCB) | AxCF1Hybrid==1) & anySeq==T, gr:="AxC"]
+      epp.ag[grepl("AxB", SCB) & is.na(anySeq), gr:="CxC"]
+
+      setkey(mmales.ag, SCB, population, anySeq)
+      setkey(epp.ag, SCB, population, anySeq)
+
+
+    ### generate BLUPs
+    male.mod <- glmer(propmalenoneo ~ 1 + (1|SCB) + (1|Clone:Replicate),
+                      data=mmales,
+                      family=binomial(),
+                      weights=NewTotal-Neos)
+
+    fill.mod <- glmer(fill~1+(1|Dayssince1stDate)+(1|Clone:Rep)+(1|SCB),
+                data=epp,
+                family=binomial(),
+                weights=TotalEppB)
+
+    epp.mod <- glmer(TotalEppB~1+(1|Dayssince1stDate)+(1|Clone:Rep)+(1|SCB),
+                data=epp,
+                family=poisson())
+
+
+    r1 <- data.table(SCB=rownames(ranef(male.mod)$SCB),
+                    propmalenoneo.ranef =  ranef(male.mod)$SCB[,1])
+    r2 <- data.table(SCB=rownames(ranef(fill.mod)$SCB),
+                    fill.ranef =  ranef(fill.mod)$SCB[,1])
+    r3 <- data.table(SCB=rownames(ranef(epp.mod)$SCB),
+               epp.ranef =  ranef(epp.mod)$SCB[,1])
+
+    r <- merge(r1, r2, by="SCB", all.x=T, all.y=T)
+    r <- merge(r, r3, by="SCB", all.x=T, all.y=T)
+
+
+    m <- merge(mmales.ag, epp.ag, all.x=T, all.y=T)
+
+    #mm <- merge(m, r, by="SCB")
+    mm <- m
+
+
+### save
+  save(mm, r, mmales, mmales.ag, epp, epp.ag, file="~/F1_pheno.Rdata")
+
+
+### merge to make rQTL file
+  setnames(mm, "Clone", "clone")
+
+  setkey(mm, "clone")
+  setkey(mh, "clone")
+
+  #, "propmalenoneo.ranef", "fill.ranef", "epp.ranef"
+
+  mhp <- merge(mm[anySeq==T,c("clone", "SCB", "propmalenoneo", "fill", "epp" ), with=F],
+                mh)
+
+  setcolorder(mhp, c("clone", "propmalenoneo", "fill", "epp", names(markers)[-1]))
+
+  mhp[1:5,1:4]
+  dim(mhp)
+
+  write.csv(mhp, file="~/F1_rQTL.csv", quote=F, row.names=F, na="")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  #Try glmer
 ​
    eppB <- epp[fill>=0]
