@@ -14,7 +14,8 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 14808979
+# sacct -j 14813067
+
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
 # sbatch --array=3 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
 # sacct -j 14767931
@@ -43,15 +44,15 @@ Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatData
 ### format RABBIT script file
 echo "make mathematica input"
 sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
-${datadir}/${chr}.m
+${datadir}/${chr}/${chr}.m
 
 ls ${datadir}/${chr}.m
 
 
 ### Run RABBIT impute & reconstruct
-math -script ${datadir}/${chr}.m
+math -script ${datadir}/${chr}/${chr}.m
 
 ### convert paths
- python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.parseHaplotypes.py \
- ${chr}.all.csv \
- ${datadir}/ >> ${chr}.all.haps
+#python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.parseHaplotypes.py \
+#${chr}.all.csv \
+#${datadir}/ >> ${chr}.all.haps
