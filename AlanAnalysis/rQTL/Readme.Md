@@ -11,8 +11,6 @@
    ```
 
 
-
-
   ### Run RABBIT
   `rabbit.runRabbit.sh` runs RABBIT
       (requires `template.m`, runs `rabbit.formatData.R` & `rabbit.parseHaplotypes.py`, and files `chrs.csv`)
