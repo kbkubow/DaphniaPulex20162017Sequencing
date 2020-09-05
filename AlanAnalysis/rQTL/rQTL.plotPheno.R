@@ -96,5 +96,13 @@ plot(epp~epp.ranef, mm)
     ylab("Proportion Male, BLUP")
 
 
-  (fill.rate | num.epp | propmale) /
-  (fill.rate.r| num.epp.r | propmale.r)
+    (fill.rate | num.epp | propmale) /
+    (fill.rate.r| num.epp.r | propmale.r)
+
+
+
+### princomp
+  pr <- prcomp(na.omit(mm[,c("fill", "epp", "propmalenoneo"), with=F]), center=T, scale=T)
+
+  ggplot(data=mm[!is.na(gr)], aes(y=fill, x=propmalenoneo, color=as.factor(gr))) +
+  geom_point()

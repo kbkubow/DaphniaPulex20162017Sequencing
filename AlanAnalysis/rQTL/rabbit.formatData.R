@@ -4,7 +4,8 @@
   args = commandArgs(trailingOnly=TRUE)
   chr.i <- as.character(args[1])
   maxcM <- as.numeric(args[2])
-  #chr.i <- "Scaffold_9199_HRSCAF_10755"; maxcM=10
+  f1s.file <- as.character(args[3])
+  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_AxC"
 
 ### libraries
   library(data.table)
@@ -20,7 +21,20 @@
 ### which F1s?
   #f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.onlyPheno.delim")
   #f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.allF1s.delim")
-  f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.all_AxC_F1s.delim")
+  #f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.all_AxC_F1s.delim")
+
+
+  if(f1s.set=="onlyPheno_AxC") {
+    f1s <- sc[AxCF1Hybrid==1][OneLiterPheno==1]$clone
+
+  } else if (f1s.set=="wildF1s_AxC"){
+    f1s <- sc[AxCF1Hybrid==1][OneLiterPheno==0]$clone
+
+  } else if(f1s.set=="all_AxC") {
+    f1s <- sc[AxCF1Hybrid==1]$clone
+
+  }
+  f1s <- data.table(cloneid=f1s)
 
 ### open GDS
   genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
@@ -59,15 +73,16 @@
 
   genomat <- genomat[(A!=0 & C!=2) | (A!=2 & C!=0)]
 
-  ### random sample
-    #genomat <- genomat[sample(c(1:dim(genomat)[1]), 5000)]
-    #genomat <- genomat[order(id)]
-
   ### most informative
     genomat <- genomat[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1) | (A==1 & C==1)]
     setkey(genomat, id)
     #genomat <- genomat[J(sample(genomat$id, 5000))]
     genomat <- genomat[order(id)]
+
+
+  ### random sample
+    #genomat <- genomat[sample(c(1:dim(genomat)[1]), 5000)]
+    #genomat <- genomat[order(id)]
 
     #table(genomat$A, genomat$C)
 
