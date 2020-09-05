@@ -4,7 +4,7 @@
   args = commandArgs(trailingOnly=TRUE)
   chr.i <- as.character(args[1])
   maxcM <- as.numeric(args[2])
-  f1s.file <- as.character(args[3])
+  f1s.set <- as.character(args[3])
   #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_AxC"
 
 ### libraries
