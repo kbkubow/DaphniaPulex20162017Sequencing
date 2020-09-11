@@ -78,7 +78,9 @@
                  geom_point(data=ce.dt[k==ce.dt.ag[which.min(mu)]$k][order(ce)][1], aes(x=k, y=ce), size=3, color="black") +
                  theme(legend.position="none")
 
-    q.plot / ( out.plot | ce.plot)
+    output.plot <- q.plot / ( out.plot | ce.plot)
+
+    ggsave(output.plot, file="~/LEA_output.pdf")
 
 
 

@@ -20,52 +20,92 @@
 
   loadDat <- function(fn) {
     print(fn)
-    #fn <- fns[1]
-    pp <- fread(fn, skip="magicReconstruct-Summary,genoprob,Conditonal genotype probability", header=T, fill=T)
+    #fn <- fns[10]
 
-    setnames(pp, names(pp), as.character(pp[1,]))
-    pp <- pp[grepl("genotype", marker)]
+    ### most likely genotype
+      pp <- fread(fn, skip="magicReconstruct-Summary,genoprob,Conditonal genotype probability", header=T, fill=T)
 
-    ppl <- melt(pp[-(1:3)], id.vars="marker")
-    ppl[value!="1",value2:=as.numeric(paste(value, "0", sep=""))]
-    ppl[value=="1", value2:=1]
+      setnames(pp, names(pp), as.character(pp[1,]))
+      pp <- pp[grepl("genotype", marker)]
 
-    ppl[,genotype:=last(tstrsplit(marker, "_"))]
-    ppl[,clone:=gsub("_genotype[0-9]{1,}", "", marker)]
+      ppl <- melt(pp[-(1:3)], id.vars="marker")
+      ppl[value!="1",value2:=as.numeric(paste(value, "0", sep=""))]
+      ppl[value=="1", value2:=1]
+
+      ppl[,genotype:=last(tstrsplit(marker, "_"))]
+      ppl[,clone:=gsub("_genotype[0-9]{1,}", "", marker)]
 
 
-    ### get only the possible states
-      ppl.ag <- ppl[,list(n=sum(value2>.95)), genotype]
+      ### get only the possible states
+        ppl.ag <- ppl[,list(n=sum(value2>.95)), genotype]
 
-      setkey(ppl, genotype)
-      setkey(ppl.ag, genotype)
+        setkey(ppl, genotype)
+        setkey(ppl.ag, genotype)
 
-      ppl <- ppl[J(ppl.ag[n>10]$genotype)]
+        ppl <- ppl[J(ppl.ag[n>10]$genotype)]
 
-    ### gneotype code
-    gc <- fread(fn, skip="Genotype,Code,founder", nrows=10)
-    setnames(gc, "Genotype", "genotype")
+      ### gneotype code
+      gc <- fread(fn, skip="Genotype,Code,founder", nrows=10)
+      setnames(gc, "Genotype", "genotype")
 
-    ppl <- merge(ppl, gc)
-    codes <- data.table(geno=LETTERS[1:4], founder=names(table(ppl$founder))[c(1,3,2,4)])
+      ppl <- merge(ppl, gc)
+      codes <- data.table(geno=LETTERS[1:4], founder=names(table(ppl$founder))[c(1,2,3,4)])
 
-    ppl <- merge(ppl, codes, by="founder")
-    ppl[,chr:=gsub(".all.out.post.csv", "", fn)]
+      ppl <- merge(ppl, codes, by="founder")
+      ppl[,chr:=last(tstrsplit(gsub(".all.out.post.csv", "", fn), "/"))]
 
-    setnames(ppl, "variable", "id")
-    #setkey(ppl, id)
-    #m <- merge(ppl, snp.dt)
+      setnames(ppl, "variable", "id")
+      #setkey(ppl, id)
+      #m <- merge(ppl, snp.dt)
 
-    ppl.ag <- ppl[,list(founder=geno[which.max(value2)]), list(id, clone, chr=chr)]
-    ppl.ag[,id:=as.numeric(as.character(id))]
+      ppl.ag <- ppl[,list(founder=geno[which.max(value2)]), list(id, clone, chr=chr)]
+      ppl.ag[,id:=as.numeric(as.character(id))]
 
-    ppl.ag
+    ### check
+      chr.i <- "Scaffold_9199_HRSCAF_10755"
+      pos.i <- 6229430
+      id.i <- snp.dt[chr==chr.i][pos==pos.i]$id
+      #ppl.ag[id==id.i]
+
+
+    ### imputed genotype
+      fn <- gsub(".post.csv", "_ImputedGenotype.csv", fn)
+      imputed <- fread(fn, skip=1, header=T)
+      imputed.l <- melt(imputed, id.vars="marker")
+
+      setnames(imputed.l, c("variable", "marker", "value"), c("id", "clone", "imputedGeno"))
+      imputed.l[,id:=as.numeric(as.character(id))]
+
+      setkey(imputed.l, id, clone)
+      setkey(ppl.ag, id, clone)
+
+      phase.impute <- merge(ppl.ag, imputed.l)
+
+    ### get original genotypes
+      seqSetFilter(genofile,
+                  sample.id=unique(phase.impute$clone),
+                  variant.id=unique(phase.impute$id))
+
+      obs.geno <- seqGetData(genofile, "$dosage") ### dosage of the ref allele
+
+      obs.geno.l <- data.table(obs.geno=expand.grid(obs.geno)$Var1,
+                              clone=rep(seqGetData(genofile, "sample.id"), dim(obs.geno)[2]),
+                              id=rep(seqGetData(genofile, "variant.id"), each=dim(obs.geno)[1]))
+
+      phase.impute.obs <- merge(phase.impute, obs.geno.l)
+      table(phase.impute.obs$obs.geno, phase.impute.obs$value)
+
+
+      phase.impute.obs[id==id.i]
+
+
   }
-  fns <- list.files("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm", pattern=".out.post.csv")
+
+  fns <- system("ls /scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/*/*out.post.csv", intern=T)
   ppl <- foreach(x=fns)%do%loadDat(x)
   ppl <- rbindlist(ppl)
 
-  save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/combined_rabbitOut.Rdata")
+  #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/combined_rabbitOut_all_AxC.Rdata")
 
 
 
@@ -76,9 +116,9 @@
 
   table(m$chr.x==m$chr.y)
 
-  write.csv(m, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/AxC.csv", quote=F, row.names=F)
+  write.csv(m, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.csv", quote=F, row.names=F)
 
-  write.csv(m, file="/project/berglandlab/alan/AxC.csv", quote=F, row.names=F)
+  write.csv(m, file="/project/berglandlab/alan/all_AxC.csv", quote=F, row.names=F)
 
 
 

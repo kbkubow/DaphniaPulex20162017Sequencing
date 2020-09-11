@@ -89,6 +89,8 @@
     setnames(peaks, "CHROM", "chr")
     setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
 
+     Scaffold_7757_HRSCAF_8726 8706276
+
 ### plot
     eppresid.plot <- ggplot() +
     #geom_hline(yintercept=summary(perm)[2]) +
