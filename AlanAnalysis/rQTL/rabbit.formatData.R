@@ -59,6 +59,7 @@
   #write.table(snp.dt.ag, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/chrs.csv", quote=F, row.names=T, col.names=F, sep=",")
 
 ### make large input file
+    useDosage <- FALSE
     if(useDosage==F) {
 
       ### first, find informative sites
