@@ -8,6 +8,7 @@
   library(patchwork)
   library(cowplot)
   theme_set(theme_cowplot())
+  library(lme4)
 
   load("~/F1_pheno.Rdata")
 
@@ -59,38 +60,38 @@ plot(epp~epp.ranef, mm)
 
   ### weighted means
     fill.rate <- ggplot(data=mm[!is.na(gr)], aes(x=gr, y=fill, color=as.factor(gr))) +
-    geom_point(position=position_jitter(width=0.05)) +
+    geom_point(position=position_jitter(width=0.05), size=5) +
     theme(legend.position = "none") +
     xlab("") +
     ylab("Ephippial Fill Rate")
 
     num.epp <- ggplot(data=mm[!is.na(gr)], aes(x=gr, y=epp, color=as.factor(gr))) +
-    geom_point(position=position_jitter(width=0.05)) +
+    geom_point(position=position_jitter(width=0.05), size=5) +
     theme(legend.position = "none")+
     xlab("") +
     ylab("Number of Ephippia")
 
     propmale <- ggplot(data=mm[!is.na(gr)], aes(x=gr, y=propmalenoneo, color=as.factor(gr))) +
-    geom_point(position=position_jitter(width=0.05)) +
+    geom_point(position=position_jitter(width=0.05), size=5) +
     theme(legend.position = "none") +
     xlab("") +
     ylab("Proportion Male")
 
   ### ranef
     fill.rate.r <- ggplot(data=mm[!is.na(gr)], aes(x=gr, y=fill.ranef, color=as.factor(gr))) +
-    geom_point(position=position_jitter(width=0.05)) +
+    geom_point(position=position_jitter(width=0.05), size=5) +
     theme(legend.position = "none") +
     xlab("") +
     ylab("Ephippial Fill Rate, BLUP")
 
     num.epp.r <- ggplot(data=mm[!is.na(gr)], aes(x=gr, y=epp.ranef, color=as.factor(gr))) +
-    geom_point(position=position_jitter(width=0.05)) +
+    geom_point(position=position_jitter(width=0.05), size=5) +
     theme(legend.position = "none")+
     xlab("") +
     ylab("Number of Ephippia, BLUP")
 
     propmale.r <- ggplot(data=mm[!is.na(gr)], aes(x=gr, y=propmalenoneo.ranef, color=as.factor(gr))) +
-    geom_point(position=position_jitter(width=0.05)) +
+    geom_point(position=position_jitter(width=0.05), size=5) +
     theme(legend.position = "none") +
     xlab("") +
     ylab("Proportion Male, BLUP")

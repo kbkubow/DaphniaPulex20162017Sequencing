@@ -5,7 +5,7 @@
   chr.i <- as.character(args[1])
   maxcM <- as.numeric(args[2])
   f1s.set <- as.character(args[3])
-  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_AxC"
+  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_CxC"
 
 ### libraries
   library(data.table)
@@ -32,6 +32,9 @@
 
   } else if(f1s.set=="all_AxC") {
     f1s <- sc[AxCF1Hybrid==1]$clone
+
+  } else if(f1s.set=="all_CxC") {
+    f1s <- sc[OneLiterPheno==1][AxCF1Hybrid==0][SC=="selfedC"]$clone
 
   }
   f1s <- data.table(cloneid=f1s)
@@ -98,7 +101,8 @@
   offspring <- foreach(ind.i=f1s$cloneid, .combine="rbind", .errorhandling="remove")%do%{
     tmp <- t(as.matrix(genomat[,ind.i, with=F]))
     tmp[tmp=="2"] <- "2N"
-    tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
+    #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
+    tmp[tmp=="1"] <- "12"
     tmp[tmp=="0"] <- "1N"
     tmp[is.na(tmp)] <- "NN"
     cbind(matrix(ind.i, ncol=1), tmp)

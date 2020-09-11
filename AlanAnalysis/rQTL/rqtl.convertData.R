@@ -12,16 +12,18 @@
 ############################
 
 ### load data and convert: [M]arkers, [H]eader
-  f1s <- fread("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/AxC.csv") ### Comes from `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.R`
+  f1s <- fread(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.csv") ### Comes from `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.R`
   f1s[,marker:=paste(chr.x, id, sep="_")]
   f1s[,diplo:=as.numeric(as.factor(founder))]
   setkey(f1s, marker)
 
   ### down sample?
-    tmp <- data.table(marker=sample(unique(f1s$marker), 6000, replace=F))
+    tmp <- data.table(marker=sample(unique(f1s$marker), 10000, replace=F))
     setkey(tmp, marker)
     f1s.sub <- f1s[J(tmp)]
     setkey(f1s.sub, id)
+
+    dim(f1s.sub)
 
   ### no?
     f1s.sub <- f1s
@@ -67,9 +69,11 @@
      male <- mmales[,c("Clone", "Replicate", "Males", "NewTotal", "propmale", "SCB"), with=F]
 
      ### tack in whether it has been genotyped yet
-       f1s.use <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.onlyPheno.delim")
+       #f1s.use <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.onlyPheno.delim")
        #f1s.use <- fread("/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/F1s_to_use.allF1s.delim")
 
+       f1s <- sc[AxCF1Hybrid==1][OneLiterPheno==1]$clone
+       f1s.use <- data.table(cloneid=f1s)
        setnames(f1s.use, "cloneid", "Clone")
        f1s.use[,geno:=T]
 
@@ -166,31 +170,35 @@
 
     m <- merge(mmales.ag, epp.ag, all.x=T, all.y=T)
 
-    #mm <- merge(m, r, by="SCB")
-    mm <- m
+    mm <- merge(m, r, by="SCB")
 
 
 ### save
   save(mm, r, mmales, mmales.ag, epp, epp.ag, file="~/F1_pheno.Rdata")
-
+  #load(file="~/F1_pheno.Rdata")
 
 ### merge to make rQTL file
-  setnames(mm, "Clone", "clone")
 
   setkey(mm, "clone")
   setkey(mh, "clone")
 
-  #, "propmalenoneo.ranef", "fill.ranef", "epp.ranef"
+  mhp <- merge(mm[anySeq==T,c("clone", "SCB",
+                              "propmalenoneo", "fill", "epp",
+                              "propmalenoneo.ranef", "fill.ranef", "epp.ranef"), with=F],
+                mh, all.y=T)
 
-  mhp <- merge(mm[anySeq==T,c("clone", "SCB", "propmalenoneo", "fill", "epp" ), with=F],
-                mh)
+  #setcolorder(mhp, c("clone", "propmalenoneo", "fill", "epp", names(markers)[-1]))
 
-  setcolorder(mhp, c("clone", "propmalenoneo", "fill", "epp", names(markers)[-1]))
+  mhp <- as.matrix(mhp)
 
-  mhp[1:5,1:4]
-  dim(mhp)
+  mhp[1:5,1:9]
+  mhp[1:2,1:8] <- ""
+  mhp[1:5,1:9]
 
-  write.csv(mhp, file="~/F1_rQTL.csv", quote=F, row.names=F, na="")
+  mhp[1:5,1:9]
+
+  write.csv(mhp, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.rQTL.csv",
+            quote=F, row.names=F)
 
 
 
