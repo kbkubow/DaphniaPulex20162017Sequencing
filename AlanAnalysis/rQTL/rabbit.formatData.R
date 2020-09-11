@@ -59,65 +59,127 @@
   #write.table(snp.dt.ag, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/chrs.csv", quote=F, row.names=T, col.names=F, sep=",")
 
 ### make large input file
+    if(useDosage==F) {
 
-  seqSetFilter(genofile,
-              sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
-                          sc[SC=="C"][which.max(medrd)]$clone,
-                          f1s$cloneid),
-              variant.id=snp.dt[J(chr.i)][numAlleles==2]$id)
+      ### first, find informative sites
 
-  genomat <- as.data.table(t(seqGetData(genofile, "$dosage")))
-  setnames(genomat, seqGetData(genofile, "sample.id"))
+        seqSetFilter(genofile,
+                    sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
+                                sc[SC=="C"][which.max(medrd)]$clone),
+                    variant.id=snp.dt[J(chr.i)][numAlleles==2]$id)
 
-  setnames(genomat, sc[SC=="A"][which.max(medrd)]$clone, "A")
-  setnames(genomat, sc[SC=="C"][which.max(medrd)]$clone, "C")
+        dosage <- as.data.table(t(seqGetData(genofile, "$dosage")))
+        setnames(dosage, names(dosage), seqGetData(genofile, "sample.id"))
+        setnames(dosage, sc[SC=="A"][which.max(medrd)]$clone, "A")
+        setnames(dosage, sc[SC=="C"][which.max(medrd)]$clone, "C")
 
-  genomat[,id:=seqGetData(genofile, "variant.id")]
+        dosage[,id:=snp.dt[J(chr.i)][numAlleles==2]$id]
 
-  genomat <- genomat[(A!=0 & C!=2) | (A!=2 & C!=0)]
+        dosage[,use:=F]
+        dosage[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1) | (A==1 & C==1), use:=T]
 
-  ### most informative
-    genomat <- genomat[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1) | (A==1 & C==1)]
-    setkey(genomat, id)
-    #genomat <- genomat[J(sample(genomat$id, 5000))]
-    genomat <- genomat[order(id)]
+    ### second, pull out depths
+
+      seqSetFilter(genofile,
+                  sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
+                              sc[SC=="C"][which.max(medrd)]$clone,
+                              f1s$cloneid),
+                  variant.id=dosage[use==T]$id)
+
+      altDepth <- seqGetData(genofile, "annotation/format/AD")$data
+      AD <- altDepth[,seq(from=1, to=dim(altDepth)[2]-1, by=2)]
+      RD <- altDepth[,seq(from=2, to=dim(altDepth)[2], by=2)]
+
+      f1.ord <- data.table(clone=seqGetData(genofile, "sample.id")))
+      f1.ord <- merge(f1.ord, sc[,c("clone", "SC"), with=F])
+
+      parents <- foreach(ind.i=c("A", "C"), .combine="rbind")%do%{
+        #ind.i<-"A"
+        i <- which(f1.ord[SC==ind.i]$clone==seqGetData(genofile, "sample.id"))
+
+        tmp <- paste(AD[i,], RD[i,], sep="|")
+        tmp <- matrix(c(ind.i, tmp), nrow=1)
+        tmp
+      }
+
+      offspring <- foreach(ind.i=f1.ord[!SC%in%c("A", "C")]$clone, .combine="rbind")%do%{
+        #ind.i<-"A"
+        i <- which(f1.ord[clone==ind.i]$clone==seqGetData(genofile, "sample.id"))
+
+        tmp <- paste(AD[i,], RD[i,], sep="|")
+        tmp <- matrix(c(ind.i, tmp), nrow=1)
+        tmp
+      }
 
 
-  ### random sample
-    #genomat <- genomat[sample(c(1:dim(genomat)[1]), 5000)]
-    #genomat <- genomat[order(id)]
 
-    #table(genomat$A, genomat$C)
 
-  parents <- foreach(ind.i=c("A", "C"), .combine="rbind")%do%{
-    tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="2"] <- "22"
-    tmp[tmp=="1"] <- "12"
-    tmp[tmp=="0"] <- "11"
 
-    cbind(matrix(ind.i, ncol=1), tmp)
-  }
 
-  offspring <- foreach(ind.i=f1s$cloneid, .combine="rbind", .errorhandling="remove")%do%{
-    tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="2"] <- "2N"
-    #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
-    tmp[tmp=="1"] <- "12"
-    tmp[tmp=="0"] <- "1N"
-    tmp[is.na(tmp)] <- "NN"
-    cbind(matrix(ind.i, ncol=1), tmp)
-  }
 
-  marker <- matrix(c("marker", genomat$id), nrow=1)
-  #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
-  #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
-  chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(genomat)[1])), nrow=1)
-  pos <- matrix(c("chromosome", seq(from=0, to=maxcM, length.out=dim(genomat)[1])), nrow=1)
 
-  header <- do.call("rbind", list(marker, chr, pos))
+    }
 
-  out <- do.call("rbind", list(header, parents, offspring))
+  ### uses dosage information
+    if(useDosage==T) {
+      seqSetFilter(genofile,
+                  sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
+                              sc[SC=="C"][which.max(medrd)]$clone,
+                              f1s$cloneid),
+                  variant.id=snp.dt[J(chr.i)][numAlleles==2]$id)
 
+      genomat <- as.data.table(t(seqGetData(genofile, "$dosage")))
+      setnames(genomat, seqGetData(genofile, "sample.id"))
+
+      setnames(genomat, sc[SC=="A"][which.max(medrd)]$clone, "A")
+      setnames(genomat, sc[SC=="C"][which.max(medrd)]$clone, "C")
+
+      genomat[,id:=seqGetData(genofile, "variant.id")]
+
+      genomat <- genomat[(A!=0 & C!=2) | (A!=2 & C!=0)]
+
+      ### most informative
+        genomat <- genomat[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1) | (A==1 & C==1)]
+        setkey(genomat, id)
+        #genomat <- genomat[J(sample(genomat$id, 5000))]
+        genomat <- genomat[order(id)]
+
+
+      ### random sample
+        #genomat <- genomat[sample(c(1:dim(genomat)[1]), 5000)]
+        #genomat <- genomat[order(id)]
+
+        #table(genomat$A, genomat$C)
+
+      parents <- foreach(ind.i=c("A", "C"), .combine="rbind")%do%{
+        tmp <- t(as.matrix(genomat[,ind.i, with=F]))
+        tmp[tmp=="2"] <- "22"
+        tmp[tmp=="1"] <- "12"
+        tmp[tmp=="0"] <- "11"
+
+        cbind(matrix(ind.i, ncol=1), tmp)
+      }
+
+      offspring <- foreach(ind.i=f1s$cloneid, .combine="rbind", .errorhandling="remove")%do%{
+        tmp <- t(as.matrix(genomat[,ind.i, with=F]))
+        tmp[tmp=="2"] <- "2N"
+        #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
+        tmp[tmp=="1"] <- "12"
+        tmp[tmp=="0"] <- "1N"
+        tmp[is.na(tmp)] <- "NN"
+        cbind(matrix(ind.i, ncol=1), tmp)
+      }
+
+      marker <- matrix(c("marker", seqGetData(genofile, "variant.id")), nrow=1)
+      #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
+      #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
+      chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(marker)[2]-1)), nrow=1)
+      pos <- matrix(c("chromosome", seq(from=0, to=maxcM, length.out=dim(marker)[2]-1)), nrow=1)
+
+      header <- do.call("rbind", list(marker, chr, pos))
+
+      out <- do.call("rbind", list(header, parents, offspring))
+    }
 
 
 ###
