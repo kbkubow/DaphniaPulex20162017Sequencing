@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 14874182
+# sacct -j 15041987
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
@@ -27,22 +27,22 @@ module load intel/18.0 intelmpi/18.0 R/3.6.3
 module load mathematica
 module load parallel
 
-#SLURM_ARRAY_TASK_ID=1
+#SLURM_ARRAY_TASK_ID=11
 cm=10
 wd="/scratch/aob2x/daphnia_hwe_sims"
-datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_${cm}cm
+datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm
 chr=$( grep "^${SLURM_ARRAY_TASK_ID}," ${datadir}/chrs.csv | cut -f2 -d',' )
 echo $chr $datadir
 
 ### make dir
-mkdir -p ${wd}/Rabbit_phase_${cm}cm/${chr}
+mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
 
 ### generate RABBIT input data
 ### which f1s
   # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC
   set="all_AxC"
 
-  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatData.R ${chr} ${cm} ${set}
+    Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatData.R ${chr} ${cm} ${set}
 
 
 ### format RABBIT script file
@@ -50,13 +50,14 @@ echo "make mathematica input"
 sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
 ${datadir}/${chr}/${chr}.m
 
-ls ${datadir}/${chr}.m
+ls ${datadir}/${chr}/${chr}.m
 
 
 ### Run RABBIT impute & reconstruct
 math -script ${datadir}/${chr}/${chr}.m
 
 ### convert paths
-#python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.parseHaplotypes.py \
-#${chr}.all.csv \
-#${datadir}/ >> ${chr}.all.haps
+# datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm_old
+python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/old/rabbit.parseHaplotypes.py \
+${chr}.all.csv \
+${datadir}/${chr}/ >> ${datadir}/${chr}/${chr}.haps.delim
