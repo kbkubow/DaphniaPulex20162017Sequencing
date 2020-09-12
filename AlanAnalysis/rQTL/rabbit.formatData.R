@@ -5,7 +5,7 @@
   chr.i <- as.character(args[1])
   maxcM <- as.numeric(args[2])
   f1s.set <- as.character(args[3])
-  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_CxC"
+  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_AxC"
 
 ### libraries
   library(data.table)
@@ -111,13 +111,15 @@
         tmp <- matrix(c(ind.i, tmp), nrow=1)
         tmp
       }
+      marker <- matrix(c("marker", seqGetData(genofile, "variant.id")), nrow=1)
+      #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
+      #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
+      chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(marker)[2]-1)), nrow=1)
+      pos <- matrix(c("chromosome", seq(from=0, to=maxcM, length.out=dim(marker)[2]-1)), nrow=1)
 
+      header <- do.call("rbind", list(marker, chr, pos))
 
-
-
-
-
-
+      out <- do.call("rbind", list(header, parents, offspring))
 
     }
 
