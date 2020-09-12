@@ -91,7 +91,7 @@
       AD <- altDepth[,seq(from=1, to=dim(altDepth)[2]-1, by=2)]
       RD <- altDepth[,seq(from=2, to=dim(altDepth)[2], by=2)]
 
-      f1.ord <- data.table(clone=seqGetData(genofile, "sample.id")))
+      f1.ord <- data.table(clone=seqGetData(genofile, "sample.id"))
       f1.ord <- merge(f1.ord, sc[,c("clone", "SC"), with=F])
 
       parents <- foreach(ind.i=c("A", "C"), .combine="rbind")%do%{
