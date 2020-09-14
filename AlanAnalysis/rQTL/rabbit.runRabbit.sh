@@ -18,7 +18,7 @@
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15189344
+# sacct -j 15189345
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14874181_1.out
 
 
@@ -42,7 +42,7 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
   # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC
   set="all_AxC"
 
-  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.whatshap.R ${chr} ${cm} ${set}
+  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.consensus.R ${chr} ${cm} ${set}
 
 
 ### format RABBIT script file
