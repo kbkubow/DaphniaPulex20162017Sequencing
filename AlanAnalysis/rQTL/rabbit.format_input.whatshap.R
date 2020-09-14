@@ -98,8 +98,8 @@
     #i<-1
     ind.i <- f1.ord[i]
 
-  #  tmp <- paste(refDepth[i,], altDepth[i,], sep="|")
-    tmp <- paste(altDepth[i,], refDepth[i,], sep="|")
+    tmp <- paste(refDepth[i,], altDepth[i,], sep="|")
+  #  tmp <- paste(altDepth[i,], refDepth[i,], sep="|")
     tmp <- matrix(c(ind.i, tmp), nrow=1)
     tmp
 
