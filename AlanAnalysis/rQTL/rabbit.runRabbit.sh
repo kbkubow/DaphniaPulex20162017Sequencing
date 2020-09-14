@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15041987
+# sacct -j 15072261
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
@@ -42,12 +42,12 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
   # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC
   set="all_AxC"
 
-    Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatData.R ${chr} ${cm} ${set}
+  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.whatshap.R ${chr} ${cm} ${set}
 
 
 ### format RABBIT script file
 echo "make mathematica input"
-sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
+sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.whatshap.m > \
 ${datadir}/${chr}/${chr}.m
 
 ls ${datadir}/${chr}/${chr}.m
@@ -58,6 +58,6 @@ math -script ${datadir}/${chr}/${chr}.m
 
 ### convert paths
 # datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm_old
-python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/old/rabbit.parseHaplotypes.py \
+python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.parseHaplotypes.py \
 ${chr}.all.csv \
 ${datadir}/${chr}/ >> ${datadir}/${chr}/${chr}.haps.delim

@@ -25,6 +25,7 @@
 
   }
 
-  i<-1
+  i<-12
   plotParentalHaplos(chr.i=peaks$CHROM[i],
-                  start)
+                    maxPos=peaks$posMaxGprime[i],
+                    window=10000)
