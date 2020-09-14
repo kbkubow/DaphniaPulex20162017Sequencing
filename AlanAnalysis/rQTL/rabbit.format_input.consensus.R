@@ -87,6 +87,10 @@
   ac.inform <- ac.inform[chr==chr.i]
 
 
+  ### subsample?
+    ac.inform <- ac.inform[sample(c(TRUE, FALSE), replace=T, size=dim(ac.inform)[1], prob=c(.05, .95))]
+
+
    A.parent <- c("A", ac.inform$A.geno)
    C.parent <- c("C", ac.inform$C.geno)
 
@@ -130,7 +134,7 @@
   #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
   #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
   chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(marker)[2]-1)), nrow=1)
-  pos <- matrix(c("chromosome", seq(from=0, to=maxcM, length.out=dim(marker)[2]-1)), nrow=1)
+  pos <- matrix(c("pos(cM)", seq(from=0, to=maxcM, length.out=dim(marker)[2]-1)), nrow=1)
 
   header <- do.call("rbind", list(marker, chr, pos))
 
