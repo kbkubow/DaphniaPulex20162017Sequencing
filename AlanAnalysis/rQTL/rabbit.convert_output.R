@@ -93,7 +93,8 @@
                               id=rep(seqGetData(genofile, "variant.id"), each=dim(obs.geno)[1]))
 
       phase.impute.obs <- merge(phase.impute, obs.geno.l)
-      table(phase.impute.obs$obs.geno, phase.impute.obs$value)
+      table(phase.impute.obs[id==id.i]$obs.geno,
+            phase.impute.obs[id==id.i]$value)
 
 
       phase.impute.obs[id==id.i]

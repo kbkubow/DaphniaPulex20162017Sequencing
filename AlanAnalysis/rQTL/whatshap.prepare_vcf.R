@@ -1,72 +1,62 @@
 #ijob -c1 -p standard -A berglandlab
 #module load intel/18.0 intelmpi/18.0 R/3.6.3; R
 
+
+
 ### libraries
   library(data.table)
   library(SeqArray)
   library(foreach)
 
-### load SuperClone & SNP filter file
-  sc <- fread("/project/berglandlab/Karen/MappingDec2019/Superclones201617182019pulexonlyD82016problematic_20200122")
-  load("/project/berglandlab/Karen/MappingDec2019/snpsvarpulexpresentinhalf_20200121.Rdata")
+### set wd
+  setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
+
+### load SuperClone
+  sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
 
 ### open GDS
-  genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/MapDec19PulexOnlyB_filtsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-  snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"), pos=seqGetData(genofile, "position"), id=seqGetData(genofile, "variant.id"), key="id")
-  use <- data.table(id=snpsvarpulexpresentinhalf, pass=T, key="id")
-  snp.dt <- merge(snp.dt, use)
+  genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
 
-  snp.dt[,use.chr:=F]
-  snp.dt[chr%in%snp.dt[,.N,chr][N>1000]$chr, use.chr:=T]
+### load in filter file
+  snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
 
-### 1. identify fixed difference between A&B
-  ab.fd <- foreach(sc.i=c("A", "B"), .combine="cbind")%do%{
+### make snp.dt
+  snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
+                       pos=seqGetData(genofile, "position"),
+                       id=seqGetData(genofile, "variant.id"),
+                       numAlleles=seqNumAllele(genofile),
+                       key="chr")
+  setkey(snpFilter, chr, pos)
+  setkey(snp.dt, chr, pos)
+
+  snp.dt <- merge(snpFilter, snp.dt)
+
+### 1. identify fixed difference between A & C
+  ac.fd <- foreach(sc.i=c("A", "C"), .combine="cbind")%do%{
     seqResetFilter(genofile)
     seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
 
     data.table(af=seqAlleleFreq(genofile))
   }
-  setnames(ab.fd, c(1,2), c("af.A", "af.B"))
-  ab.fd <- cbind(ab.fd, snp.dt)
-  ab.fd[!is.na(af.A),A.geno := unlist(sapply(ab.fd[!is.na(af.A)]$af.A, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
-  ab.fd[!is.na(af.B),B.geno := unlist(sapply(ab.fd[!is.na(af.B)]$af.B, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
+  setnames(ac.fd, c(1,2), c("af.A", "af.C"))
+  ac.fd <- cbind(ac.fd, snp.dt)
+  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ab.fd[!is.na(af.A)]$af.A, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ab.fd[!is.na(af.C)]$af.C, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
 
-  ac.inform <- ac.fd[(A.geno==0 & C.geno==2) | (A.geno==1 & C.geno==0) | (A.geno==0 & C.geno==1)]
+  ac.inform <- ac.fd[(A.geno==1 & C.geno==0) |
+                     (A.geno==1 & C.geno==2) |
+                     (A.geno==0 & C.geno==1) |
+                     (A.geno==2 & C.geno==1)]
 
-
-### 2. Identify F1s
-  seqResetFilter(genofile)
-  seqSetFilter(genofile, variant.id=ac.inform$id)
-
-  genomat <- seqGetData(genofile, "$dosage")
-
-  het.count <- foreach(i=1:dim(genomat)[1], .combine="rbind")%do%{
-    print(paste(i, dim(genomat)[1], sep=" / "))
-
-    tmp <- ac.inform
-    tmp[,geno:=genomat[i,]]
-    nLoci <- dim(tmp[!is.na(A.geno) & !is.na(C.geno) & !is.na(geno)])[1]
-    tmp.ag <- tmp[!is.na(A.geno) & !is.na(C.geno),list(nRR=sum(geno==2, na.rm=T),
-                                                      nRA=sum(geno==1, na.rm=T),
-                                                      nAA=sum(geno==0, na.rm=T),
-                                                      n=sum(!is.na(geno))),
-                                                  list(A.geno=abs(A.geno-2), C.geno=abs(C.geno-2))]
-    tmp.ag[,fRR:=nRR/n]
-    tmp.ag[,fRA:=nRA/n]
-    tmp.ag[,fAA:=nAA/n]
-
-    tmp.ag[,sample.id:=seqGetData(genofile, "sample.id")[i]]
-    tmp.ag
-  }
-
-  f1.set <- het.count[n>1000][A.geno==0 & C.geno==2 & fRA>.9]$sample.id
+### 2. Identify F1s to use
+  f1s <- sc[AxCF1Hybrid==1]$clone
 
 ### 3. make majority rule F1s, A & B
   setkey(sc, clone)
-  sc.f1.ag <- sc[J(f1.set)][SC!="OO" & SC!="AxCF1",.N,list(SC)]
+  sc.f1.ag <- sc[J(f1s)][SC!="OO" & SC!="AxCF1",.N,list(SC)]
   sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "C")))[order(N, decreasing=T)]
 
-  nF1s <- 4
+  nF1s <- 4 ### misnomer
 
   f1.cons <- foreach(i=1:(2+nF1s), .combine="cbind")%do%{
     #i<-1
@@ -98,8 +88,11 @@
 
 ### 4. write VCF file & PED file
   seqSetFilter(genofile, variant.id=1)
-  seqGDS2VCF(genofile, "/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.vcf", info.var=character(0), fmt.var=character(0),
-    verbose=TRUE)
+  seqGDS2VCF(genofile,
+             "/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.vcf",
+             info.var=character(0), fmt.var=character(0),
+             verbose=TRUE)
+
   system("grep '##' /scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.vcf > /scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.header.vcf")
 
   write.table(vcf, file="/scratch/aob2x/daphnia_hwe_sims/trioPhase/rQTL_quartet.consensus.header.vcf", sep="\t", append=T, col.names=T, quote=F, row.names=F)
