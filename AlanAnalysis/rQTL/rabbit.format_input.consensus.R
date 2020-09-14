@@ -88,7 +88,7 @@
 
 
   ### subsample?
-    #ac.inform <- ac.inform[sample(c(TRUE, FALSE), replace=T, size=dim(ac.inform)[1], prob=c(.05, .95))]
+    ac.inform <- ac.inform[sample(c(TRUE, FALSE), replace=T, size=dim(ac.inform)[1], prob=c(.25, .75))]
 
 
    A.parent <- c("A", ac.inform$A.geno)
