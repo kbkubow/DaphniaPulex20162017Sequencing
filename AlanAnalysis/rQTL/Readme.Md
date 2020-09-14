@@ -1,6 +1,12 @@
+### Run Whatshapp to phase A & C from quartets. Use consensus calls across highly replicated superclones
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/whatshap.prepare_vcf.R`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/whatshap.run.sh`
+
 ### Run RABBIT to reconstruct phase of F1s
   #git clone https://github.com/chaozhi/RABBIT.git
-  Apparently does not need phased parents, orininally built for only phenotyped F1s. Now it does all F1s
+
+  ~~Apparently does not need phased parents, orininally built for only phenotyped F1s. Now it does all F1s~~
+
   ### Run RABBIT
   1. `rabbit.runRabbit.sh` runs RABBIT
       (requires `template.m`, runs `rabbit.formatData.R` & `rabbit.parseHaplotypes.py`, and files `chrs.csv`)
