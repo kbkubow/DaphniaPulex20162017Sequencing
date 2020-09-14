@@ -18,7 +18,7 @@
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14761054_3.out
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 14874181
+# sacct -j 15189344
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.14874181_1.out
 
 
@@ -47,7 +47,8 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
 
 ### format RABBIT script file
 echo "make mathematica input"
-sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.whatshap.m > \
+#sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.whatshap.m > \
+sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
 ${datadir}/${chr}/${chr}.m
 
 ls ${datadir}/${chr}/${chr}.m
