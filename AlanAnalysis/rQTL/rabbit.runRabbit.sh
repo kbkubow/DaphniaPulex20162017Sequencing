@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15225227
+# sacct -j 15247907
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15196960_5.err
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
@@ -62,4 +62,4 @@ math -script ${datadir}/${chr}/${chr}.m
 # datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm_old
 python ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.parseHaplotypes.py \
 ${chr}.all.csv \
-${datadir}/${chr}/ >> ${datadir}/${chr}/${chr}.haps.delim
+${datadir}/${chr}/ > ${datadir}/${chr}/${chr}.haps.delim
