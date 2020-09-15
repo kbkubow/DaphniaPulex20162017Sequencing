@@ -114,10 +114,10 @@
 
   offspring <- foreach(ind.i=f1s$clone, .combine="rbind", .errorhandling="remove")%do%{
     tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="2"] <- "11"
+    tmp[tmp=="2"] <- "1N"
     #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
     tmp[tmp=="1"] <- "12"
-    tmp[tmp=="0"] <- "22"
+    tmp[tmp=="0"] <- "2N"
     tmp[is.na(tmp)] <- "NN"
     cbind(matrix(ind.i, ncol=1), tmp)
   }
