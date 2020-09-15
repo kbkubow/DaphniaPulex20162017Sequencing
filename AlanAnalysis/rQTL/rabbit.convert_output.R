@@ -6,6 +6,9 @@
   library(ggplot2)
   library(foreach)
   library(SeqArray)
+  library(doMC)
+  registerDoMC(10)
+
 
 ### make SNP table
   genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
@@ -93,17 +96,15 @@
                               id=rep(seqGetData(genofile, "variant.id"), each=dim(obs.geno)[1]))
 
       phase.impute.obs <- merge(phase.impute, obs.geno.l)
-      table(phase.impute.obs[id==id.i]$obs.geno,
-            phase.impute.obs[id==id.i]$value)
 
 
-      phase.impute.obs[id==id.i]
+      #phase.impute.obs[id==id.i]
 
 
   }
 
   fns <- system("ls /scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/*/*out.post.csv", intern=T)
-  ppl <- foreach(x=fns)%do%loadDat(x)
+  ppl <- foreach(x=fns)%dopar%loadDat(x)
   ppl <- rbindlist(ppl)
 
   #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/combined_rabbitOut_all_AxC.Rdata")

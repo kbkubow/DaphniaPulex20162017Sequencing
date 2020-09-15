@@ -11,38 +11,6 @@
 #### Prep the input data ###
 ############################
 
-### load data and convert: [M]arkers, [H]eader
-  f1s <- fread(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.csv") ### Comes from `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.R`
-  f1s[,marker:=paste(chr.x, id, sep="_")]
-  f1s[,diplo:=as.numeric(as.factor(founder))]
-  setkey(f1s, marker)
-
-  ### down sample?
-    tmp <- data.table(marker=sample(unique(f1s$marker), 10000, replace=F))
-    setkey(tmp, marker)
-    f1s.sub <- f1s[J(tmp)]
-    setkey(f1s.sub, id)
-
-    dim(f1s.sub)
-
-  ### no?
-    f1s.sub <- f1s
-
-  markers<- dcast(f1s.sub , clone ~ id, value.var=list("diplo"))
-  markers[1:5,1:4]
-
-
-  chrs <- f1s.sub[,list(chr=unique(chr.x), pos=unique(pos)), id]
-
-  header <- as.data.table(rbind(c("", chrs$chr), c("", chrs$pos)))
-  setnames(header, names(header), names(markers))
-
-  markers[1:5,1:4]
-  header[1:2,1:4]
-
-  mh <- rbind(header, markers)
-  mh[1:5,1:4]
-
 ########################
 ### [P]henotype data ###
 ########################
@@ -177,6 +145,50 @@
   save(mm, r, mmales, mmales.ag, epp, epp.ag, file="~/F1_pheno.Rdata")
   #load(file="~/F1_pheno.Rdata")
 
+
+### load data and convert: [M]arkers, [H]eader
+  f1s <- fread(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.csv") ### Comes from `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.R`
+  f1s[,marker:=paste(chr.x, id, sep="_")]
+  f1s[,diplo:=as.numeric(as.factor(founder))]
+  setkey(f1s, marker)
+
+### get one individual per named superclone
+  f1s.ind <- data.table(clone=unique(f1s$clone))
+  f1s.ind <- merge(f1s.ind, sc, by="clone")
+  f1s.ind$SCB <- ifelse(f1s.ind$LabGenerated==0 & f1s.ind$SC!="OO", f1s.ind$SC, f1s.ind$clone)
+  f1s.ind.ag <- f1s.ind[OneLiterPheno==1,list(clone=clone[1]), list(SCB)]
+
+  setkey(f1s, clone)
+  setkey(f1s.ind.ag, clone)
+  f1s.sub <- merge(f1s, f1s.ind.ag)
+
+
+#### down sample?
+  tmp <- data.table(marker=sample(as.character(unique(f1s.sub$marker)), 50000, replace=F))
+  setkey(f1s.sub, marker)
+  f1s.sub <- f1s.sub[J(tmp)]
+  setkey(f1s.sub, id)
+
+  dim(f1s.sub)
+
+#### no?
+#  f1s.sub <- f1s
+
+  markers<- dcast(f1s.sub , clone ~ id, value.var=list("diplo"))
+  markers[1:5,1:4]
+
+
+  chrs <- f1s.sub[,list(chr=unique(chr.x), pos=unique(pos)), id]
+
+  header <- as.data.table(rbind(c("", chrs$chr), c("", chrs$pos)))
+  setnames(header, names(header), names(markers))
+
+  markers[1:5,1:4]
+  header[1:2,1:4]
+
+  mh <- rbind(header, markers)
+  mh[1:5,1:4]
+
 ### merge to make rQTL file
 
   setkey(mm, "clone")
@@ -197,7 +209,7 @@
 
   mhp[1:5,1:9]
 
-  write.csv(mhp, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.rQTL.csv",
+  write.csv(mhp, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/justPheno.rQTL.csv",
             quote=F, row.names=F)
 
 
