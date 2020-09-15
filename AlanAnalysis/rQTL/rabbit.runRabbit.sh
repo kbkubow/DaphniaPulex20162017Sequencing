@@ -43,7 +43,7 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
   # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC
   set="all_AxC"
 
-  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.maxRD.R ${chr} ${cm} ${set}
+  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.maxRD.dosage.R ${chr} ${cm} ${set}
 
 
 ### format RABBIT script file
