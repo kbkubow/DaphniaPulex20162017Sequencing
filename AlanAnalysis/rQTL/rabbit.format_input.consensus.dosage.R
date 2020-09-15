@@ -123,26 +123,6 @@
   }
 
 
-  #alleleDepth <- seqGetData(genofile, "annotation/format/AD")$data
-  #refDepth <- alleleDepth[,seq(from=1, to=dim(alleleDepth)[2]-1, by=2)]
-  #altDepth <- alleleDepth[,seq(from=2, to=dim(alleleDepth)[2], by=2)]
-  #f1.ord <- seqGetData(genofile, "sample.id")
-
-  dim(refDepth)
-  dim(altDepth)
-
-  offspring <- foreach(i=1:length(f1.ord), .combine="rbind")%do%{
-    print(i)
-    #i<-1
-    ind.i <- f1.ord[i]
-
-    tmp <- paste(refDepth[i,], altDepth[i,], sep="|")
-  #  tmp <- paste(altDepth[i,], refDepth[i,], sep="|")
-    tmp <- matrix(c(ind.i, tmp), nrow=1)
-    tmp
-
-  }
-
   dim(offspring)
   offspring[1:5,1:10]
 
