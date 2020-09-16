@@ -70,7 +70,6 @@
   ac.fd <- cbind(ac.fd, snp.dt)
 
 
-
   ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
   ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
 
@@ -82,14 +81,15 @@
   ac.inform <- ac.fd[(A.geno=="12" & C.geno=="11") |
                      (A.geno=="12" & C.geno=="22") |
                      (A.geno=="11" & C.geno=="12") |
-                     (A.geno=="22" & C.geno=="12") |
-                     (A.geno=="12" & C.geno=="12")]
+                     (A.geno=="22" & C.geno=="12") ]
+
+                     #(A.geno=="12" & C.geno=="12")]
 
   ac.inform <- ac.inform[chr==chr.i]
 
 
   ### subsample?
-    ac.inform <- ac.inform[sample(c(TRUE, FALSE), replace=T, size=dim(ac.inform)[1], prob=c(1, 0))]
+    #ac.inform <- ac.inform[sample(c(TRUE, FALSE), replace=T, size=dim(ac.inform)[1], prob=c(1, 0))]
 
 
    A.parent <- c("A", ac.inform$A.geno)
@@ -112,13 +112,22 @@
 
   genomat[,id:=seqGetData(genofile, "variant.id")]
 
+### check
+  genomat.l <- melt(genomat, id.vars="id")
+  genomat.l.ag <- genomat.l[,list(n22=sum(value==0, na.rm=T), n12=sum(value==1, na.rm=T), n11=sum(value==2, na.rm=T)), list(id)]
+
+  gp <- merge(genomat.l.ag, ac.inform, by="id")
+
+
+
+
 
   offspring <- foreach(ind.i=f1s$clone, .combine="rbind", .errorhandling="remove")%do%{
     tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="0"] <- "11"
+    tmp[tmp=="0"] <- "2N"
     #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
     tmp[tmp=="1"] <- "12"
-    tmp[tmp=="2"] <- "22"
+    tmp[tmp=="2"] <- "1N"
     tmp[is.na(tmp)] <- "NN"
     cbind(matrix(ind.i, ncol=1), tmp)
   }

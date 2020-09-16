@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15339262
+# sacct -j 15341473
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15196960_5.err
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
