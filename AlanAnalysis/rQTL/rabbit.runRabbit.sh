@@ -35,7 +35,7 @@ chr=$( grep "^${SLURM_ARRAY_TASK_ID}," ${datadir}/chrs.csv | cut -f2 -d',' )
 echo $chr $datadir
 
 ### make dir
-rm ${wd}/Rabbit_phase_10cm/${chr}
+rm -fr ${wd}/Rabbit_phase_10cm/${chr}
 mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
 
 ### generate RABBIT input data
