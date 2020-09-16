@@ -40,6 +40,36 @@
 
   ppl.ag <- ppl[,list(nRecomb=length(V4)), list(chr, clone)]
 
+  #ppl[,method:="maxRD.dosage"]
+  #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.dosage.Rdata")
+
+  ppl[,method:="maxRD.readCounts"]
+  save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.readCounts.Rdata")
+
+
+
+
+###
+  load(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.readCounts.Rdata")
+  ppl.rc <- ppl
+
+  load(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.dosage.Rdata")
+  ppl.d <- ppl
+
+  ppl <- rbind(ppl.rc, ppl.d, fill=T)
+  ppl[is.na(method), method:="maxRD.dosage"]
+
+  ppl.ag <- ppl[,list(nRecomb=length(V4)), list(chr, clone, method)]
+
+  summary(aov(nRecomb~method+chr+clone, ppl.ag))
+
+
+
+
+
+
+
+
 
   #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/combined_rabbitOut_all_AxC.Rdata")
 

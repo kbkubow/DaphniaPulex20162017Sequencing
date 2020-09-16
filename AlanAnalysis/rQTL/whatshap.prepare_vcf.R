@@ -31,17 +31,17 @@
 
   snp.dt <- merge(snpFilter, snp.dt)
 
-### 1. identify fixed difference between A & C
+### 1. identify informative differences between A & C
   ac.fd <- foreach(sc.i=c("A", "C"), .combine="cbind")%do%{
     seqResetFilter(genofile)
     seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
 
-    data.table(af=seqAlleleFreq(genofile))
+    data.table(af=seqAlleleFreq(genofile, ref.allele=0L)) ### reference allele
   }
   setnames(ac.fd, c(1,2), c("af.A", "af.C"))
   ac.fd <- cbind(ac.fd, snp.dt)
-  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ab.fd[!is.na(af.A)]$af.A, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
-  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ab.fd[!is.na(af.C)]$af.C, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
 
   ac.inform <- ac.fd[(A.geno==1 & C.geno==0) |
                      (A.geno==1 & C.geno==2) |

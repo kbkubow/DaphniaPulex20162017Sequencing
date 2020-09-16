@@ -64,15 +64,15 @@
     seqResetFilter(genofile)
     seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
 
-    data.table(af=seqAlleleFreq(genofile, ref.allele=0L)) ### reference allele
+    data.table(af=seqAlleleFreq(genofile, ref.allele=1L)) ### reference allele
   }
   setnames(ac.fd, c(1,2), c("af.A", "af.C"))
   ac.fd <- cbind(ac.fd, snp.dt)
 
 
 
-  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c("22","12","11")[which.min(abs(x-c(0,.5,1)))]))]
-  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c("22","12","11")[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
 
   ac.fd[!is.na(af.A),A.delta := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) min(abs(x-c(0,.5,1)))))]
   ac.fd[!is.na(af.C),C.delta := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) min(abs(x-c(0,.5,1)))))]
@@ -115,10 +115,10 @@
 
   offspring <- foreach(ind.i=f1s$clone, .combine="rbind", .errorhandling="remove")%do%{
     tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="2"] <- "1N"
+    tmp[tmp=="0"] <- "11"
     #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
     tmp[tmp=="1"] <- "12"
-    tmp[tmp=="0"] <- "2N"
+    tmp[tmp=="2"] <- "22"
     tmp[is.na(tmp)] <- "NN"
     cbind(matrix(ind.i, ncol=1), tmp)
   }
