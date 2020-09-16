@@ -23,18 +23,23 @@
 
   loadDat <- function(fn) {
     print(fn)
-    #fn <- fns[10]
+    #fn <- fns[1]
 
     ### most likely genotype
       pp <- fread(fn)
       pp[,chr:=tstrsplit(V1, " ")[[2]]]
       pp[,clone:=tstrsplit(V1, " ")[[1]]]
 
+    ### return
+      return(pp)
   }
   fns <- system("ls /scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/*/*haps*", intern=T)
 
   ppl <- foreach(x=fns)%do%loadDat(x)
   ppl <- rbindlist(ppl)
+
+  ppl.ag <- ppl[,list(nRecomb=length(V4)), list(chr, clone)]
+
 
   #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/combined_rabbitOut_all_AxC.Rdata")
 
