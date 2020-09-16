@@ -81,9 +81,8 @@
   ac.inform <- ac.fd[(A.geno=="12" & C.geno=="11") |
                      (A.geno=="12" & C.geno=="22") |
                      (A.geno=="11" & C.geno=="12") |
-                     (A.geno=="22" & C.geno=="12") ]
-
-                     #(A.geno=="12" & C.geno=="12")]
+                     (A.geno=="22" & C.geno=="12") |
+                     (A.geno=="12" & C.geno=="12")]
 
   ac.inform <- ac.inform[chr==chr.i]
 
