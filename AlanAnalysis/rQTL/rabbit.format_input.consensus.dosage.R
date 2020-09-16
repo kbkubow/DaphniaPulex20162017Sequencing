@@ -64,7 +64,7 @@
     seqResetFilter(genofile)
     seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
 
-    data.table(af=seqAlleleFreq(genofile, ref.allele=1L)) ### reference allele
+    data.table(af=seqAlleleFreq(genofile, ref.allele=1L)) ### alternate allele
   }
   setnames(ac.fd, c(1,2), c("af.A", "af.C"))
   ac.fd <- cbind(ac.fd, snp.dt)
@@ -124,10 +124,10 @@
 
   offspring <- foreach(ind.i=f1s$clone, .combine="rbind", .errorhandling="remove")%do%{
     tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="0"] <- "22"
+    tmp[tmp=="0"] <- "11"
     #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
     tmp[tmp=="1"] <- "12"
-    tmp[tmp=="2"] <- "11"
+    tmp[tmp=="2"] <- "22"
     tmp[is.na(tmp)] <- "NN"
     cbind(matrix(ind.i, ncol=1), tmp)
   }

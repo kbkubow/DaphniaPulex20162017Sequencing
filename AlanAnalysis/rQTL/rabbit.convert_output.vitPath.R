@@ -43,23 +43,40 @@
   #ppl[,method:="maxRD.dosage"]
   #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.dosage.Rdata")
 
-  ppl[,method:="maxRD.readCounts"]
-  save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.readCounts.Rdata")
+  ppl[,method:="consensus.dosage"]
+  save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.consensus.dosage.Rdata")
 
 
 
 
 ###
+  rm(list=ls())
+
+  load(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.consensus.dosage.Rdata")
+  ppl.con.d <- ppl
+
   load(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.readCounts.Rdata")
   ppl.rc <- ppl
 
   load(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.dosage.Rdata")
+  ppl[, method:="maxRD.dosage"]
   ppl.d <- ppl
 
-  ppl <- rbind(ppl.rc, ppl.d, fill=T)
-  ppl[is.na(method), method:="maxRD.dosage"]
+  ppl <- rbindlist(list(ppl.con.d, ppl.rc, ppl.d))
 
+  save(ppl, file="~/3method.ppl.Rdata")
+
+  scp aob2x@rivanna.hpc.virginia.edu:~/3method.ppl.Rdata ~/.
+
+  library(data.table)
+  library(ggplot2)
+  install.pack
+  load(file="~/3method.ppl.Rdata")
   ppl.ag <- ppl[,list(nRecomb=length(V4)), list(chr, clone, method)]
+
+  ggplot(ppl.ag, aes(x=method, y=nRecomb, color=grepl("AxB", clone))) + geom_jitter() + facet_wrap(~chr)
+
+
 
   summary(aov(nRecomb~method+chr+clone, ppl.ag))
 
