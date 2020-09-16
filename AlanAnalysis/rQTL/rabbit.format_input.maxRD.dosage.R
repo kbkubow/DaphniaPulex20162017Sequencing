@@ -59,72 +59,8 @@
   #write.table(snp.dt.ag, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase/chrs.csv", quote=F, row.names=T, col.names=F, sep=",")
 
 ### make large input file
-    useDosage <- TRUE
-    if(useDosage==F) {
-
-      ### first, find informative sites
-
-        seqSetFilter(genofile,
-                    sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
-                                sc[SC=="C"][which.max(medrd)]$clone),
-                    variant.id=snp.dt[J(chr.i)][numAlleles==2]$id)
-
-        dosage <- as.data.table(t(seqGetData(genofile, "$dosage")))
-        setnames(dosage, names(dosage), seqGetData(genofile, "sample.id"))
-        setnames(dosage, sc[SC=="A"][which.max(medrd)]$clone, "A")
-        setnames(dosage, sc[SC=="C"][which.max(medrd)]$clone, "C")
-
-        dosage[,id:=snp.dt[J(chr.i)][numAlleles==2]$id]
-
-        dosage[,use:=F]
-        dosage[(A==1 & C==0) | (A==1 & C==2) | (A==0 & C==1) | (A==2 & C==1) | (A==1 & C==1), use:=T]
-
-    ### second, pull out depths
-
-      seqSetFilter(genofile,
-                  sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
-                              sc[SC=="C"][which.max(medrd)]$clone,
-                              f1s$cloneid),
-                  variant.id=dosage[use==T]$id)
-
-      altDepth <- seqGetData(genofile, "annotation/format/AD")$data
-      AD <- altDepth[,seq(from=1, to=dim(altDepth)[2]-1, by=2)]
-      RD <- altDepth[,seq(from=2, to=dim(altDepth)[2], by=2)]
-
-      f1.ord <- data.table(clone=seqGetData(genofile, "sample.id"))
-      f1.ord <- merge(f1.ord, sc[,c("clone", "SC"), with=F])
-
-      parents <- foreach(ind.i=c("A", "C"), .combine="rbind")%do%{
-        #ind.i<-"A"
-        i <- which(f1.ord[SC==ind.i]$clone==seqGetData(genofile, "sample.id"))
-
-        tmp <- paste(AD[i,], RD[i,], sep="|")
-        tmp <- matrix(c(ind.i, tmp), nrow=1)
-        tmp
-      }
-
-      offspring <- foreach(ind.i=f1.ord[!SC%in%c("A", "C")]$clone, .combine="rbind")%do%{
-        #ind.i<-"A"
-        i <- which(f1.ord[clone==ind.i]$clone==seqGetData(genofile, "sample.id"))
-
-        tmp <- paste(AD[i,], RD[i,], sep="|")
-        tmp <- matrix(c(ind.i, tmp), nrow=1)
-        tmp
-      }
-      marker <- matrix(c("marker", seqGetData(genofile, "variant.id")), nrow=1)
-      #chr <- matrix(c("chromosome", rep(NA, dim(genomat)[1])), nrow=1)
-      #pos <- matrix(c("pos(cM)", rep(NA, dim(genomat)[1])), nrow=1)
-      chr <- matrix(c("chromosome", rep(as.numeric(as.factor(chr.i)), dim(marker)[2]-1)), nrow=1)
-      pos <- matrix(c("chromosome", seq(from=0, to=maxcM, length.out=dim(marker)[2]-1)), nrow=1)
-
-      header <- do.call("rbind", list(marker, chr, pos))
-
-      out <- do.call("rbind", list(header, parents, offspring))
-
-    }
 
   ### uses dosage information
-    if(useDosage==T) {
       seqSetFilter(genofile,
                   sample.id=c(sc[SC=="A"][which.max(medrd)]$clone,
                               sc[SC=="C"][which.max(medrd)]$clone,
@@ -182,7 +118,6 @@
       header <- do.call("rbind", list(marker, chr, pos))
 
       out <- do.call("rbind", list(header, parents, offspring))
-    }
 
 
 ###
