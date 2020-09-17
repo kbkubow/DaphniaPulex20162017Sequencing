@@ -82,7 +82,7 @@
                      (A.geno=="12" & C.geno=="22") |
                      (A.geno=="11" & C.geno=="12") |
                      (A.geno=="22" & C.geno=="12") |
-                     (A.geno=="12" & C.geno=="12")]
+                     (A.geno=="12" & C.geno=="12") ]
 
   ac.inform <- ac.inform[chr==chr.i]
 
@@ -123,10 +123,10 @@
 
   offspring <- foreach(ind.i=f1s$clone, .combine="rbind", .errorhandling="remove")%do%{
     tmp <- t(as.matrix(genomat[,ind.i, with=F]))
-    tmp[tmp=="0"] <- "2N"
+    tmp[tmp=="0"] <- "22"
     #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
     tmp[tmp=="1"] <- "12"
-    tmp[tmp=="2"] <- "1N"
+    tmp[tmp=="2"] <- "11"
     tmp[is.na(tmp)] <- "NN"
     cbind(matrix(ind.i, ncol=1), tmp)
   }
