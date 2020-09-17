@@ -23,7 +23,7 @@
 
   loadDat <- function(fn) {
     print(fn)
-    #fn <- fns[1]
+    #fn <- fns[3]
 
     ### most likely genotype
       pp <- fread(fn)
@@ -35,10 +35,16 @@
   }
   fns <- system("ls /scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/*/*haps*", intern=T)
 
-  ppl <- foreach(x=fns)%do%loadDat(x)
+  ppl <- foreach(x=fns, .errorhandling="remove")%do%loadDat(x)
   ppl <- rbindlist(ppl)
 
-  ppl.ag <- ppl[,list(nRecomb=length(V4)), list(chr, clone)]
+  ppl.ag <- ppl[,list(nRecomb=length(V4)-1), list(chr, clone)]
+  ppl.ag.ag <- ppl.ag[,list(mu=mean(nRecomb)), list(chr)]
+
+  ppl[,A:=tstrsplit(V4, "\\|")[[1]]]
+  ppl[,C:=tstrsplit(V4, "\\|")[[2]]]
+
+
 
   #ppl[,method:="maxRD.dosage"]
   #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.dosage.Rdata")
@@ -76,7 +82,8 @@
 
   ggplot(ppl.ag, aes(x=method, y=nRecomb, color=grepl("AxB", clone))) + geom_jitter() + facet_wrap(~chr)
 
-
+  ppl[,A:=tstrsplit(V4, "\\|")[[1]]]
+  ppl[,C:=tstrsplit(V4, "\\|")[[2]]]
 
   summary(aov(nRecomb~method+chr+clone, ppl.ag))
 
