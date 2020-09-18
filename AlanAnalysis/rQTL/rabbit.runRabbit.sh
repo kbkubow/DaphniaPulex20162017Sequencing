@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15409828
+# sacct -j 15410449
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15401525_1.out
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
@@ -43,12 +43,12 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
   # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC
   set="all_AxC"
 
-  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.whatshap.dosage.R ${chr} ${cm} ${set}
+  Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.consensus.dosage.R ${chr} ${cm} ${set}
 
 
 ### format RABBIT script file
 echo "make mathematica input"
-sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.whatshap.m > \
+sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
 ${datadir}/${chr}/${chr}.m
 
 #sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
