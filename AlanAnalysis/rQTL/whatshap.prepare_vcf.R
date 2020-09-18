@@ -36,17 +36,25 @@
     seqResetFilter(genofile)
     seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
 
-    data.table(af=seqAlleleFreq(genofile, ref.allele=0L)) ### reference allele
+    data.table(af=seqAlleleFreq(genofile, ref.allele=1L)) ### alternate allele
   }
   setnames(ac.fd, c(1,2), c("af.A", "af.C"))
   ac.fd <- cbind(ac.fd, snp.dt)
-  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
-  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c(0,1,2)[which.min(abs(x-c(0,.5,1)))]))]
 
-  ac.inform <- ac.fd[(A.geno==1 & C.geno==0) |
-                     (A.geno==1 & C.geno==2) |
-                     (A.geno==0 & C.geno==1) |
-                     (A.geno==2 & C.geno==1)]
+
+  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
+
+  ac.fd[!is.na(af.A),A.delta := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) min(abs(x-c(0,.5,1)))))]
+  ac.fd[!is.na(af.C),C.delta := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) min(abs(x-c(0,.5,1)))))]
+
+  ac.fd <- ac.fd[A.delta < 0.05 & C.delta < 0.05]
+
+  ac.inform <- ac.fd[(A.geno=="12" & C.geno=="11") |
+                     (A.geno=="12" & C.geno=="22") |
+                     (A.geno=="11" & C.geno=="12") |
+                     (A.geno=="22" & C.geno=="12") |
+                     (A.geno=="12" & C.geno=="12") ]
 
 ### 2. Identify F1s to use
   f1s <- sc[AxCF1Hybrid==1]$clone
@@ -56,7 +64,7 @@
   sc.f1.ag <- sc[J(f1s)][SC!="OO" & SC!="AxCF1",.N,list(SC)]
   sc.f1.ag <- rbind(sc.f1.ag, data.table(N=100, SC=c("A", "C")))[order(N, decreasing=T)]
 
-  nF1s <- 4 ### misnomer
+  nF1s <- 4
 
   f1.cons <- foreach(i=1:(2+nF1s), .combine="cbind")%do%{
     #i<-1
@@ -64,7 +72,7 @@
     seqResetFilter(genofile)
     seqSetFilter(genofile, sample.id=sc[SC==sc.f1.ag$SC[i]]$clone, variant.id=ac.inform$id)
 
-    tmp <- data.table(af=seqAlleleFreq(genofile))
+    tmp <- data.table(af=seqAlleleFreq(genofile, ref.allele=1L))
     #tmp <- cbind(tmp, snp.dt)
 
     tmp[!is.na(af), geno := unlist(sapply(tmp[!is.na(af)]$af, function(x) c("0/0","0/1","1/1")[which.min(abs(x-c(0,.5,1)))]))]
