@@ -81,32 +81,38 @@
   head(parents[,1:10])
 
 ### load & format offspring
+
   seqSetFilter(genofile,
               sample.id=f1s$clone,
               variant.id=phased$id)
 
-  alleleDepth <- seqGetData(genofile, "annotation/format/AD")$data
-  refDepth <- alleleDepth[,seq(from=1, to=dim(alleleDepth)[2]-1, by=2)]
-  altDepth <- alleleDepth[,seq(from=2, to=dim(alleleDepth)[2], by=2)]
-  f1.ord <- seqGetData(genofile, "sample.id")
+  genomat <- as.data.table(t(seqGetData(genofile, "$dosage")))
+  setnames(genomat, seqGetData(genofile, "sample.id"))
 
-  dim(refDepth)
-  dim(altDepth)
+  genomat[,id:=seqGetData(genofile, "variant.id")]
 
-  offspring <- foreach(i=1:length(f1.ord), .combine="rbind")%do%{
-    print(i)
-    #i<-1
-    ind.i <- f1.ord[i]
+  ### check
+    genomat.l <- melt(genomat, id.vars="id")
+    genomat.l.ag <- genomat.l[,list(n22=sum(value==0, na.rm=T), n12=sum(value==1, na.rm=T), n11=sum(value==2, na.rm=T)), list(id)]
 
-    tmp <- paste(refDepth[i,], altDepth[i,], sep="|")
-  #  tmp <- paste(altDepth[i,], refDepth[i,], sep="|")
-    tmp <- matrix(c(ind.i, tmp), nrow=1)
-    tmp
+    genomat.l.ag[,A:=formatParent(tstrsplit(phased$A, ":")[[1]])]
+    genomat.l.ag[,C:=formatParent(tstrsplit(phased$C, ":")[[1]])]
 
-  }
+    genomat.l.ag[,list(mu22=mean(n22), mu12=mean(n12), mu11=mean(n11)), list(A, C)]
 
-  dim(offspring)
-  offspring[1:5,1:10]
+    offspring <- foreach(ind.i=f1s$clone, .combine="rbind", .errorhandling="remove")%do%{
+      tmp <- t(as.matrix(genomat[,ind.i, with=F]))
+      tmp[tmp=="0"] <- "2N"
+      #tmp[tmp=="1"] <- sample(c("1N","2N"), dim(tmp)[1], replace=T)
+      tmp[tmp=="1"] <- "12"
+      tmp[tmp=="2"] <- "1N"
+      tmp[is.na(tmp)] <- "NN"
+      cbind(matrix(ind.i, ncol=1), tmp)
+    }
+
+
+    dim(offspring)
+    offspring[1:5,1:10]
 
 ### make header
 
