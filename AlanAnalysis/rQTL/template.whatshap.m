@@ -12,7 +12,7 @@ inputfile = "STEM.all.in"
 resultFile = "STEM.all.out"
 imputeTarget = "Offspring"
 
-magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True, imputingTarget -> ]
+magicImpute[inputfile,model,popScheme,isFounderInbred -> False, outputFileID -> resultFile, isPrintTimeElapsed -> True, imputingTarget -> imputeTarget]
 
 
 magicReconstruct[inputfile, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
