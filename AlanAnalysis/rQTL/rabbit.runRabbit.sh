@@ -14,8 +14,8 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15401508
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15401508_1.err
+# sacct -j 15401525
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15401525_1.out
 
 # sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
 # sacct -j 15196734
@@ -27,7 +27,7 @@ module load intel/18.0 intelmpi/18.0 R/3.6.3
 module load mathematica
 module load parallel
 
-#SLURM_ARRAY_TASK_ID=11
+#SLURM_ARRAY_TASK_ID=1
 cm=10
 wd="/scratch/aob2x/daphnia_hwe_sims"
 datadir=/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm
@@ -48,10 +48,10 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
 
 ### format RABBIT script file
 echo "make mathematica input"
-sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.whatshap.m > \
+#sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.whatshap.m > \
+sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
 ${datadir}/${chr}/${chr}.m
 
-#sed "s/STEM/${chr}/g" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/template.m > \
 
 ls ${datadir}/${chr}/${chr}.m
 
