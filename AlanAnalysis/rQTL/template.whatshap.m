@@ -16,10 +16,4 @@ summaryFile = StringDrop[resultFile, -4] <> ".csv"
 saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]
 
 
-estfun = "origPosteriorDecoding"
-resultFile = "STEM.all.out.post"
-magicReconstruct[imputed, model, popScheme, isFounderInbred -> False, outputFileID -> resultFile, reconstructAlgorithm -> estfun, isPrintTimeElapsed -> True]
-summaryFile = StringDrop[resultFile, -5] <> ".post.csv"
-saveAsSummaryMR[resultFile<>"_magicReconstruct.txt", summaryFile]
-
 Exit
