@@ -16,6 +16,12 @@
   setkey(snp.dt, id)
 
 
+### set wd
+  setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
+
+### load SuperClone
+  sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+
 
 
 ### load posterior probabilities
@@ -38,16 +44,55 @@
   ppl <- foreach(x=fns, .errorhandling="remove")%do%loadDat(x)
   ppl <- rbindlist(ppl)
 
+
+### basic summary stats
   ppl.ag <- ppl[,list(nRecomb=length(V4)-1), list(chr, clone)]
   ppl.ag.ag <- ppl.ag[,list(mu=mean(nRecomb)), list(chr)]
-
+  mean(ppl.ag.ag$mu)
   ppl[,A:=tstrsplit(V4, "\\|")[[1]]]
   ppl[,C:=tstrsplit(V4, "\\|")[[2]]]
+  table(ppl$A, ppl$chr)
+  table(ppl$C)
+
+  table(ppl$A, ppl$C)
+
+### distances of paths
+  setnames(ppl, "V2", "id")
+  setkey(ppl, id)
+  setkey(snp.dt, id)
+  ppl.start <- merge(ppl, snp.dt)
+  setnames(ppl.start, "pos", "start.pos")
+
+  setnames(ppl.start, "id", "V2")
+  setnames(ppl.start, "V3", "id")
+  setkey(ppl.start, id)
+  setkey(snp.dt, id)
+  ppl.start.stop <- merge(ppl.start, snp.dt)
+  setnames(ppl.start.stop, "pos", "stop.pos")
+
+  pplss <- ppl.start.stop
+  pplss[,dist:=stop.pos - start.pos]
+
+
+  setkey(pplss, clone)
+  setkey(sc, clone)
+  pplss <- merge(pplss, sc)
+
+  save(pplss, file="~/pplss.Rdata")
+
+
+# scp aob2x@rivanna.hpc.virginia.edu:~/pplss.Rdata ~/pplss.Rdata
+
+library(data.table)
+library(ggplot2)
+load("~/pplss.Rdata")
+
+ggplot(data=pplss[abs(dist)>100000]) +
+geom_segment(aes(y=clone, yend=clone, x=start.pos, xend=stop.pos, color=V4), size=4) +
+facet_grid(SC~chr.x, scales="free", space="free_y", shrink=T)
 
 
 
-  #ppl[,method:="maxRD.dosage"]
-  #save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.maxRD.dosage.Rdata")
 
   ppl[,method:="consensus.dosage"]
   save(ppl, file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/ppl.consensus.dosage.Rdata")
