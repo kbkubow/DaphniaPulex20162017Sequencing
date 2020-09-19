@@ -85,12 +85,58 @@
                      (A.geno=="12" & C.geno=="12") ]
 
   ac.inform <- ac.inform[chr==chr.i]
+  ac.inform[,pos.bin:=round(pos/1e5)]
 
 
-  ### subsample?
-    #ac.inform <- ac.inform[sample(c(TRUE, FALSE), replace=T, size=dim(ac.inform)[1], prob=c(1, 0))]
+### select sites in F1s with lowest amount of missing data
+  seqResetFilter(genofile)
+  seqSetFilter(genofile,
+              sample.id=f1s$clone,
+              variant.id=ac.inform$id)
+
+  mr <- data.table(id=seqGetData(genofile, "variant.id"),
+                    mr=seqMissing(genofile))
+  mr <- merge(mr, snp.dt, by="id")
 
 
+  ### check to see if missing rates are homogeneously distributed throughout the genome.
+    mr[,pos.bin:=round(pos/1e5)]
+    mr.ag <- mr[,list(nLow=sum(mr<.25), n=length(mr)), list(pos.bin)]
+    summary(mr.ag$nLow/mr.ag$n)
+
+  ### trim out position bins with high rates of missing data (i.e., when nLow/n is high. mr=missing rate so a low is good; we want windows with a lot of sites with low missing rates, i.e. with y>.5)
+
+    #ggplot(data=mr.ag[nLow/n>.5], aes(y=nLow/n, x=pos.bin)) + geom_line()
+
+  ### select windows with low rates of high missing rat ( 50% )
+      setkey(ac.inform, pos.bin)
+      ac.inform <- ac.inform[J(mr.ag[nLow/n >.5]$pos.bin)]
+
+  ### trim to sites with low rates of missing data
+      ac.inform <- merge(ac.inform, mr[,c("id", "mr"), with=F], by="id")
+      ac.inform <- ac.inform[mr<.25]
+
+
+  ### subsample
+    ac.inform.ag <- ac.inform[,list(n=length(id)), list(pos.bin)]
+
+    sample.fun <- function(x, n) {
+      if(length(x)<=n) return(x)
+      if(length(x)>n) return(sort(as.integer(sample(as.character(x), size=n))))
+    }
+
+    set.seed(1234)
+
+    ac.inform.sub <- ac.inform[,list(id=sample.fun(id, 50)), list(pos.bin)]
+
+    setkey(ac.inform.sub, pos.bin, id)
+    setkey(ac.inform, pos.bin, id)
+    ac.inform <- merge(ac.inform, ac.inform.sub)
+
+
+    ac.inform[,list(n=length(id)), list(pos.bin)]
+
+  ### make parents
    A.parent <- c("A", ac.inform$A.geno)
    C.parent <- c("C", ac.inform$C.geno)
 
