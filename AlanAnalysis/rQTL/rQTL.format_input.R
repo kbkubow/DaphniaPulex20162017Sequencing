@@ -148,8 +148,10 @@
 
 ### load data and convert: [M]arkers, [H]eader
   f1s <- fread(file="/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.csv") ### Comes from `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.R`
-  f1s[,marker:=paste(chr.x, id, sep="_")]
-  f1s[,diplo:=as.numeric(as.factor(founder))]
+  f1sv <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
+  f1sv[,diplo:=as.numeric(factor(diplo, levels=c("A_m|C_m", "A_p|C_m", "A_m|C_p", "A_p|C_p")))]
+  f1s <- f1sv
+  f1s[,marker:=paste(chr, id, sep="_")]
   setkey(f1s, marker)
 
 ### get one individual per named superclone
@@ -178,7 +180,7 @@
   markers[1:5,1:4]
 
 
-  chrs <- f1s.sub[,list(chr=unique(chr.x), pos=unique(pos)), id]
+  chrs <- f1s.sub[,list(chr=unique(chr), pos=unique(pos)), id]
 
   header <- as.data.table(rbind(c("", chrs$chr), c("", chrs$pos)))
   setnames(header, names(header), names(markers))
@@ -217,12 +219,85 @@
 
 
 
+#### test
+  f1sv.ag <- f1sv[,list(.N), list(chr, pos, id)]
+
+  ii <- seq(from=1, to=dim(f1sv.ag)[1], by=10)
+
+
+  out <- foreach(i=ii, .errorhandling="remove")%dopar%{
+    print(paste(i, dim(f1sv.ag)[1], sep=" / "))
+    tmp <- merge(mm, f1sv[id==f1sv.ag$id[i]], by="clone")
+
+    t1.fill <- anova(lm(fill.ranef~as.factor(geno), tmp))
+    t1.male <- anova(lm(propmalenoneo.ranef~as.factor(geno), tmp))
+
+
+    data.table(id=f1sv.ag$id[i],
+               F=c(t1.fill[1,4], t1.male[1,4]),
+               p=c(t1.fill[1,5], t1.male[1,5]),
+               term=c("fill", "male"))
+  }
+  out <- rbindlist(out)
+  out[,pa:=p.adjust(p, "fdr")]
+
+  save(out, file="~/out.Rdata")
+
+
+
+  tmp <- merge(mmales, f1sv[id==981731], by="clone")
+
+  t1.male <- lm(propmalenoneo~as.factor(geno.y), tmp)
+  t1.male <- lm(propmalenoneo~as.factor(diplo), tmp)
+
+
+  summary(t1.male); anova(t1.male)
+  save(out, file="~/out.Rdata")
+
+  t1.male <- glmer(propmalenoneo~as.factor(geno.y) + , tmp)
+
+  t1.male <- glm(I(Males/NewTotal)~as.factor(geno.y), family=binomial(), weights=tmp$NewTotal, data=tmp)
+  t1.male <- glmer(I(Males/NewTotal)~as.factor(geno.y) + (1|SCB), family=binomial(), weights=tmp$NewTotal, data=tmp)
+  t1.male <- lmp(propmalenoneo~as.factor(geno.y), tmp, perm="Exact")
+  t1.male <- lmp(propmalenoneo~as.factor(diplo), tmp, perm="Exact")
+
+
+  library(data.table)
+  library(ggplot2)
+  load("~/out.Rdata")
+  ggplot(data=out, aes(x=id, y=-log10(pa))) + geom_line() + facet_wrap(term~.)
+  ggplot(data=out, aes(p)) + geom_histogram() + facet_wrap(term~.)
+
+  out[term=="fill"][which.max(F)]
+  tmp <- merge(mm, f1sv[id==out[term=="fill"][which.max(F)]$id], by="clone")
+
+  t1.fill <- (lm(fill.ranef~as.factor(geno), tmp))
+  t1.male <- (lm(propmalenoneo.ranef~as.factor(geno), tmp))
+
+
+### window
+  win.bp <- 100000
+  step.bp <- 10000
+  wins <- foreach(chr.i=unique(f1sv.ag$chr), .combine="rbind")%do%{
+    #chr.i=unique(f1sv.ag$chr)[1]
+    data.table(chr=chr.i,
+              start=seq(from=min(f1sv.ag[chr==chr.i]$pos),
+                        to=max(f1sv.ag[chr==chr.i]$pos)-win.bp,
+                        by=step.bp),
+              stop=seq(from=min(f1sv.ag[chr==chr.i]$pos),
+                        to=max(f1sv.ag[chr==chr.i]$pos)-win.bp,
+                        by=step.bp)+win.bp)
+  }
 
 
 
 
 
+  f1sv[chr=="Scaffold_9199_HRSCAF_10755"][which.min(abs(pos-6229430))]
 
+  merge(mm, f1sv[pos==6229926], by="clone")
+
+  anova(lm(propmalenoneo.ranef~as.factor(diplo),  merge(mm, f1sv[pos==6229926], by="clone")))
 
 
 

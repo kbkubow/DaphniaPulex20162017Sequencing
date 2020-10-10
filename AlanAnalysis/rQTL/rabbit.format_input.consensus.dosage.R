@@ -127,7 +127,7 @@
 
     set.seed(1234)
 
-    ac.inform.sub <- ac.inform[,list(id=sample.fun(id, 50)), list(pos.bin)]
+    ac.inform.sub <- ac.inform[,list(id=sample.fun(id, 50000)), list(pos.bin)]
 
     setkey(ac.inform.sub, pos.bin, id)
     setkey(ac.inform, pos.bin, id)
