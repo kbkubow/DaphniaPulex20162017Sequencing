@@ -15,16 +15,13 @@
                        numAlleles=seqNumAllele(genofile))
   setkey(snp.dt, id)
 
-
 ### set wd
   setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
 
 ### load SuperClone
   sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
 
-
-
-### load posterior probabilities
+### load vit paths
   setwd("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm")
 
   loadDat <- function(fn) {
@@ -45,33 +42,180 @@
   ppl <- rbindlist(ppl)
 
 
-### basic summary stats
-  ppl.ag <- ppl[,list(nRecomb=length(V4)-1), list(chr, clone)]
-  ppl.ag.ag <- ppl.ag[,list(mu=mean(nRecomb)), list(chr)]
-  mean(ppl.ag.ag$mu)
-  ppl[,A:=tstrsplit(V4, "\\|")[[1]]]
-  ppl[,C:=tstrsplit(V4, "\\|")[[2]]]
-  table(ppl$A, ppl$chr)
-  table(ppl$C)
+### load parental genotypes
+  loadDat <- function(fn) {
+    print(fn)
+    #fn <- fns[1]
+    ### phased & imputed
+      pp <- fread(fn, skip=1, nrows=6, header=T, fill=T)
+      ppl <- melt(pp, id.vars="marker")
 
-  table(ppl$A, ppl$C)
+      setnames(ppl, c("marker", "variable"), c("allele", "id"))
 
-### distances of paths
-  setnames(ppl, "V2", "id")
-  setkey(ppl, id)
-  setkey(snp.dt, id)
-  ppl.start <- merge(ppl, snp.dt)
-  setnames(ppl.start, "pos", "start.pos")
+      setkey(ppl, "allele")
 
-  setnames(ppl.start, "id", "V2")
-  setnames(ppl.start, "V3", "id")
-  setkey(ppl.start, id)
-  setkey(snp.dt, id)
-  ppl.start.stop <- merge(ppl.start, snp.dt)
-  setnames(ppl.start.stop, "pos", "stop.pos")
+      ppl <- ppl[J(c("A_Maternal", "A_Paternal", "C_Maternal", "C_Paternal"))]
+      ppl[,id:=as.numeric(as.character(id))]
 
-  pplss <- ppl.start.stop
-  pplss[,dist:=stop.pos - start.pos]
+      setkey(ppl, "id")
+      setkey(snp.dt, "id")
+      ppl <- merge(ppl, snp.dt)
+
+    ### consensus
+      fni <- gsub(".out.post.csv", ".in",  fn)
+      con <- as.matrix(fread(fni, skip=4, nrows=2, header=F, fill=T))
+      #con[,1:5]
+      id <- as.matrix(fread(fni, skip=1, nrows=1, header=F, fill=T))
+      #id[,1:5]
+      con.dt <- data.table(id=as.numeric(id[-1]),
+                            A=con[1,-1],
+                            C=con[2,-1])
+      setkey(con.dt, id)
+      setkey(ppl, id)
+      pplc <- merge(ppl, con.dt)
+      set
+
+    return(pplc)
+  }
+
+  fns <- system("ls /scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/*/*out.post.csv", intern=T)
+  parental <- foreach(x=fns)%do%loadDat(x)
+  parental <- rbindlist(parental)
+  setkey(parental, id)
+  parental[,allele:=gsub("A_Maternal", "A_m", allele)]
+  parental[,allele:=gsub("A_Paternal", "A_p", allele)]
+  parental[,allele:=gsub("C_Maternal", "C_m", allele)]
+  parental[,allele:=gsub("C_Paternal", "C_p", allele)]
+
+### iterate through windows to make SNP call per site
+
+  dat <- foreach(i=1:dim(ppl)[1])%dopar%{
+    #i<-1
+    print(paste(i, dim(ppl)[1], sep=" / "))
+
+    off.tmp <- ppl[i]
+    par.temp <- parental[J(off.tmp$V2:off.tmp$V3), nomatch=0]
+
+    A.seg <- par.temp[allele==tstrsplit(off.tmp$V4, "\\|")[[1]]]
+    C.seg <- par.temp[allele==tstrsplit(off.tmp$V4, "\\|")[[2]]]
+
+    out.tmp <- data.table(id=A.seg$id, chr=A.seg$chr, pos=A.seg$pos, diplo=off.tmp$V4, clone=off.tmp$clone,
+                          geno=paste(A.seg$value, C.seg$value, sep=""))
+  }
+  dat <- rbindlist(dat)
+
+
+### get parental genotypes into it
+  parental.ag <- parental[,list(geno=c(paste(value[allele=="A_m"], value[allele=="A_p"], sep=""),
+                                       paste(value[allele=="C_m"], value[allele=="C_p"], sep="")),
+                                obs.geno=c(A[allele=="A_m"],
+                                           C[allele=="C_m"]),
+                 clone=c("A", "C"),
+                  diplo=c("A_m|A_p", "C_m|C_p")),
+            list(chr, pos,id)]
+
+### combine offspring + parental
+  #dat <- datp[,-"diplo",with=F]
+  datp <- rbind(dat, parental.ag, fill=T)
+  save(datp, file="~/datp.Rdata")
+  write.csv(datp, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
+
+### load
+  datp <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
+  setnames(datp, "geno", "phase.geno")
+
+
+
+### add in imputed genotypes from Rabbit + original genotype call
+  setwd("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm")
+
+  loadDat.io <- function(fn) {
+    print(fn)
+    #fn <- fns[1]
+
+    ### imputed genotype
+      fn <- gsub(".post.csv", "_ImputedGenotype.csv", fn)
+      imputed <- fread(fn, skip=1, header=T)
+      imputed.l <- melt(imputed, id.vars="marker")
+
+      setnames(imputed.l, c("variable", "marker", "value"), c("id", "clone", "imputedGeno"))
+      imputed.l[,id:=as.numeric(as.character(id))]
+
+      setkey(imputed.l, id, clone)
+      setkey(datp, id, clone)
+
+      phase.impute <- merge(datp, imputed.l)
+
+    ### get original genotypes
+      seqSetFilter(genofile,
+                  sample.id=unique(phase.impute$clone),
+                  variant.id=unique(phase.impute$id))
+
+      obs.geno <- seqGetData(genofile, "$dosage") ### dosage of the ref allele
+
+      obs.geno.l <- data.table(obs.geno=expand.grid(obs.geno)$Var1,
+                              clone=rep(seqGetData(genofile, "sample.id"), dim(obs.geno)[2]),
+                              id=rep(seqGetData(genofile, "variant.id"), each=dim(obs.geno)[1]))
+
+      phase.impute.obs <- merge(phase.impute, obs.geno.l, all=T)
+      setnames(phase.impute.obs, c("obs.geno.x", "obs.geno.y"), c("consensusParent", c("obs.dosage")))
+      return(phase.impute.obs)
+    }
+
+    fns <- system("ls /scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/*/*out.post.csv", intern=T)
+    pio <- foreach(x=fns)%dopar%loadDat.io(x)
+    pio <- rbindlist(pio)
+
+    table(pio$phase.geno, pio$imputedGeno)
+
+    table(pio$phase.geno, pio$consensusParent)
+    table(pio$imputedGeno, pio$consensusParent)
+
+    save(pio, file="~/pio.Rdata")
+    write.csv(pio, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.pio.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### some stuff with teh vit segments
+  ### basic summary stats
+    ppl.ag <- ppl[,list(nRecomb=length(V4)-1), list(chr, clone)]
+    ppl.ag.ag <- ppl.ag[,list(mu=mean(nRecomb)), list(chr)]
+    mean(ppl.ag.ag$mu)
+    ppl[,A:=tstrsplit(V4, "\\|")[[1]]]
+    ppl[,C:=tstrsplit(V4, "\\|")[[2]]]
+    table(ppl$A, ppl$chr)
+    table(ppl$C)
+
+    table(ppl$A, ppl$C)
+
+  ### distances of paths
+    setnames(ppl, "V2", "id")
+    setkey(ppl, id)
+    setkey(snp.dt, id)
+    ppl.start <- merge(ppl, snp.dt)
+    setnames(ppl.start, "pos", "start.pos")
+
+    setnames(ppl.start, "id", "V2")
+    setnames(ppl.start, "V3", "id")
+    setkey(ppl.start, id)
+    setkey(snp.dt, id)
+    ppl.start.stop <- merge(ppl.start, snp.dt)
+    setnames(ppl.start.stop, "pos", "stop.pos")
+
+    pplss <- ppl.start.stop
+    pplss[,dist:=stop.pos - start.pos]
 
 
   setkey(pplss, clone)

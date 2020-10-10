@@ -39,7 +39,7 @@
   mq <- makeqtl(AxCF1, chr=max(mr.fill)$chr, pos=max(mr.fill)$pos)
 
   lod <- fitqtl(AxCF1, pheno.col=4, mq,
-                formula=paste("y~", paste(paste("Q", c(7,10,1), sep=""), collapse="+ "), sep=" "),
+                formula=paste("y~", paste(paste("Q", c(1:12), sep=""), collapse="+ "), sep=" "),
                 method="imp")
   summary(lod)
 
@@ -55,9 +55,9 @@
 
 
 ### mega plot
-mr.epp.dt <- as.data.table(mr.epp.blup)
-mr.fill.dt <- as.data.table(mr.fill.blup)
-mr.propmale.dt <- as.data.table(mr.propmale.blup)
+mr.epp.dt <- as.data.table(mr.epp)
+mr.fill.dt <- as.data.table(mr.fill)
+mr.propmale.dt <- as.data.table(mr.propmale)
 
 eppresid.plot <- ggplot() +
 #geom_hline(yintercept=summary(perm)[2]) +
