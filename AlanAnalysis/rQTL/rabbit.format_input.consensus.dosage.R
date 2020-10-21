@@ -5,7 +5,7 @@
   chr.i <- as.character(args[1])
   maxcM <- as.numeric(args[2])
   f1s.set <- as.character(args[3])
-  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all_AxC"
+  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all"
 
 ### libraries
   library(data.table)
@@ -36,6 +36,9 @@
   } else if(f1s.set=="all_CxC") {
     f1s <- sc[OneLiterPheno==1][AxCF1Hybrid==0][SC=="selfedC"]$clone
 
+  } else if(f1s.set=="all") {
+    f1s <- c(sc[AxCF1Hybrid==1]$clone,
+             sc[OneLiterPheno==1][AxCF1Hybrid==0][SC=="selfedC"]$clone)
   }
   f1s <- data.table(clone=f1s)
 
@@ -219,13 +222,24 @@
 ### make ped file
   ped.fn <- paste("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_", maxcM, "cm/", chr.i, "/", chr.i, ".ped", sep="")
 
-  writeLines( "Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
-               con=ped.fn
-             )
+  if(f1s.set!="all") {
+    writeLines( "Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
+                 con=ped.fn
+               )
 
-  f1s[,id:=3]
-  f1s[,fc:="1-2"]
+    f1s[,id:=3]
+    f1s[,fc:="1-2"]
+  } else if(f1s.set=="all" ) {
+    writeLines( "Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\n1,4,0,2,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
+                 con=ped.fn
+               )
 
+    f1s[clone%in%sc[AxCF1Hybrid==1]$clone, id:=3]
+    f1s[clone%in%sc[OneLiterPheno==1][AxCF1Hybrid==0][SC=="selfedC"]$clone, id:=4]
+    f1s[,fc:="1-2"]
+
+
+  }
    write.table(f1s,
                file=ped.fn,
                quote=FALSE,
