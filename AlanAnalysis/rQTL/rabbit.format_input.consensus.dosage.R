@@ -230,7 +230,7 @@
     f1s[,id:=3]
     f1s[,fc:="1-2"]
   } else if(f1s.set=="all" ) {
-    writeLines( "Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,2,0,0\n1,3,0,1,2\n1,4,0,2,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
+    writeLines( "Pedigree-Information,DesignPedigree\nGeneration,MemberID,Female=1/Male=2/Hermaphrodite=0,MotherID,FatherID\n0,1,1,0,0\n0,2,0,0,0\n1,3,0,1,2\n1,4,0,2,2\nPedigree-Information,SampleInfor\nProgenyLine,MemberID,Funnelcode",
                  con=ped.fn
                )
 
