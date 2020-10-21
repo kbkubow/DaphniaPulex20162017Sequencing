@@ -40,8 +40,8 @@ mkdir -p ${wd}/Rabbit_phase_10cm/${chr}
 
 ### generate RABBIT input data
 ### which f1s
-  # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC
-  set="all_AxC"
+  # options: onlyPheno_AxC; wildF1s_AxC; all_AxC; all_CxC; all
+  set="all"
 
   Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.format_input.consensus.dosage.R ${chr} ${cm} ${set}
 
