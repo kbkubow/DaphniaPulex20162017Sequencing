@@ -56,7 +56,7 @@ setkey(snp.dt, id)
 
     return(ppl)
   }
-  fns <- list.files("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm", pattern=".out.post.csv")
+  fns <- list.files("/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/Scaffold*/", pattern=".out.post.csv")
   ppl <- foreach(x=fns)%do%loadDat(x)
   ppl <- rbindlist(ppl)
 

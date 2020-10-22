@@ -11,7 +11,7 @@
 
 # ijob -c1 -p standard -A berglandlab
 # submit as: sbatch --array=1-2 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh
-
+# sacct -j 17483430
 
 module load gatk/4.0.0.0
 
@@ -28,7 +28,7 @@ module load gatk/4.0.0.0
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant.vcf
 
-gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf
+#gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf
 
 
 ###

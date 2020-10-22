@@ -85,7 +85,9 @@
                      (A.geno=="12" & C.geno=="22") |
                      (A.geno=="11" & C.geno=="12") |
                      (A.geno=="22" & C.geno=="12") |
-                     (A.geno=="12" & C.geno=="12") ]
+                     (A.geno=="12" & C.geno=="12") |
+                     (A.geno=="11" & C.geno=="22") |
+                     (A.geno=="22" & C.geno=="11") ]
 
   ac.inform <- ac.inform[chr==chr.i]
   ac.inform[,pos.bin:=round(pos/1e5)]

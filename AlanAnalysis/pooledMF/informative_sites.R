@@ -54,7 +54,6 @@
   ac.fd[!is.na(af.A),A.delta := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) min(abs(x-c(0,.5,1)))))]
   ac.fd[!is.na(af.C),C.delta := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) min(abs(x-c(0,.5,1)))))]
 
-  ac.fd <- ac.fd[A.delta < 0.05 & C.delta < 0.05]
 
   ac.inform <- ac.fd[(A.geno=="12" & C.geno=="11") |
                      (A.geno=="12" & C.geno=="22") |
@@ -62,8 +61,10 @@
                      (A.geno=="22" & C.geno=="12") |
                      (A.geno=="12" & C.geno=="12") ]
 
+  ac.inform <- ac.inform[A.delta < 0.05 & C.delta < 0.05]
+
 ### export VCF
-  seqSetFilter(genofile, sample.id=sc[which.max(medrd)]$clone, variant.id=ac.inform$id)
+  seqSetFilter(genofile, sample.id=sc[SC%in%c("A", "C")]$clone, variant.id=ac.inform$id)
 
   seqGDS2VCF(genofile,
              vcf.fn="/scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf", info.var=character(0), fmt.var=character(0))

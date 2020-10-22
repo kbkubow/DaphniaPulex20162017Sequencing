@@ -73,7 +73,9 @@
       setkey(con.dt, id)
       setkey(ppl, id)
       pplc <- merge(ppl, con.dt)
-      set
+
+    ### bring in fixed differences between A&C
+      
 
     return(pplc)
   }
@@ -87,11 +89,13 @@
   parental[,allele:=gsub("C_Maternal", "C_m", allele)]
   parental[,allele:=gsub("C_Paternal", "C_p", allele)]
 
+
+
 ### iterate through windows to make SNP call per site
 
   dat <- foreach(i=1:dim(ppl)[1])%dopar%{
     #i<-1
-    print(paste(i, dim(ppl)[1], sep=" / "))
+    message(paste(i, dim(ppl)[1], sep=" / "))
 
     off.tmp <- ppl[i]
     par.temp <- parental[J(off.tmp$V2:off.tmp$V3), nomatch=0]
@@ -101,6 +105,7 @@
 
     out.tmp <- data.table(id=A.seg$id, chr=A.seg$chr, pos=A.seg$pos, diplo=off.tmp$V4, clone=off.tmp$clone,
                           geno=paste(A.seg$value, C.seg$value, sep=""))
+    return(out.tmp)
   }
   dat <- rbindlist(dat)
 
@@ -112,16 +117,18 @@
                                            C[allele=="C_m"]),
                  clone=c("A", "C"),
                   diplo=c("A_m|A_p", "C_m|C_p")),
-            list(chr, pos,id)]
+            list(chr, pos, id)]
 
 ### combine offspring + parental
   #dat <- datp[,-"diplo",with=F]
   datp <- rbind(dat, parental.ag, fill=T)
   save(datp, file="~/datp.Rdata")
-  write.csv(datp, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
+  write.csv(datp, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.csv")
 
 ### load
-  datp <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
+  datp <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.csv")
+  datpo <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
+
   setnames(datp, "geno", "phase.geno")
 
 
@@ -166,13 +173,19 @@
     pio <- foreach(x=fns)%dopar%loadDat.io(x)
     pio <- rbindlist(pio)
 
+    setnames(pio, "geno", "phase.geno")
+
+
     table(pio$phase.geno, pio$imputedGeno)
 
     table(pio$phase.geno, pio$consensusParent)
+
+    table(pio$phase.geno, pio$obs.dosage)
+
     table(pio$imputedGeno, pio$consensusParent)
 
     save(pio, file="~/pio.Rdata")
-    write.csv(pio, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.pio.csv")
+    write.csv(pio, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.pio.csv")
 
 
 
@@ -225,6 +238,11 @@
   save(pplss, file="~/pplss.Rdata")
 
 
+  table(pio[chr=="Scaffold_9200_HRSCAF_10757"][pos>8e6]$diplo)
+  table(pio[chr=="Scaffold_9200_HRSCAF_10757"][pos>8e6][clone%in%c("A", "C")]$phase.geno,
+        pio[chr=="Scaffold_9200_HRSCAF_10757"][pos>8e6][clone%in%c("A", "C")]$clone)
+
+  pio[,list()]
 # scp aob2x@rivanna.hpc.virginia.edu:~/pplss.Rdata ~/pplss.Rdata
 
 library(data.table)
