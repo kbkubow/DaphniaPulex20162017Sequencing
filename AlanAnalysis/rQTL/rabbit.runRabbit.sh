@@ -14,12 +14,12 @@
 
 ### run as
 # sbatch --array=1-12 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 15452659
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15401525_1.out
+# sacct -j 17483571
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.17483571_1.out
 
-# sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
-# sacct -j 17479813
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.15196737_10.err
+## sbatch --array=1,2 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.runRabbit.sh
+## sacct -j 17484121
+## cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.17483849_2.out
 
 
 

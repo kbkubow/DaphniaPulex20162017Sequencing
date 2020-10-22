@@ -4,7 +4,8 @@
 ## Estimate haplotype frequencies using Harp
 `DaphniaPulex20162017Sequencing/AlanAnalysis/AB_phasing/Readme.Md`
 
-## G' test 
+## G' test
+### `DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/informative_sites.R` makes informative sites info for ASE read counter
 ### `DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh` runs ASE read-counter to call allele frequencies
 ### `DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/QTLSeqR.R` runs Gprime analysis
 ### `DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/QTLPlot.R` makes composite QLT plot, relies on HARP data
