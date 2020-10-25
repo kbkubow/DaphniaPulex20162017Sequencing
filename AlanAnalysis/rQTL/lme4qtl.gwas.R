@@ -125,7 +125,7 @@ perm <- as.numeric(args[1]) - 1
   dimnames(kinship_matrix)[[2]] <- (pio.u.ag.w$clone)
 
 #### using lme4qtl
-  lmer.gwas <- foreach(i=pio.u.ag.ag$id[100:110], .errorhandling="remove")%dopar%{
+  lmer.gwas <- foreach(i=pio.u.ag.ag$id, .errorhandling="remove")%dopar%{
 
     message(which(i==pio.u.ag.ag$id))
     #i=2920958
