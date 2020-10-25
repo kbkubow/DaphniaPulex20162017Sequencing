@@ -14,6 +14,13 @@
   2. `rabbit.plotRabbit.R` makes some diagnostic analysis
 
   ### convert RABBIT to
+  3. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.vitPath.R` makes `pio` object:
+    `/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.pio.csv`
+
+### RUN lme4qtl gwas with perms
+  1. 
+
+
   `rabbit.convert_output.R` formats output data
     outputs to `/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm_onlyPheno`
 

@@ -6,6 +6,8 @@
   library(ggplot2)
   library(foreach)
   library(SeqArray)
+  library(doMC)
+  registerDoMC(20)
 
 ### make SNP table
   genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
@@ -43,6 +45,7 @@
 
 
 ### load parental genotypes
+
   loadDat <- function(fn) {
     print(fn)
     #fn <- fns[1]
@@ -61,7 +64,8 @@
       setkey(snp.dt, "id")
       ppl <- merge(ppl, snp.dt)
 
-    ### consensus
+    ### consensus impute
+
       fni <- gsub(".out.post.csv", ".in",  fn)
       con <- as.matrix(fread(fni, skip=4, nrows=2, header=F, fill=T))
       #con[,1:5]
@@ -74,8 +78,8 @@
       setkey(ppl, id)
       pplc <- merge(ppl, con.dt)
 
-    ### bring in fixed differences between A&C
-      
+
+
 
     return(pplc)
   }
@@ -89,6 +93,7 @@
   parental[,allele:=gsub("C_Maternal", "C_m", allele)]
   parental[,allele:=gsub("C_Paternal", "C_p", allele)]
 
+  setkey(parental, id)
 
 
 ### iterate through windows to make SNP call per site
@@ -121,13 +126,12 @@
 
 ### combine offspring + parental
   #dat <- datp[,-"diplo",with=F]
-  datp <- rbind(dat, parental.ag, fill=T)
+  datp <- rbind(dat, parental.ag, fill=T, all=T)
   save(datp, file="~/datp.Rdata")
   write.csv(datp, file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.csv")
 
 ### load
   datp <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.csv")
-  datpo <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all_AxC.vitPath.csv")
 
   setnames(datp, "geno", "phase.geno")
 
@@ -249,10 +253,11 @@ library(data.table)
 library(ggplot2)
 load("~/pplss.Rdata")
 
-ggplot(data=pplss[abs(dist)>100000]) +
+chromPaint <- ggplot(data=pplss[abs(dist)>100000]) +
 geom_segment(aes(y=clone, yend=clone, x=start.pos, xend=stop.pos, color=V4), size=4) +
 facet_grid(SC~chr.x, scales="free", space="free_y", shrink=T)
 
+ggsave(chromPaint, file="~/chromPaint.pdf")
 
 
 

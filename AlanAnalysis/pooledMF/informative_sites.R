@@ -68,3 +68,16 @@
 
   seqGDS2VCF(genofile,
              vcf.fn="/scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf", info.var=character(0), fmt.var=character(0))
+
+
+
+
+
+
+
+ prop.table(table(A=ac.fd[grepl("9200", chr)][pos>8e6]$A.geno,
+ C=ac.fd[grepl("9200", chr)][pos>8e6]$C.geno))
+
+
+prop.table(table(ac.fd[grepl("9200", chr)][pos<8e6]$A.geno,
+ac.fd[grepl("9200", chr)][pos<8e6]$C.geno))
