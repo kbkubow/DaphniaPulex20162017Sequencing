@@ -22,4 +22,4 @@ module load intel/18.0 intelmpi/18.0 R/3.6.3
 #SLURM_ARRAY_TASK_ID=1
 wd="/scratch/aob2x/daphnia_hwe_sims"
 
-Rscript ${wd}DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.R ${SLURM_ARRAY_TASK_ID}
+Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.R ${SLURM_ARRAY_TASK_ID}
