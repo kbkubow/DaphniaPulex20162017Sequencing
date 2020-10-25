@@ -13,11 +13,11 @@
 
 
 ### run as
-# sbatch --array=1 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
-# sacct -j 17584183
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/trioPhase_whatshapp.17584183_9.out
+# sbatch --array=1-100 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
+# sacct -j 17773415
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/lme4qtl.17773415_88.err
 
-module load intel/18.0 intelmpi/18.0 R/3.6.3
+module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
 
 #SLURM_ARRAY_TASK_ID=1
 wd="/scratch/aob2x/daphnia_hwe_sims"
