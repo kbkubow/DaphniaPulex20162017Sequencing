@@ -14,8 +14,8 @@
 
 #### using the ASE read counter data
 ### load data
-  male <- fread("/mnt/sammas_storage/bergland-lab/alan/D8Male.pooledAF.aseReadCounter.allvariant.delim")
-  pe <- fread("/mnt/sammas_storage/bergland-lab/alan/D8PE.pooledAF.aseReadCounter.allvariant.delim")
+  male <- fread("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim")
+  pe <- fread("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.delim")
 
   setnames(male,
            c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
@@ -43,16 +43,21 @@
 
   ### filter?
   df_filt <- filterSNPs(SNPset = as.data.frame(m),
-                       refAlleleFreq = 0.1,
+                       refAlleleFreq = 0.05,
                        minTotalDepth = 100,
-                       maxTotalDepth = 1500,
-                       depthDifference = 200,
+                       maxTotalDepth = 5000,
+                       depthDifference = 1500,
                        minSampleDepth = 100,
                        verbose = TRUE)
 
 
-  gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000)
-  gprime <- as.data.table(gprime)
+  gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
+  getQTLTable(SNPset = gprime, method = "Gprime", alpha = 0.25, export = FALSE)
+  summary(gprime)
+
+  qtlseq <- runQTLseqAnalysis(SNPset=df_filt, windowSize=250000, bulkSize=40)
+  getQTLTable(SNPset=qtlseq, method="QTLseq")
+
   p <- plotQTLStats(SNPset = gprime, var = "Gprime") +
        geom_hline(aes(yintercept=min(gprime[qvalue<.1]$Gprime)), color="red") +
        geom_hline(aes(yintercept=min(gprime[qvalue<.05]$Gprime)), color="blue") +
@@ -62,16 +67,23 @@
 
 
   peaks <- as.data.table(getQTLTable(SNPset = gprime, method = "Gprime", alpha = 0.05, export = FALSE))
-  save(gprime, peaks, file="/mnt/sammas_storage/bergland-lab/alan/peaks.Rdata")
+  save(peaks, gprime, file="~/peaks.Rdata")
+
+  #save(gprime, peaks, file="/mnt/sammas_storage/bergland-lab/alan/peaks.Rdata")
 
 
 
 
+### scp aob2x@rivanna.hpc.virginia.edu:~/peaks.Rdata ~/.
 
 
+library(data.table)
+library(ggplot2)
 
+load("~/peaks.Rdata")
+gprime
 
-
+ggplot(data=gprime, aes(x=POS, y=Gprime, color=CHROM))  + geom_line() + facet_grid(~CHROM)
 
 
 

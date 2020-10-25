@@ -150,12 +150,12 @@ perm <- as.numeric(args[1]) - 1
 
       gp.male.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
 
-      male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + gr + (1|clone) + (1|Replicate:clone),
+      male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ as.factor(d) + (1|clone) + (1|Replicate:clone),
                           family=binomial(),
                           data=gp.male.tmp,
                           relmat=list(clone=kinship_matrix))
 
-      male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ gr + (1|clone) + (1|Replicate:clone),
+      male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ 1 + (1|clone) + (1|Replicate:clone),
                           family=binomial(),
                           data=gp.male.tmp,
                           relmat=list(clone=kinship_matrix))
@@ -181,12 +181,12 @@ perm <- as.numeric(args[1]) - 1
       }
 
       gp.fill.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
-      epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d + gr + (1|clone) + (1|Rep:clone),
+      epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ as.factor(d) + (1|clone) + (1|Rep:clone),
                           family=binomial(),
                           data=gp.fill.tmp,
                           relmat=list(clone=kinship_matrix))
 
-      epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ gr + (1|clone) + (1|Rep:clone),
+      epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ 1 + (1|clone) + (1|Rep:clone),
                           family=binomial(),
                           data=gp.fill.tmp,
                           relmat=list(clone=kinship_matrix))
