@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-10 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
-# sacct -j 17779000
+# sacct -j 17860644
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/lme4qtl.17773556_8.err
 
 module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
