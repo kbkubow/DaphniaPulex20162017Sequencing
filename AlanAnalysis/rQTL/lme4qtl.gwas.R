@@ -2,10 +2,10 @@
 
 args = commandArgs(trailingOnly=TRUE)
 perm <- as.numeric(args[1]) - 1
-set <- (args[2]) ### all or AxC
+set <- (args[2]) ### all,  AxC, or CxC
 
 
-#perm <- 0
+#perm <- 0; set<-"CxC"
 
 ### libraries
   #library(qtl)
@@ -86,14 +86,18 @@ set <- (args[2]) ### all or AxC
 
     table(male$gr)
 
+    #save(male, epp, file="/nv/vol186/bergland-lab/alan/phenos_F1.Rdata")
+
     ### subset down
       if(set=="AxC") {
         epp <- epp[gr=="AxC"]
         male <- male[gr=="AxC"]
+      } else if (set=="CxC") {
+        epp <- epp[gr=="CxC"]
+        male <- male[gr=="CxC"]
       } else if (set=="all") {
         epp <- epp[gr%in%c("AxC", "CxC")]
         male <- male[gr%in%c("AxC", "CxC")]
-
       }
 
 #####################
@@ -129,12 +133,6 @@ set <- (args[2]) ### all or AxC
       pio.u.ag.w <- dcast(pio.u.ag, clone ~ id, value.var="d")
       pio.u.ag.ag <- pio.u.ag[,list(chr=chr[1], pos=pos[1]), list(id)]
 
-
-### make kinship matrix using the rrBLUP package
-
-  kinship_matrix <- rrBLUP::A.mat(pio.u.ag.w[,-c("clone"),with=F], n.core = 10)
-  dimnames(kinship_matrix)[[1]] <- (pio.u.ag.w$clone)
-  dimnames(kinship_matrix)[[2]] <- (pio.u.ag.w$clone)
 
 #### using lme4qtl
   lmer.gwas <- foreach(i=pio.u.ag.ag$id, .errorhandling="remove")%dopar%{
@@ -174,7 +172,7 @@ set <- (args[2]) ### all or AxC
 
       gp.male.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
 
-      if(set=="AxC") {
+      if(set=="AxC" | set=="CxC") {
         male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + (1|clone) + (1|Replicate:clone),
                             family=binomial(),
                             data=gp.male.tmp,
@@ -218,7 +216,7 @@ set <- (args[2]) ### all or AxC
 
       gp.fill.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
 
-      if(set=="AxC") {
+      if(set=="AxC" | set=="CxC") {
         epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + (1|clone) + (1|Rep:clone),
                             family=binomial(),
                             data=gp.fill.tmp,

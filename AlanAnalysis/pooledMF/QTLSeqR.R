@@ -1,5 +1,5 @@
 ### ijob -c1 -p standard -A berglandlab
-### module load gcc/7.1.0  openmpi/3.1.4 R/3.6.0; R
+### module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3; R
 
 
 #install.packages("devtools")
@@ -14,47 +14,117 @@
 
 #### using the ASE read counter data
 ### load data
-  male <- fread("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim")
-  pe <- fread("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.delim")
+  gprime <- foreach(r=c(1,2))%do%{
+    male <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male", r, ".delim", sep=""))
+    pe <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE", r, ".delim", sep=""))
 
-  setnames(male,
-           c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
-           c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"))
+    setnames(male,
+             c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
+             c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"))
 
+    male[,freq:=AD_ALT.LOW/(AD_ALT.LOW + AD_REF.LOW)]
+    male[,rd:=AD_ALT.LOW + AD_REF.LOW]
+    male[,effrd:=round((70*rd)/(70+rd))]
+
+    male[,AD_REF.LOW:=round((1-freq)*effrd)]
+    male[,AD_ALT.LOW:=round((freq)*effrd)]
 
    setnames(pe,
             c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
             c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"))
+    pe[,freq:=AD_ALT.HIGH/(AD_ALT.HIGH + AD_REF.HIGH)]
+    pe[,rd:=AD_ALT.HIGH + AD_REF.HIGH]
+    pe[,effrd:=round((70*rd)/(70+rd))]
+
+    pe[,AD_REF.LOW:=round((1-freq)*effrd)]
+    pe[,AD_ALT.LOW:=round((freq)*effrd)]
 
 
-  setkey(male, CHROM, POS)
-  setkey(pe, CHROM, POS)
+    setkey(male, CHROM, POS)
+    setkey(pe, CHROM, POS)
 
-  m <- merge(male[,c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"),with=F],
-             pe[,c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"),with=F])
+    m <- merge(male[,c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"),with=F],
+               pe[,c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"),with=F])
 
-  m[,deltaSNP:=qlogis(AD_ALT.LOW/(AD_ALT.LOW+AD_REF.LOW)) - qlogis(AD_ALT.HIGH/(AD_ALT.HIGH+AD_REF.HIGH))]
-  m.ag <- m[,.N,CHROM]
-  m <-  m[CHROM%in%m.ag[N>1000]$CHROM]
+    m[,deltaSNP:=qlogis(AD_ALT.LOW/(AD_ALT.LOW+AD_REF.LOW)) - qlogis(AD_ALT.HIGH/(AD_ALT.HIGH+AD_REF.HIGH))]
+    m.ag <- m[,.N,CHROM]
+    m <-  m[CHROM%in%m.ag[N>1000]$CHROM]
 
-  m[,REF_FRQ:=(AD_REF.LOW + AD_REF.HIGH) / (AD_REF.LOW + AD_REF.HIGH + AD_ALT.LOW + AD_ALT.HIGH )]
-  m[,DP.LOW:=AD_REF.LOW + AD_ALT.LOW]
-  m[,DP.HIGH:=AD_REF.HIGH + AD_ALT.HIGH]
+    m[,REF_FRQ:=(AD_REF.LOW + AD_REF.HIGH) / (AD_REF.LOW + AD_REF.HIGH + AD_ALT.LOW + AD_ALT.HIGH )]
+    m[,DP.LOW:=AD_REF.LOW + AD_ALT.LOW]
+    m[,DP.HIGH:=AD_REF.HIGH + AD_ALT.HIGH]
 
-  ### filter?
-  df_filt <- filterSNPs(SNPset = as.data.frame(m),
-                       refAlleleFreq = 0.05,
-                       minTotalDepth = 100,
-                       maxTotalDepth = 5000,
-                       depthDifference = 1500,
-                       minSampleDepth = 100,
-                       verbose = TRUE)
+    m <- m[!is.na(deltaSNP) & deltaSNP!=Inf & deltaSNP!=-Inf]
+    ### filter?
+    df_filt <- filterSNPs(SNPset = as.data.frame(m),
+                         refAlleleFreq = 0.05,
+                         minTotalDepth = 10,
+                         maxTotalDepth = 5000,
+                         depthDifference = 1500,
+                         minSampleDepth = 10,
+                         verbose = TRUE)
 
 
-  gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
-  getQTLTable(SNPset = gprime, method = "Gprime", alpha = 0.25, export = FALSE)
-  summary(gprime)
+    gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
+    gprime <- as.data.table(gprime)
+    gprime[,rep:=r]
+    gprime
+  }
+  gprime <- rbindlist(gprime)
 
+
+
+
+
+
+  setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
+  setkey(gprime, chr, pos)
+  setkey(o, chr, pos)
+  o.ag <- o[,list(p.z=mean(p.z)), list(id, chr, pos, set, term, perm)]
+  setkey(o.ag, chr, pos)
+  m <- merge(gprime, o.ag)
+
+  fisher.test(table(m[rep==1]$p.z<.001, m[rep==1]$pvalue<.01))
+
+  overlap <- foreach(perm.i=unique(m$perm), .combine="rbind")%do%{
+    foreach(term.i=unique(m$term), .combine="rbind")%do%{
+      foreach(r=c(1,2), .combine="rbind")%do%{
+        #perm.i<-0; term.i="male"; r<-2
+        p1 <- m[perm==perm.i][term==term.i][rep==r]$p.z
+        p2 <- m[perm==perm.i][term==term.i][rep==r]$pvalue
+
+        rep1<- fisher.test(table(p1<.01, p2<.01))
+
+        data.table(perm=perm.i, term=term.i, rep=r, or=rep1$estimate, p=rep1$p.value)
+
+        #m[perm==perm.i][term==term.i][rep==r][p.z<.001 & pvalue<.01]
+
+      }
+    }
+  }
+
+  head(overlap[order(p)])
+  tail(overlap[order(or)])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   qtlseq <- runQTLseqAnalysis(SNPset=df_filt, windowSize=250000, bulkSize=40)
   getQTLTable(SNPset=qtlseq, method="QTLseq")
 
