@@ -19,3 +19,13 @@
   o.ag <- o[,list(minp=min(p, na.rm=T), maxc=max(chisq)), list(term, perm)]
 
   o.ag[perm>0, list(q=quantile(minp, .05)), list(term)]
+
+
+
+
+
+
+ggplot() +
+geom_line(data=gprime, aes(x=POS, y=G, color=CHROM)) +
+geom_point(data=gprime[POS==3968943], aes(x=POS, y=G)) +
+facet_grid(~CHROM)
