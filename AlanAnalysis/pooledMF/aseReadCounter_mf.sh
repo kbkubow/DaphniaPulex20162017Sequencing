@@ -10,8 +10,9 @@
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.err # Standard error
 
 # ijob -c1 -p standard -A berglandlab
-# submit as: sbatch --array=1-2 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh
-# sacct -j 17483430
+# submit as: sbatch --array=1-4 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh
+# sacct -j 17863582
+# cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.17863582_1.out
 
 module load gatk/4.0.0.0
 
@@ -43,6 +44,8 @@ if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]; then
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE2.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
 
+elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]; then
+
   gatk ASEReadCounter \
   --I ${datadir}/HT2LNDSXX_s1_D8PE1.filt.merged.mdup.bam \
   --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
@@ -50,13 +53,15 @@ if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]; then
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
 
 
-elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]; then
+elif [[ ${SLURM_ARRAY_TASK_ID} -eq 3 ]]; then
 
   gatk ASEReadCounter \
   --I ${datadir}/HT2LNDSXX_s1_D8Male2.filt.merged.mdup.bam \
   --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
   --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male2.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
+
+elif [[ ${SLURM_ARRAY_TASK_ID} -eq 4 ]]; then
 
   gatk ASEReadCounter \
   --I ${datadir}/HT2LNDSXX_s1_D8Male1.filt.merged.mdup.bam \
