@@ -11,7 +11,7 @@
 
 # ijob -c1 -p standard -A berglandlab
 # submit as: sbatch --array=1-4 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/aseReadCounter_mf.sh
-# sacct -j 17863582
+# sacct -j 17864732
 # cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.17863582_1.out
 
 module load gatk/4.0.0.0
