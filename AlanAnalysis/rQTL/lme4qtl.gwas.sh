@@ -13,13 +13,13 @@
 
 
 ### run as
-# sbatch --array=1-100 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
-# sacct -j 17773556
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/lme4qtl.17773415_88.err
+# sbatch --array=1-10 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
+# sacct -j 17779000
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/lme4qtl.17773556_8.err
 
 module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
 
 #SLURM_ARRAY_TASK_ID=1
 wd="/scratch/aob2x/daphnia_hwe_sims"
 
-Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.R ${SLURM_ARRAY_TASK_ID}
+Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.R ${SLURM_ARRAY_TASK_ID} AxC
