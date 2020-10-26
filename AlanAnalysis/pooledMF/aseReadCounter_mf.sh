@@ -38,19 +38,30 @@ datadir=/project/berglandlab/Karen/MappingDec2019/MaleFemale2018Pools/bams
 if [[ ${SLURM_ARRAY_TASK_ID} -eq 1 ]]; then
 
   gatk ASEReadCounter \
-  --I ${datadir}/HT2LNDSXX_s1_D8PE1.filt.merged.mdup.bam \
   --I ${datadir}/HT2LNDSXX_s1_D8PE2.filt.merged.mdup.bam \
   --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
-  --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.delim \
+  --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE2.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
+
+  gatk ASEReadCounter \
+  --I ${datadir}/HT2LNDSXX_s1_D8PE1.filt.merged.mdup.bam \
+  --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
+  --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE1.delim \
+  --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
+
 
 elif [[ ${SLURM_ARRAY_TASK_ID} -eq 2 ]]; then
 
   gatk ASEReadCounter \
-  --I ${datadir}/HT2LNDSXX_s1_D8Male1.filt.merged.mdup.bam \
   --I ${datadir}/HT2LNDSXX_s1_D8Male2.filt.merged.mdup.bam \
   --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
-  --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim \
+  --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male2.delim \
+  --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
+
+  gatk ASEReadCounter \
+  --I ${datadir}/HT2LNDSXX_s1_D8Male1.filt.merged.mdup.bam \
+  --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
+  --output /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male1.delim \
   --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
 
 fi
