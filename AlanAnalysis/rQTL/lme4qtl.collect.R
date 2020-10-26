@@ -6,7 +6,7 @@
 
 
 ### load data
-  fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/", "perm", full.name=T)
+  fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/", "AxC", full.name=T)
   o <- foreach(fn.i=fn)%do%{
     #fn.i <- fn[1]
     message(fn.i)
@@ -16,9 +16,12 @@
   o <- rbindlist(o)
 
 ### summarize
-  o.ag <- o[,list(minp=min(p, na.rm=T), maxc=max(chisq)), list(term, perm)]
+  o.ag <- o[,list(minp=min(p.z, na.rm=T), maxc=max(chisq)), list(term, perm)]
 
   o.ag[perm>0, list(q=quantile(minp, .05)), list(term)]
+
+
+
 
 
 

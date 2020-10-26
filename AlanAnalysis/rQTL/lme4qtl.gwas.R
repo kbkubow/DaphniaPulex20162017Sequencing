@@ -243,8 +243,8 @@ set <- (args[2]) ### all or AxC
       aov.fill <- anova(epp.full, epp.red)
 
     ### output
-      averages <- merge(gp.male.tmp[,list(males.mu=sum(Males)/sum(NewTotal-Neos), males.n=sum(NewTotal-Neos)), list(phase.fold.geno)],
-                        gp.fill.tmp[,list(fill.mu=sum(fill*TotalEppB, na.rm=T)/sum((1-fill)*TotalEppB, na.rm=T), fill.n=sum(TotalEppB, na.rm=T)), list(phase.fold.geno)],
+      averages <- merge(gp.male.tmp[,list(males.mu=sum(Males)/sum(NewTotal-Neos), males.n=sum(NewTotal-Neos)), list(phase.fold.geno, d)],
+                        gp.fill.tmp[,list(fill.mu=sum(fill*TotalEppB, na.rm=T)/sum((1-fill)*TotalEppB, na.rm=T), fill.n=sum(TotalEppB, na.rm=T)), list(phase.fold.geno, d)],
                         by="phase.fold.geno")
       averages[,id:=i]
 
