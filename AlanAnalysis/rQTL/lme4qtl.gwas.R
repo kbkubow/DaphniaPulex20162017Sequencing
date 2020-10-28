@@ -5,7 +5,7 @@ perm <- as.numeric(args[1]) - 1
 set <- (args[2]) ### all,  AxC, or CxC
 
 
-#perm <- 0; set<-"CxC"
+#perm <- 0; set<-"AxC"
 
 ### libraries
   #library(qtl)
@@ -100,6 +100,17 @@ set <- (args[2]) ### all,  AxC, or CxC
         male <- male[gr%in%c("AxC", "CxC")]
       }
 
+
+
+    #male.full <- glmer(cbind(Males, NewTotal-Males-Neos) ~ 1 + (1|clone) + (1|Replicate),
+    #                    family=binomial(),
+    #                    data=male[gr=="AxC"])
+    #male.red <- glmer(cbind(Males, NewTotal-Males-Neos) ~ 1 + (1|Replicate),
+    #                    family=binomial(),
+    #                    data=male[gr=="AxC"])
+    #anova(male.full, male.red)
+
+
 #####################
 ### Genotype data ###
 #####################
@@ -109,6 +120,9 @@ set <- (args[2]) ### all,  AxC, or CxC
     pio[,phase.fold.geno:=phase.geno]
     pio[phase.fold.geno%in%c(12, 21), phase.fold.geno:=12]
 
+  ### trim to samples used
+    setkey(pio, clone)
+    pio <- pio[J(unique(c(epp$clone, male$clone)))]
 
   ### identify unique SNPs (there shoudl be about 5K of them)
     pio.unique <- pio[,list(vec=paste(phase.fold.geno, collapse=".")), list(chr, pos, id)]
@@ -130,6 +144,12 @@ set <- (args[2]) ### all,  AxC, or CxC
                       list(chr, pos, id, clone)]
 
       pio.u.ag[,d:=as.numeric(factor(phase.fold.geno)) - 2]
+      pio.u.ag.ag <- pio.u.ag[,list(maf=mean((d+1)/2)), list(id)]
+
+      #setkey(pio.u.ag, id)
+      #pio.u.ag <- pio.u.ag[J(pio.u.ag.ag[maf>.05 & maf<.95]$id)]
+
+
       pio.u.ag.w <- dcast(pio.u.ag, clone ~ id, value.var="d")
       pio.u.ag.ag <- pio.u.ag[,list(chr=chr[1], pos=pos[1]), list(id)]
 
@@ -159,7 +179,7 @@ set <- (args[2]) ### all,  AxC, or CxC
         gp.male.tmp <- merge(male, geno.tmp, by="clone")
 
       } else if(perm>0) {
-
+        set.seed(perm)
         male.ag <- male[,list(.N), list(clone)]
         male.ag[,permClone:=sample(clone)]
 
@@ -173,22 +193,22 @@ set <- (args[2]) ### all,  AxC, or CxC
       gp.male.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
 
       if(set=="AxC" | set=="CxC") {
-        male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + (1|clone) + (1|Replicate:clone),
+        male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + (1|clone) + (1|Replicate),
                             family=binomial(),
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ 1 + (1|clone) + (1|Replicate:clone),
+        male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ 1 + (1|clone) + (1|Replicate),
                             family=binomial(),
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
       } else if(set=="all") {
-        male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + gr + (1|clone) + (1|Replicate:clone),
+        male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + gr + (1|clone) + (1|Replicate),
                             family=binomial(),
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ gr + (1|clone) + (1|Replicate:clone),
+        male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ gr + (1|clone) + (1|Replicate),
                             family=binomial(),
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
@@ -203,7 +223,7 @@ set <- (args[2]) ### all,  AxC, or CxC
         gp.fill.tmp <- merge(epp, geno.tmp, by="clone")
 
       } else if (perm>0) {
-
+        set.seed(perm)
         epp.ag <- epp[,list(.N), list(clone)]
         epp.ag[,permClone:=sample(clone)]
 
@@ -217,22 +237,22 @@ set <- (args[2]) ### all,  AxC, or CxC
       gp.fill.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
 
       if(set=="AxC" | set=="CxC") {
-        epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + (1|clone) + (1|Rep:clone),
+        epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ 1 + (1|clone) + (1|Rep:clone),
+        epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ 1 + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
       } else if(set=="all") {
-        epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + gr + (1|clone) + (1|Rep:clone),
+        epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + gr + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ gr + (1|clone) + (1|Rep:clone),
+        epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ gr + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))

@@ -22,9 +22,35 @@
 
 
 
+### libraries
+  library(SeqArray)
+
+  genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
+  snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
+                       pos=seqGetData(genofile, "position"),
+                       id=seqGetData(genofile, "variant.id"),
+                       numAlleles=seqNumAllele(genofile))
+  setkey(snp.dt, id)
+
+  snp.dt[id==976200]
+  seqSetFilter(genofile, variant.id=976200)
+
+### set wd
+  setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
+
+### load SuperClone
+  sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
 
 
+  target <- data.table(dosage=seqGetData(genofile, "$dosage"),
+                      clone=seqGetData(genofile, "sample.id"))
 
+  target <- merge(target, sc, "clone")
+
+  table(na.omit(target[Species=="pulex"][population=="D8"][,list(dosage=mean(dosage.V1, na.rm=T)), list(SCnum)])$dosage)
+
+
+)
 
 
 
