@@ -287,4 +287,4 @@ set <- (args[2]) ### all,  AxC, or CxC
 
 
 
-  save(lmer.gwas, file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/perm", perm, ".set.", set, ".Rdata", sep=""))
+  save(lmer.gwas, file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/v2.perm", perm, ".set.", set, ".Rdata", sep=""))
