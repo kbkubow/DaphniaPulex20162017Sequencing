@@ -106,25 +106,59 @@
   head(overlap[order(p)])
   tail(overlap[order(or)])
 
+  m[,cp:= 1-pchisq(-2*(log(pvalue)+log(p.z)), 4)]
+  m[,list(mincp=min(cp)), list(term, perm, rep)][order(mincp)]
+
+  table(m$cp<.000005, m$perm, m$rep)
+
+  save(m, file="~/f1_pool.Rdata")
+
+  scp aob2x@rivanna.hpc.virginia.edu:~/f1_pool.Rdata ~/.
+
+  library(data.table)
+  library(ggplot2)
+
+  load("~/f1_pool.Rdata")
 
 
 
 
+#### how many sites
+m <- foreach(perm.i=unique(m$perm), .combine="rbind")%do%{
+  foreach(term.i=unique(m$term), .combine="rbind")%do%{
+    foreach(r=c(1,2), .combine="rbind")%do%{
+      #perm.i<-0; term.i="male"; r<-2
+      tmp <- m[perm==perm.i][term==term.i][rep==r]
+
+      tmp[,pool.q:=rank(pvalue)/(length(pvalue)+1)]
+      tmp[,f1.q:=rank(p.z)/(length(p.z)+1)]
+      tmp[,cp:=1-pchisq(-2*(log(pool.q)+log(f1.q)), 4)]
+      #m[perm==perm.i][term==term.i][rep==r][p.z<.001 & pvalue<.01]
+      tmp[,cp:=pool.q/2 + f1.q/2]
+
+    }
+  }
+}
 
 
 
+  manhattan <- ggplot(data=m[perm==0], aes(x=pos, y=-log10(cp), color=chr)) +
+  geom_line() +
+  facet_grid(term~chr)
 
 
-
-
-
-
-
-
-
-
-
+  ggplot(data=m[perm==0], aes(x=pos, y=Gprime, color=chr)) +
+  geom_line(data=m[perm==0], aes(x=pos, y=Gprime, color=chr)) +
+  geom_point(data=m[perm==0][p.z<.005], aes(x=pos, y=Gprime), color="black") +
+  facet_grid(term+rep~chr)
   
+
+
+
+
+
+
+
   qtlseq <- runQTLseqAnalysis(SNPset=df_filt, windowSize=250000, bulkSize=40)
   getQTLTable(SNPset=qtlseq, method="QTLseq")
 
