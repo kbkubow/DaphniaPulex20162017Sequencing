@@ -3,20 +3,112 @@
 ### libraries
   library(foreach)
   library(data.table)
+  library(doMC)
+  registerDoMC(20)
+
+### param
+  set <- "AxC"
+
+### load pio.unique.n
+  load(file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/pio.uniq.set.", set, ".Rdata", sep=""))
+  pio.uniq.n.long <- pio.uniq.n[,list(setId=as.numeric(unlist(tstrsplit(ids, ";"))),
+                                      setPos=as.numeric(unlist(tstrsplit(poss, ";"))),
+                                      setChr=unlist(tstrsplit(chrs, ";"))),
+                                list(id)]
+  setkey(pio.uniq.n.long, id)
+
 
 
 ### load data
-  fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/", "AxC", full.name=T)
-  o <- foreach(fn.i=fn)%do%{
-    #fn.i <- fn[1]
-    message(fn.i)
-    load(fn.i)
-    return(lmer.gwas)
-  }
-  o <- rbindlist(o)
+    fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/", set, full.name=T)
+    fn <- fn[grepl("v2", fn)]
+    o <- foreach(fn.i=fn)%do%{
+      #fn.i <- fn[1]
+      message(fn.i)
+      load(fn.i)
+
+      setkey(lmer.gwas, id)
+
+      lmer.gwas.long <- merge(lmer.gwas, pio.uniq.n.long, allow.cartesian=T)
+
+      setnames(lmer.gwas.long, c("chr", "pos", "id", "setId", "setPos", "setChr"),
+                               c("marker.chr", "marker.pos", "marker.id", "id", "pos", "chr"))
+      return(lmer.gwas.long)
+    }
+    o <- rbindlist(o)
+
+    o.ag <- o[, list(p.z=mean(p.z, na.rm=T), chisq=max(chisq), p.aov=min(p.aov, na.rm=T)), list(term, perm, id, chr, pos)]
+    o.ag.ag <- o.ag[,list(pr=mean(p.aov[perm==0] < p.aov[perm!=0])), list(term, id, chr, pos)]
+    o.ag.ag[pr==1, pr:=1/201]
+
+
+
+    save(o, file=paste("~/lme4qtl_output.", set, ".long.Rdata", sep=""))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### scp aob2x@rivanna.hpc.virginia.edu:~/lme4qtl_output.AxC.long.Rdata ~/.
+  library(data.table)
+  library(ggplot2)
+
+  load("~/lme4qtl_output.AxC.long.Rdata")
+
+  o.ag <- o[, list(p.z=mean(p.z, na.rm=T), chisq=max(chisq), p.aov=min(p.aov, na.rm=T)), list(term, perm, id, chr, pos)]
+  o.ag.ag <- o.ag[,list(pr=mean(p.aov[perm==0] < p.aov[perm!=0])), list(term, id, chr, pos)]
+  o.ag.ag[pr==1, pr:=1/201]
+
+### ANOVA output
+  o.ag.perm <- o.ag[perm!=0, list(p.aov=c(quantile(p.aov, .01), quantile(p.aov, .05)),
+                                  q=c(.01, .05)), list(term, chr)]
+
+  ggplot() +
+  geom_line(data=o.ag[perm==0], aes(x=pos, y=-log10(p.aov), color=chr)) +
+  geom_hline(data=o.ag.perm, aes(yintercept=-log10(p.aov), linetype=as.factor(q))) +
+  facet_grid(term~chr)
+
+
+### beta-p output
+  o.ag.perm <- o.ag[perm!=0, list(p.z=quantile(p.z, .05)), list(term, chr)]
+
+  ggplot() +
+  geom_line(data=o.ag[perm==0], aes(x=pos, y=-log10(p.z), color=chr)) +
+  geom_hline(data=o.ag.perm, aes(yintercept=-log10(p.z))) +
+  facet_grid(term~chr)
+
+### normalized
+  ggplot() +
+  geom_line(data=o.ag.ag, aes(x=pos, y=-log10(1-pr), color=chr)) +
+  facet_grid(term~chr)
+
+
 
 ### summarize
-  o.ag <- o[,list(minp=min(p.z, na.rm=T), maxc=max(chisq)), list(term, perm)]
+
+
+
+
+  o.ag.ag <- o.ag[,list(pr=mean(p.aov[perm==0] < p.aov[perm!=0])), list(term, id)]
 
   o.ag[perm>0, list(q=quantile(minp, .05)), list(term)]
 

@@ -14,7 +14,7 @@
 
 ### run as
 # sbatch --array=1-100 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
-# sacct -j 17884349 #AxC
+# sacct -j 17976415 #AxC
 # sacct -j 17976410 #CxC
 # cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/lme4qtl.17773556_8.err
 

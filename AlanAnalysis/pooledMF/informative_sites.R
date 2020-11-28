@@ -1,11 +1,11 @@
 #module load intel/18.0 intelmpi/18.0 R/3.6.3; R
 
-### makes rabbit input
-  args = commandArgs(trailingOnly=TRUE)
-  chr.i <- as.character(args[1])
-  maxcM <- as.numeric(args[2])
-  f1s.set <- as.character(args[3])
-  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all"
+#### makes rabbit input
+#  args = commandArgs(trailingOnly=TRUE)
+#  chr.i <- as.character(args[1])
+#  maxcM <- as.numeric(args[2])
+#  f1s.set <- as.character(args[3])
+#  #chr.i <- "Scaffold_1863_HRSCAF_2081"; maxcM=10; f1s.set <- "all"
 
 ### libraries
   library(data.table)
@@ -62,7 +62,8 @@
                      (A.geno=="12" & C.geno=="12") ]
 
   ac.inform <- ac.inform[A.delta < 0.05 & C.delta < 0.05]
-
+  save(ac.inform, file="/scratch/aob2x/daphnia_hwe_sims/ac_inform.Rdata")
+  
 ### export VCF
   seqSetFilter(genofile, sample.id=sc[SC%in%c("A", "C")]$clone, variant.id=ac.inform$id)
 

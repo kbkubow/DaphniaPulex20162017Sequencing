@@ -4,7 +4,6 @@ args = commandArgs(trailingOnly=TRUE)
 perm <- as.numeric(args[1]) - 1
 set <- (args[2]) ### all,  AxC, or CxC
 
-
 #perm <- 0; set<-"AxC"
 
 ### libraries
@@ -127,11 +126,18 @@ set <- (args[2]) ### all,  AxC, or CxC
   ### identify unique SNPs (there shoudl be about 5K of them)
     pio.unique <- pio[,list(vec=paste(phase.fold.geno, collapse=".")), list(chr, pos, id)]
     pio.uniq.tab <- table(pio.unique$vec)
-    pio.uniq.n <- pio.unique[,list(id=id[1], chr=chr[1], pos=pos[1], .N), list(vec)]
+    pio.uniq.n <- pio.unique[,list(id=id[1], chr=chr[1], pos=pos[1], .N,
+                                  ids=paste(id, collapse=";"),
+                                  chrs=paste(chr, collapse=";"),
+                                  poss=paste(pos, collapse=";")),
+                              list(vec)]
+
+    pio.uniq.n[,set:=set]
+    save(pio.uniq.n, file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/pio.uniq.set.", set, ".Rdata", sep=""))
 
     setkey(pio, id, chr, pos)
     setkey(pio.uniq.n, id, chr, pos)
-    pio.u <- merge(pio, pio.uniq.n[,-c("vec"), with=F])
+    pio.u <- merge(pio, pio.uniq.n[,-c("vec", "ids"), with=F])
 
 
     ((table(pio.u$imputedGeno, pio.u$phase.fold.geno)))

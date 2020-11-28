@@ -11,10 +11,15 @@
 ### libraries
   library(data.table)
   library(QTLseqr)
+  library(foreach)
 
-#### using the ASE read counter data
+### load AC inform object made by `informative_sites.R`
+  load(file="/scratch/aob2x/daphnia_hwe_sims/ac_inform.Rdata")
+  ac.inform[!(A.geno==12 & C.geno)]
+
+#### using the ASE read counter data and running gprime separately for each rep PE1 vs Male1; PE2 vs Male2
 ### load data
-  gprime <- foreach(r=c(1,2))%do%{
+  gprime.peaks <- foreach(r=c(1,2))%do%{
     male <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male", r, ".delim", sep=""))
     pe <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE", r, ".delim", sep=""))
 
@@ -34,10 +39,10 @@
             c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"))
     pe[,freq:=AD_ALT.HIGH/(AD_ALT.HIGH + AD_REF.HIGH)]
     pe[,rd:=AD_ALT.HIGH + AD_REF.HIGH]
-    pe[,effrd:=round((70*rd)/(70+rd))]
+    pe[,effrd:=round((100*rd)/(100+rd))]
 
-    pe[,AD_REF.LOW:=round((1-freq)*effrd)]
-    pe[,AD_ALT.LOW:=round((freq)*effrd)]
+    pe[,AD_REF.HIGH:=round((1-freq)*effrd)]
+    pe[,AD_ALT.HIGH:=round((freq)*effrd)]
 
 
     setkey(male, CHROM, POS)
@@ -57,6 +62,233 @@
     m <- m[!is.na(deltaSNP) & deltaSNP!=Inf & deltaSNP!=-Inf]
     ### filter?
     df_filt <- filterSNPs(SNPset = as.data.frame(m),
+                         refAlleleFreq = 0.15,
+                         minTotalDepth = 20,
+                         maxTotalDepth = 5000,
+                         depthDifference = 1500,
+                         minSampleDepth = 20,
+                         verbose = TRUE)
+
+
+    gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
+    peaks <- getQTLTable(gprime, alpha=.05)
+    peaks <- as.data.table(peaks)
+    peaks[,rep:=r]
+
+    gprime <- as.data.table(gprime)
+    gprime[,rep:=r]
+
+    m[,rep:=r]
+
+    list(gprime, peaks, m)
+  }
+  gprime <- rbindlist(lapply(gprime.peaks, function(x) x[[1]]))
+  peaks <- rbindlist(lapply(gprime.peaks, function(x) x[[2]]))
+  alleleFreqs <- rbindlist(lapply(gprime.peaks, function(x) x[[3]]))
+
+  table(peaks$rep)
+
+  save(gprime, peaks, file="/scratch/aob2x/daphnia_hwe_sims/gprime_peaks.replicates.250K.05.Rdata")
+  save(gprime, peaks, file="/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
+  save(alleleFreqs, file="/project/berglandlab/alan/alleleFreqs.replicates.250K.05.Rdata")
+
+
+#### using the ASE read counter data and running gprime separately for each rep PE1 vs PE2; Male1 vs Male2
+### load data
+  gprime.peaks.groups <- foreach(group=c("Male", "PE"))%do%{
+    r1 <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8", group, ".pooledAF.aseReadCounter.allvariant.", group, "1.delim", sep=""))
+    r2 <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8", group, ".pooledAF.aseReadCounter.allvariant.", group, "2.delim", sep=""))
+
+    setnames(r1,
+             c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
+             c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"))
+
+    r1[,freq:=AD_ALT.LOW/(AD_ALT.LOW + AD_REF.LOW)]
+    r1[,rd:=AD_ALT.LOW + AD_REF.LOW]
+    r1[,effrd:=round((70*rd)/(70+rd))]
+
+    r1[,AD_REF.LOW:=round((1-freq)*effrd)]
+    r1[,AD_ALT.LOW:=round((freq)*effrd)]
+
+   setnames(r2,
+            c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
+            c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"))
+    r2[,freq:=AD_ALT.HIGH/(AD_ALT.HIGH + AD_REF.HIGH)]
+    r2[,rd:=AD_ALT.HIGH + AD_REF.HIGH]
+    r2[,effrd:=round((100*rd)/(100+rd))]
+
+    r2[,AD_REF.HIGH:=round((1-freq)*effrd)]
+    r2[,AD_ALT.HIGH:=round((freq)*effrd)]
+
+
+    setkey(r1, CHROM, POS)
+    setkey(r2, CHROM, POS)
+
+    m <- merge(r1[,c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"),with=F],
+               r2[,c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"),with=F])
+
+    m[,deltaSNP:=qlogis(AD_ALT.LOW/(AD_ALT.LOW+AD_REF.LOW)) - qlogis(AD_ALT.HIGH/(AD_ALT.HIGH+AD_REF.HIGH))]
+    m.ag <- m[,.N,CHROM]
+    m <-  m[CHROM%in%m.ag[N>1000]$CHROM]
+
+    m[,REF_FRQ:=(AD_REF.LOW + AD_REF.HIGH) / (AD_REF.LOW + AD_REF.HIGH + AD_ALT.LOW + AD_ALT.HIGH )]
+    m[,DP.LOW:=AD_REF.LOW + AD_ALT.LOW]
+    m[,DP.HIGH:=AD_REF.HIGH + AD_ALT.HIGH]
+
+    m <- m[!is.na(deltaSNP) & deltaSNP!=Inf & deltaSNP!=-Inf]
+    ### filter?
+    df_filt <- filterSNPs(SNPset = as.data.frame(m),
+                         refAlleleFreq = 0.15,
+                         minTotalDepth = 20,
+                         maxTotalDepth = 5000,
+                         depthDifference = 1500,
+                         minSampleDepth = 20,
+                         verbose = TRUE)
+
+
+    gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
+    peaks <- getQTLTable(gprime, alpha=.05)
+    peaks <- as.data.table(peaks)
+    peaks[,group:=group]
+
+    gprime <- as.data.table(gprime)
+    gprime[,group:=group]
+
+    m[,group:=group]
+
+    list(gprime, peaks, m)
+  }
+  gprime.groups <- rbindlist(lapply(gprime.peaks.groups, function(x) x[[1]]))
+  peaks.groups <- rbindlist(lapply(gprime.peaks.groups, function(x) x[[2]]))
+  alleleFreqs.groups <- rbindlist(lapply(gprime.peaks.groups, function(x) x[[3]]))
+
+  table(peaks$rep)
+
+  save(gprime.groups, peaks.groups, file="/scratch/aob2x/daphnia_hwe_sims/gprime_peaks.groups.250K.05.Rdata")
+  save(gprime.groups, peaks.groups, file="/project/berglandlab/alan/gprime_peaks.groups.250K.05.Rdata")
+  save(alleleFreqs.groups, file="/project/berglandlab/alan/alleleFreqs.groups.250K.05.Rdata")
+
+
+
+### scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/gprime_peaks.replicates.Rdata ~/.
+### scp aob2x@rivanna.hpc.virginia.edu:/project/berglandlab/alan/gprime_peaks.groups.250K.05.Rdata ~/.
+
+  library(ggplot2)
+  library(data.table)
+  library(cowplot)
+  load("~/gprime_peaks.replicates.Rdata")
+
+  poolggplot() +
+  geom_vline(data=peaks, aes(xintercept=posMaxGprime), color="grey") +
+  geom_line(data=gprime, aes(x=POS, y=Gprime, color=CHROM)) +
+  facet_grid(rep~CHROM) +
+  theme(legend.position = "none")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### using the ASE read counter data and adding neff for ombibus test
+  ### load data
+    inputData <- foreach(r=c(1,2))%do%{
+      #r<-1
+      message(r)
+      male <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male", r, ".delim", sep=""))
+      pe <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE", r, ".delim", sep=""))
+
+      setnames(male,
+               c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
+               c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW"))
+
+      male[,freq:=AD_ALT.LOW/(AD_ALT.LOW + AD_REF.LOW)]
+      male[,rd:=AD_ALT.LOW + AD_REF.LOW]
+      male[,effrd:=round((70*rd)/(70+rd))]
+
+      male[,AD_REF.LOW:=round((1-freq)*effrd)]
+      male[,AD_ALT.LOW:=round((freq)*effrd)]
+
+     setnames(pe,
+              c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
+              c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH"))
+      pe[,freq:=AD_ALT.HIGH/(AD_ALT.HIGH + AD_REF.HIGH)]
+      pe[,rd:=AD_ALT.HIGH + AD_REF.HIGH]
+      pe[,effrd:=round((100*rd)/(100+rd))]
+
+      pe[,AD_REF.HIGH:=round((1-freq)*effrd)]
+      pe[,AD_ALT.HIGH:=round((freq)*effrd)]
+
+
+      setkey(male, CHROM, POS)
+      setkey(pe, CHROM, POS)
+
+      m <- merge(male[,c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW", "AD_ALT.LOW", "effrd"),with=F],
+                 pe[,c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH", "AD_ALT.HIGH", "effrd"),with=F])
+
+      m[,deltaSNP:=qlogis(AD_ALT.LOW/(AD_ALT.LOW+AD_REF.LOW)) - qlogis(AD_ALT.HIGH/(AD_ALT.HIGH+AD_REF.HIGH))]
+      m.ag <- m[,.N,CHROM]
+      m <-  m[CHROM%in%m.ag[N>1000]$CHROM]
+
+      m[,REF_FRQ:=(AD_REF.LOW + AD_REF.HIGH) / (AD_REF.LOW + AD_REF.HIGH + AD_ALT.LOW + AD_ALT.HIGH )]
+      m[,DP.LOW:=AD_REF.LOW + AD_ALT.LOW]
+      m[,DP.HIGH:=AD_REF.HIGH + AD_ALT.HIGH]
+      m[,rep:=r]
+    }
+    inputData <- rbindlist(inputData)
+    m <- inputData[,list(AD_REF.LOW=sum(AD_REF.LOW),
+                         AD_ALT.LOW=sum(AD_ALT.LOW),
+                         AD_REF.HIGH=sum(AD_REF.HIGH),
+                         AD_ALT.HIGH=sum(AD_ALT.HIGH),
+                         deltaSNP=mean(deltaSNP),
+                         REF_FRQ=mean(REF_FRQ),
+                         DP.LOW=sum(DP.LOW),
+                         DP.HIGH=sum(DP.HIGH)),
+                    list(CHROM, POS, REF=REF.x, ALT=ALT.x)]
+
+    m <- m[!is.na(deltaSNP) & deltaSNP!=Inf & deltaSNP!=-Inf]
+
+
+    df_filt <- filterSNPs(SNPset = as.data.frame(m),
                          refAlleleFreq = 0.05,
                          minTotalDepth = 10,
                          maxTotalDepth = 5000,
@@ -65,35 +297,61 @@
                          verbose = TRUE)
 
 
-    gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
+     gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=1000000) #250000
+     gprime <- as.data.table(gprime)
+     gprime[Gprime>10]
+
+     peaks <- getQTLTable(gprime, alpha=.1)
+     peaks <- as.data.table(peaks)
+     peaks
+
+
+
+
+
+
+
+
     gprime <- as.data.table(gprime)
-    gprime[,rep:=r]
-    gprime
-  }
-  gprime <- rbindlist(gprime)
+
+    summary(gprime[nSNPs>1])
+
+  save(gprime, file="~/gprime_new.Rdata")
+  scp aob2x@rivanna.hpc.virginia.edu:~/gprime_new.Rdata ~/.
+  R --vanilla
+  library(ggplot2); library(data.table)
+  load("~/gprime_new.Rdata")
+  setnames(gprime, c("CHROM", "POS"), c("chr", "pos"), skip_absent=T)
+
+  ggplot(data=gprime, aes(x=pos, y=Gprime, color=chr)) + geom_point() + facet_grid(~chr)
 
 
-
-
-
-
-  setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
+#### for two separate reps
   setkey(gprime, chr, pos)
   setkey(o, chr, pos)
   o.ag <- o[,list(p.z=mean(p.z)), list(id, chr, pos, set, term, perm)]
   setkey(o.ag, chr, pos)
-  m <- merge(gprime, o.ag)
 
-  fisher.test(table(m[rep==1]$p.z<.001, m[rep==1]$pvalue<.01))
+  m <- merge(gprime, o.ag, allow.cartesian=T)
 
-  overlap <- foreach(perm.i=unique(m$perm), .combine="rbind")%do%{
+
+  overlap <- foreach(perm.i=unique(m$perm), .combine="rbind")%dopar%{
+    message(perm.i)
     foreach(term.i=unique(m$term), .combine="rbind")%do%{
       foreach(r=c(1,2), .combine="rbind")%do%{
-        #perm.i<-0; term.i="male"; r<-2
+        #perm.i<-1; term.i="fill"; r<-1
         p1 <- m[perm==perm.i][term==term.i][rep==r]$p.z
         p2 <- m[perm==perm.i][term==term.i][rep==r]$pvalue
 
-        rep1<- fisher.test(table(p1<.01, p2<.01))
+        #p1 <- m[perm==perm.i][term==term.i]$p.z
+        #p2 <- m[perm==perm.i][term==term.i]$pvalue
+
+        q1 <- rank(p1)/(length(p1)+1)
+        q2 <- rank(p2)/(length(p2)+1)
+
+
+        r#ep1<- fisher.test(table(p1<.01, p2<.01))
+        rep1<- fisher.test(table(q1<.05, q2<.05))
 
         data.table(perm=perm.i, term=term.i, rep=r, or=rep1$estimate, p=rep1$p.value)
 
@@ -102,6 +360,11 @@
       }
     }
   }
+
+  mean(overlap[rep==2][perm==0][term=="male"]$or > overlap[rep==2][perm!=0][term=="male"]$or)
+  mean(overlap[rep==1][perm==0][term=="male"]$or > overlap[rep==1][perm!=0][term=="male"]$or)
+  mean(overlap[rep==2][perm==0][term=="fill"]$or > overlap[rep==2][perm!=0][term=="fill"]$or)
+  mean(overlap[rep==1][perm==0][term=="fill"]$or > overlap[rep==1][perm!=0][term=="fill"]$or)
 
   head(overlap[order(p)])
   tail(overlap[order(or)])
@@ -151,7 +414,7 @@ m <- foreach(perm.i=unique(m$perm), .combine="rbind")%do%{
   geom_line(data=m[perm==0], aes(x=pos, y=Gprime, color=chr)) +
   geom_point(data=m[perm==0][p.z<.005], aes(x=pos, y=Gprime), color="black") +
   facet_grid(term+rep~chr)
-  
+
 
 
 
