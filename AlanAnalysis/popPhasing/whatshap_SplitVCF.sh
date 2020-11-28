@@ -23,27 +23,31 @@
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
   export PATH=$HOME/.local/bin:$PATH
 
-### make job file
-  #chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" )
+### make job file: run once
+#  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim | cut -f1  | sed '1d' | sort | uniq )
+#
+#  makeJobs () {
+#    #line="foo"
+#    line=${1}
+#
+#    grep -m1 "#CHROM" /project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.vcf |
+#    cut -f 10- | \
+#    tr '\t' '\n' | \
+#    sed "s/^/${line}\t/g"
+#
+#  }
+#  export -f makeJobs
+#
+#  parallel -j 1 makeJobs ::: ${chr} > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim
+#  cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim | awk '{print NR"\t"$0}' > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim
 
-  makeJobs () {
-    #line="foo"
-    line=${1}
-
-    grep -m1 "#CHROM" /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf |
-    cut -f 10- | \
-    tr '\t' '\n' | \
-    sed "s/^/${line}\t/g"
-
-  }
-  export -f makeJobs
-
-  #parallel -j 1 makeJobs ::: ${chr} > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim
-  #cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim | awk '{print NR"\t"$0}' > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim
+### get filtered sites
+ #cat /project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/snpsvarpulexpresentinhalf_table_20200623 | cut -f2,3  | sed '1d' > \
+ #/scratch/aob2x/daphnia_hwe_sims/popPhase/snpsvarpulexpresentinhalf_table_20200623.sites
 
 
 ### get parameters
-  # SLURM_ARRAY_TASK_ID=2
+  # SLURM_ARRAY_TASK_ID=300
   chr=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $2} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim )
   sample=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $3} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim  )
 
@@ -56,8 +60,9 @@
 
   bcftools view \
   -s ${sample} \
+  -t ${chr} \
   -O v \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.${chr}.vcf.gz | \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/MapJune2020_ann.filter.bcf | \
   awk '{
     a=0
     if(substr($0, 0, 1)=="#") {
@@ -67,7 +72,8 @@
       split($10, sp, ":")
       printf sp[1]"\n"
     }
-  }' > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}_${chr}.vcf
+  }' > \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}_${chr}.vcf
 
 ### extract reads from bam file per chromosome per sample
   echo "getting bam"
@@ -78,7 +84,7 @@
   -M \
   -O BAM \
   -@ 1 \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/bams/${sample}_finalmap_mdup.bam \
+  /project/berglandlab/Karen/MappingDec2019/bams/PulexBams/${sample}_finalmap_mdup.bam \
   ${chr} > \
   /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}_${chr}.bam
 
