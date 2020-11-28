@@ -23,33 +23,33 @@
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
   export PATH=$HOME/.local/bin:$PATH
 
-#### make job file: run once
-##  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim | cut -f1  | sed '1d' | sort | uniq )
-##
-##  makeJobs () {
-##    #line="foo"
-##    line=${1}
-##
-##    grep -m1 "#CHROM" /project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.vcf |
-##    cut -f 10- | \
-##    tr '\t' '\n' | \
-##    sed "s/^/${line}\t/g"
-##
-##  }
-##  export -f makeJobs
-##
-##  parallel -j 1 makeJobs ::: ${chr} > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim
-##  cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim | awk '{print NR"\t"$0}' > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim
+### make job file: run once
+#  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim | cut -f1  | sed '1d' | sort | uniq )
 #
-#### get filtered sites
-# #cat /project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/snpsvarpulexpresentinhalf_table_20200623 | cut -f2,3  | sed '1d' > \
-# #/scratch/aob2x/daphnia_hwe_sims/popPhase/snpsvarpulexpresentinhalf_table_20200623.sites
+#  makeJobs () {
+#    #line="foo"
+#    line=${1}
+#
+#    grep -m1 "#CHROM" /project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.vcf |
+#    cut -f 10- | \
+#    tr '\t' '\n' | \
+#    sed "s/^/${line}\t/g"
+#
+#  }
+#  export -f makeJobs
+#
+#  parallel -j 1 makeJobs ::: ${chr} > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim
+#  cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.delim | awk '{print NR"\t"$0}' > /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim
+
+### get filtered sites
+ #cat /project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/snpsvarpulexpresentinhalf_table_20200623 | cut -f2,3  | sed '1d' > \
+ #/scratch/aob2x/daphnia_hwe_sims/popPhase/snpsvarpulexpresentinhalf_table_20200623.sites
 
 
 ### get parameters
   # SLURM_ARRAY_TASK_ID=300
-  chr=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $1} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim )
-  sample=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $2} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim  )
+  chr=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $2} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim )
+  sample=$( awk -v samp=${SLURM_ARRAY_TASK_ID} '{if(NR==samp) { print $3} }' < /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim  )
 
 
   echo "chr: "${chr}
