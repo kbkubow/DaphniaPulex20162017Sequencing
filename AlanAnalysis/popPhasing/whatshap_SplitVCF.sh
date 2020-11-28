@@ -12,10 +12,10 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-# ijob -c1 -p standard -A berglandlab
 ### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 -d' ' )
 ### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
-### sacct -u aob2x -j 10041462
+### sacct -j 19043314
+
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007523_507.err
 ### sacct -u aob2x -j 10041462 | less
 
