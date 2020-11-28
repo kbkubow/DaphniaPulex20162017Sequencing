@@ -9,9 +9,11 @@
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/popPhase/slurmOut/copy_bams.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/popPhase/slurmOut/copy_bams.%A_%a.err # Standard error
 
-# ijob -c1 -p standard -A berglandlab
 # submit as: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyBams.sh
-# sacct -j 19042379
+# sacct -j 19042389
+
+
+
 #cp -r /project/berglandlab/Karen/MappingDec2019/bams/* \
 #/scratch/aob2x/daphnia_hwe_sims/popPhase/bams/.
 #
