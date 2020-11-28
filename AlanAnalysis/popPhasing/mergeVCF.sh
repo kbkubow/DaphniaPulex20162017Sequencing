@@ -20,7 +20,11 @@
 
 ## get job
   # SLURM_ARRAY_TASK_ID=2
-  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
+  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
+
+### make file list
+  ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf > ${chr}.list
+
 
 # bgzip vcf files
 #for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf; do
