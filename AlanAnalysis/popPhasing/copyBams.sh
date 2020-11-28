@@ -11,9 +11,17 @@
 
 # ijob -c1 -p standard -A berglandlab
 # submit as: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyBams.sh
+# sacct -j 19042379
+#cp -r /project/berglandlab/Karen/MappingDec2019/bams/* \
+#/scratch/aob2x/daphnia_hwe_sims/popPhase/bams/.
+#
+#cp /project/berglandlab/Karen/MappingDec2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf \
+#/scratch/aob2x/daphnia_hwe_sims/popPhase/.
+module load bcftools/1.9
 
-cp -r /project/berglandlab/Karen/MappingDec2019/bams/* \
-/scratch/aob2x/daphnia_hwe_sims/popPhase/bams/.
-
-cp /project/berglandlab/Karen/MappingDec2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.vcf \
-/scratch/aob2x/daphnia_hwe_sims/popPhase/.
+bcftools view \
+-O b \
+-T /scratch/aob2x/daphnia_hwe_sims/popPhase/snpsvarpulexpresentinhalf_table_20200623.sites \
+-o /scratch/aob2x/daphnia_hwe_sims/popPhase/MapJune2020_ann.filter.bcf \
+--threads 10 \
+/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.vcf
