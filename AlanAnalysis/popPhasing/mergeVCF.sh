@@ -12,8 +12,8 @@
 
 # ijob -c1 -p standard -A berglandlab
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh
-### sacct -u aob2x -j 19047983
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19047983_1.out
+### sacct -u aob2x -j 19048068
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19048068_1.err
 
 ### load modules
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
@@ -22,29 +22,30 @@
   # SLURM_ARRAY_TASK_ID=2
   chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
+
+## bgzip vcf files
+#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf; do
+#  echo "File -> $f"
+#  bgzip \
+#  -c \
+#  -@ 20 \
+#  -i \
+#  ${f} > ${f}.gz
+#done
+#
+## index bgzippped files
+#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz; do
+#  #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
+#  echo "File -> $f"
+#  tabix \
+#  -p vcf \
+#  -f \
+#  ${f}
+#done
+
 ### make file list
-  ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
+  ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${chr}.list
 
-
-# bgzip vcf files
-for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf; do
-  echo "File -> $f"
-  bgzip \
-  -c \
-  -@ 20 \
-  -i \
-  ${f} > ${f}.gz
-done
-
-# index bgzippped files
-for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/*.${chr}.phase.vcf.gz; do
-  #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
-  echo "File -> $f"
-  tabix \
-  -p vcf \
-  -f \
-  ${f}
-done
 
 bcftools \
 merge \
