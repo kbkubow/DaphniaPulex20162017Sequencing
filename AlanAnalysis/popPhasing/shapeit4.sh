@@ -21,11 +21,12 @@
 #
 ## ijob -c1 -p standard -A berglandlab
 #SLURM_ARRAY_TASK_ID=1
-chr=$( cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/jobId | cut -f2 -d' ' | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
+chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
+echo $chr
 
 ### run shapeit
-  module load gcc shapeit4
+  module load gcc/9.2.0 python/3.6.8 shapeit4
 
   shapeit4 \
   --input /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.bcf \
