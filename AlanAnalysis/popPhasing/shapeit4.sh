@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-#
-#
 #SBATCH -J popPhasing_shapeit4 # A single job name for the array
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=20 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
@@ -20,7 +18,8 @@
 #
 #
 ## ijob -c1 -p standard -A berglandlab
-#SLURM_ARRAY_TASK_ID=1
+# SLURM_ARRAY_TASK_ID=1
+
 chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
 echo $chr
