@@ -22,49 +22,42 @@
   # SLURM_ARRAY_TASK_ID=2
   chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
-###
-  bcftools \
-  consensus \
-  -f 
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.daphnid.bcf
+
+## set up RAM disk
+  ## rm /scratch/aob2x/test/*
+  #tmpdir="/scratch/aob2x/test"
+  #SLURM_JOB_ID=1
+  [ ! -d /dev/shm/$USER/ ] && mkdir /dev/shm/$USER/
+  [ ! -d /dev/shm/$USER/${SLURM_JOB_ID} ] && mkdir /dev/shm/$USER/${SLURM_JOB_ID}
+  [ ! -d /dev/shm/$USER/${SLURM_JOB_ID}/${SLURM_ARRAY_TASK_ID} ] && mkdir /dev/shm/$USER/${SLURM_JOB_ID}/${SLURM_ARRAY_TASK_ID}
+
+  tmpdir=/dev/shm/$USER/${SLURM_JOB_ID}/${SLURM_ARRAY_TASK_ID}
 
 
+### extract chromosome from each individual
+  getChr () {
+    chr=${1}
+    file=${2} # file="/scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/Spring_2017_DBunk_360.1.fa"
+    tmpdir=${3}
+
+    stem=$( echo ${file} | rev | cut -d'/' -f1 | rev )
+
+    echo ${chr} ${stem}
 
 
+    echo ${chr} > ${tmpdir}/chr.list
 
+    ~/seqtk/seqtk \
+    subseq \
+    ${file} \
+    ${tmpdir}/chr.list | sed "s/${chr}/${stem};${chr}/g" > ${tmpdir}/${chr}_${stem}
 
+  }
+  export -f getChr
 
+  parallel getChr ::: ${chr} ::: $( ls -d  /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/*.fa ) ::: ${tmpdir}
 
-# bgzip vcf files
-for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/*.${chr}.phase.vcf; do
-  echo "bgzipping File -> $f"
-  bgzip \
-  -c \
-  -@ 20 \
-  -i \
-  ${f} > ${f}.gz
-done
+  #cat ${tmpdir}/*.fa > /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/${chr}.fasta
+  awk 'NR>1 && FNR==1{print ""};1' ${tmpdir}/*.fa > /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/${chr}.fasta
 
-# index bgzippped files
-for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/*.${chr}.phase.vcf.gz; do
-  #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
-  echo "indexing File -> $f"
-  tabix \
-  -p vcf \
-  -f \
-  ${f}
-done
-
-### make file list
-  ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/*.${chr}.phase.vcf.gz > /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${chr}.list
-
-
-bcftools \
-merge \
--l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${chr}.list \
--o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.daphnid.bcf \
--O b \
---threads 20
-
-# index
-  bcftools index --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.daphnid.bcf
+  rm -fr ${tmpdir}

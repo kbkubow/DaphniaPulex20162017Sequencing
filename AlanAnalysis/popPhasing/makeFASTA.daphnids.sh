@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 # ijob -c1 -p standard -A berglandlab
-### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh
+### run with: sbatch --array=1-174 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeFASTA.daphnids.sh
 ### sacct -u aob2x -j 19104079
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19048068_1.err
 
