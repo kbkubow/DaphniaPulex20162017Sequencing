@@ -89,6 +89,40 @@ ij <- foreach(i=c(1:(dim(mat)[1]-1)), .combine="rbind")%do%{
 
 ### scp aob2x@rivanna.hpc.virginia.edu:~/mats.Rdata ~/.
 
+### libraries
+  library(data.table)
+  library(ape)
+  library(ggtree)
+  library(ggplot2)
+
+  load("~/mats.Rdata")
+
+### iterate through
+  foreach(i=1:length(mats))%do%{
+    #i<-3
+    matn <- mats[[i]]
+
+    dm <- dist(matn, diag=T, upper=T)
+    njo <- nj(dm)
+    njo <- root(njo, outgroup="allele1_Spring_2016_W6_6.3")
+    d <- data.table(label=njo$tip.label)
+    d[,pond:=tstrsplit(label, "_")[[4]]]
+    d[,A:=ifelse(grepl("April_2017_D8_213", label), "A", "")]
+    d[,C:=ifelse(grepl("April_2017_D8_151", label), "C", "")]
+    d <- as.data.frame(d)
+
+
+    p <- ggtree(njo) %<+% d +
+    geom_tiplab(aes(label=A)) +
+    geom_tiplab(aes(label=C)) +
+    geom_tiplab(aes(label=pond, color=pond), offset=1, angle=90, align=T) +
+    coord_flip()
+
+    ggsave(p, file=paste("~/qtl", i, ".pdf", sep=""))
+  }
+
+
+
 
 
 
