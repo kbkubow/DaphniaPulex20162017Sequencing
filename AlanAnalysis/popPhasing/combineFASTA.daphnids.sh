@@ -12,8 +12,8 @@
 
 # ijob -c1 -p standard -A berglandlab
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh
-### sacct -u aob2x -j 19104079
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19048068_1.err
+### sacct -u aob2x -j 19110025
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### load modules
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
@@ -22,6 +22,7 @@
   # SLURM_ARRAY_TASK_ID=2
   chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
+  echo ${chr}
 
 ## set up RAM disk
   ## rm /scratch/aob2x/test/*
