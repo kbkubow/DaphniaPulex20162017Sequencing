@@ -25,7 +25,7 @@ chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 | so
 echo $chr
 
 ### run shapeit
-  module load gcc/9.2.0 python/3.6.8 shapeit4
+  module load gcc/9.2.0 shapeit4
 
   shapeit4 \
   --input /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.bcf \
