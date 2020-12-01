@@ -9,9 +9,9 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
-### sacct -u aob2x -j 19048158
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.10260082_1.err
+### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.daphnids.sh
+### sacct -u aob2x -j 19104692
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.19104692_1.err
 ### run with: sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
 ### sacct -u aob2x -j 10267463
 #module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
@@ -25,7 +25,7 @@ chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut
 echo $chr
 
 ### run shapeit
-  module load gcc/9.2.0 python/3.6.8 shapeit4
+module load gcc/9.2.0 shapeit4
 
   shapeit4 \
   --input /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.daphnid.bcf \
