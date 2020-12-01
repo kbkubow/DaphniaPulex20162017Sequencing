@@ -12,9 +12,9 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.delim | cut -f1 -d' ' )
-### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh
-### sacct -j 19043314
+### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f1 -d' ' )
+### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.dapnids.sh
+### sacct -j 19093224
 
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007523_507.err
 ### sacct -u aob2x -j 10041462 | less
