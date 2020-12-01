@@ -1,9 +1,9 @@
-# A. Get data in right place
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyBams.sh`
-
-# B. these are some index files created by scripts for slurm. I don't remember exactly which scripts make these files.
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/bams2phase.sh`
-  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/path2bams`
+## A. Get data in right place
+#  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyBams.sh`
+#
+## B. these are some index files created by scripts for slurm. I don't remember exactly which scripts make these files.
+#  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/bams2phase.sh`
+#  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/path2bams`
 
 # C. Run Whatshapp to generate read-backed phase-sets
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh`

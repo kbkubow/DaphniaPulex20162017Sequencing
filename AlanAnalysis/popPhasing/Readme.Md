@@ -1,21 +1,41 @@
-# A. Convert original VCF to BCF and filter on sites that pass quality filtering via `snpsvarpulexpresentinhalf_table_20200623`
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/filterVCF.sh`
+# A. Convert original VCF to BCF and filter on sites that pass quality filtering via one of two files (w/in pulex or across multiple)
+  1. for within species `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/filterVCF.within.sh`
+  2. for all available daphnids `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/filterVCF.daphnids.sh`
 
 # B. Make jobs file (1 line per chr X clone, downsampled to 1 clone/SC, no lab F1s)
-  1. `onePerSC.R` this generates 1 file which is the 1 line per chr per SC (passing filter)
+  1. `onePerSC.within.R` this generates 1 file which is the 1 line per chr per SC (passing filter)
+  2. `onePerSC.daphnids.R` this generates 1 file which is the 1 line per chr per SC (passing filter)
 
 # C. Run Whatshapp to generate read-backed phase-sets
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.sh`
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.within.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.daphnids.sh`
 
 # D. merge individual vcfs
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.sh`
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.within.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh`
 
-# E. shapeit4
-  ### Run shapeit on each chromosome separatley
-    1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh`
+# E. Run shapeit on each chromosome separatley
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh`
 
-  ### concatenate resulting VCFs
-    2.
+# F. concatenate the bcfs, and convert to VCF
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/concatenate_convert.sh`
+
+# G. convert to GDS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # F. KING to get basic relationships; is based on observed (not imputed) data; identifies parent offspring pairs
   ### concatenate whatshapp VCF files, rename chromosomes, convert bcf to plink
