@@ -2,17 +2,17 @@
 #
 ##SBATCH -J popPhasing_mergeVCF # A single job name for the array
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=20 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-02:00:00 # Running time of 4 days
-#SBATCH --mem 100G # Memory request of 20GB
+#SBATCH --mem 10G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
 # ijob -c1 -p standard -A berglandlab
-### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh
-### sacct -u aob2x -j 19110025
+### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh
+### sacct -u aob2x -j 19110690
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### load modules
