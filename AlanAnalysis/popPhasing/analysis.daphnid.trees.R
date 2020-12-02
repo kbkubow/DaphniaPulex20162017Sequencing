@@ -8,7 +8,7 @@
   library(ape)
 
 ### open gds
-  genofile <- seqOpen("/scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.filter.snpsvarpulex.whatshap.gds")
+  genofile <- seqOpen("/scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.filter.daphnid.whatshap.gds")
 
 ### snp.dt
   seqResetFilter(genofile)
@@ -27,7 +27,7 @@
   sc[SC=="OO", SC.uniq:=paste(SC, SCnum, sep="")]
 
 ### hard filtering of SC
-  sc.ag <- sc[Species=="pulex" & LabGenerated==F, list(clone=clone[which.max(medrd)][1]), list(SC.uniq)]
+  sc.ag <- sc[LabGenerated==F, list(clone=clone[which.max(medrd)][1]), list(SC.uniq, Species)]
 
 ### ij
 
@@ -83,11 +83,11 @@ ij <- foreach(i=c(1:(dim(mat)[1]-1)), .combine="rbind")%do%{
   }
 
 ### save
-  save(mats, file="~/mats.Rdata")
+  save(mats, file="~/mats.daphnid.Rdata")
 
 
 
-### scp aob2x@rivanna.hpc.virginia.edu:~/mats.Rdata ~/.
+### scp aob2x@rivanna.hpc.virginia.edu:~/mats.daphnid.Rdata ~/.
 
 ### libraries
   library(data.table)
@@ -95,7 +95,7 @@ ij <- foreach(i=c(1:(dim(mat)[1]-1)), .combine="rbind")%do%{
   library(ggtree)
   library(ggplot2)
 
-  load("~/mats.Rdata")
+  load("~/mats.daphnid.Rdata")
 
 ### iterate through
   foreach(i=1:length(mats))%do%{
@@ -104,7 +104,7 @@ ij <- foreach(i=c(1:(dim(mat)[1]-1)), .combine="rbind")%do%{
 
     dm <- dist(matn, diag=T, upper=T)
     njo <- nj(dm)
-    njo <- root(njo, outgroup="allele1_Spring_2016_W6_6.3")
+    njo <- root(njo, outgroup="allele1_March20_2018_DBunk_38")
     d <- data.table(label=njo$tip.label)
     d[,pond:=tstrsplit(label, "_")[[4]]]
     d[,A:=ifelse(grepl("April_2017_D8_213", label), "A", "")]
@@ -118,7 +118,7 @@ ij <- foreach(i=c(1:(dim(mat)[1]-1)), .combine="rbind")%do%{
     geom_tiplab(aes(label=pond, color=pond), offset=1, angle=90, align=T) +
     coord_flip()
 
-    ggsave(p, file=paste("~/qtl", i, ".pdf", sep=""))
+    ggsave(p, file=paste("~/Outgroup_qtl", i, ".pdf", sep=""))
   }
 
 

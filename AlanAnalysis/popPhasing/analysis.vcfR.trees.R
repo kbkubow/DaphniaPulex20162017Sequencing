@@ -5,7 +5,21 @@
   library(ape)
 
 ### load reference genome
-  read.FASTA(file, type = "DNA")
+  refGenome <- read.FASTA("/project/berglandlab/daphnia_ref/totalHiCwithallbestgapclosed.fa", type = "DNA")
+
+### convert vcf to DNAbin
+bcftools view -O v /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/Scaffold_2217_HRSCAF_2652.whatshapp.onPerSC.shapeit.bcf > \
+/scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/Scaffold_2217_HRSCAF_2652.whatshapp.onPerSC.shapeit.vcf
+
+
+
+  vcf <- read.vcfR(paste("/scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/", "Scaffold_2217_HRSCAF_2652", ".whatshapp.onPerSC.shapeit.vcf", sep=""))
+
+  haps.dnabin <- vcfR2DNAbin(x=vcf[1:10,1:5], ref.seq=refGenome[which(labels(refGenome)=="Scaffold_2217_HRSCAF_2652")], verbose=T, start.pos=1)
+
+
+
+
 
 
 
