@@ -2,7 +2,7 @@
 #
 ##SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=5 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-02:00:00 # Running time of 4 days
 #SBATCH --mem 1G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.out # Standard output
@@ -16,7 +16,7 @@
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
-### sacct -u aob2x -j 19110776
+### sacct -u aob2x -j 19143514
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### modules
@@ -85,7 +85,8 @@
 ### run this R script
   Rscript --vanilla \
   /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh \
-  ${tmpdir}/${chr}_${start}_${stop}.fasta
+  ${tmpdir}/${chr}_${start}_${stop}.fasta \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/${chr}_${start}_${stop}.fasta
 
   #cp ${tmpdir}/${chr}_${start}_${stop}.fasta /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
 
