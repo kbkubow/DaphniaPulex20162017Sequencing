@@ -10,6 +10,7 @@ library(ggtree)
 load("~/cdlo.Rdata")
   #cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
 
+  cdl.genome.ag <- cdl.genome[,list(cd=mean(cd_mean), sd=mean(cd_sd)), list(sp.group, pond.group)]
 
   o.plot <- ggplot() +
   geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)],
@@ -18,10 +19,12 @@ load("~/cdlo.Rdata")
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
             size=2) +
+  geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
   facet_wrap(~window)
 
 
-  ggsave(o.plot, file="~/qtl_age.pdf")
+
+  ggsave(o.plot, file="~/qtl_age.pdf", height=20, width=20)
 
 
 
