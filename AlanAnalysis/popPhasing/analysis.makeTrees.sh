@@ -16,6 +16,7 @@
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 # sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
+# sacct -j 19141305
 
 ### modules
   module load samtools parallel
@@ -60,7 +61,7 @@
   }
   export -f getRegion
 
-  #parallel getRegion ::: ${chr} ::: $( ls -d  /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/*.fa ) ::: ${tmpdir}
+  parallel getRegion ::: ${chr} ::: $( ls -d  /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/*.fa ) ::: ${tmpdir}
 
 ### combine
   awk 'NR>1 && FNR==1{print ""};1' ${tmpdir}/*.fa > ${tmpdir}/${chr}_${start}_${stop}.fasta
