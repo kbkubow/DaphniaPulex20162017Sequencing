@@ -12,7 +12,7 @@
 
 # ijob -c1 -p standard -A berglandlab
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh
-### sacct -u aob2x -j 19110690
+### sacct -u aob2x -j 19110776
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### load modules

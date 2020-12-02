@@ -1,8 +1,32 @@
 #module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3; R
 
 ### libraries
-  library(vcfR)
   library(ape)
+
+### load fasta as DNAbin
+  db <- read.FASTA("Scaffold_1931_HRSCAF_2197.fasta", type = "DNA")
+
+### dist
+  gd <- dist.dna(db)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ### load reference genome
   read.FASTA(file, type = "DNA")

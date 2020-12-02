@@ -10,8 +10,8 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### run with: sbatch --array=1-$( ls -d  /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/*.fa | wc -l ) /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeFASTA.daphnids.sh
-### sacct -u aob2x -j 19109825
+### sbatch --array=1-346 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/indexFASTA.daphnids.sh
+### sacct -u aob2x -j 19140955
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19048068_1.err
 
 
