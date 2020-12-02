@@ -10,6 +10,7 @@
 
   args = commandArgs(trailingOnly=TRUE)
   fasta.fn=args[[1]]
+  out.fn=args[[2]]
 
   #fasta.fn <- "/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/region.fasta"
 
@@ -81,4 +82,4 @@
   cdl[,pond.group:=factor(pond.group, levels=c("DWT-DWT", "DWT-D10", "DWT-W", "all"))]
 
 
-  save(cdl, gd, njo, file=paste(fasta.fn, ".Rdata", sep=""))
+  save(cdl, gd, njo, file=out.fn)
