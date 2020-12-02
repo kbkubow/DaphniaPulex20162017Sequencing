@@ -15,14 +15,23 @@
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh`
 
 # E. Run shapeit on each chromosome separatley
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh`
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.within.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.daphnids.sh`
 
-# F. concatenate the bcfs, and convert to VCF
+# F. concatenate the bcfs, and convert to VCF, convert to GDS
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/concatenate_convert.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/vcf2gds.R`
 
-# G. convert to GDS
+# G. Analysis (this is quick and dirty analysis using GDS file)
+  1. Trees `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.trees.R`
 
+# H. Make FASTA formatted data, one per chromosome
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeFASTA.daphnids.sh` makes fasta files for each haplotype
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/indexFASTA.daphnids.sh` indexes the fastas above
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh` makes 12 fasta, one per chr
 
+# I. Build trees on windows
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh` slices individual FASTA file
 
 
 
