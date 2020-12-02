@@ -12,7 +12,7 @@
 
 
   fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
-  lenfth(fn)
+  length(fn)
   cdl.o <- foreach(i=fn)%dopar%{
     message(i)
     #i <- fn[1]
@@ -29,7 +29,7 @@
 
   target.fn <- sapply(tail(wins, 14)$V2, function(x) fn[grepl(x, fn)])
 
-  lenfth(target.fn)
+  length(target.fn)
   cdl.qtl <- foreach(i=target.fn)%dopar%{
     message(i)
     #i <- fn[1]
