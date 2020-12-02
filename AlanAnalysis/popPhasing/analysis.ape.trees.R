@@ -86,4 +86,4 @@
   cdl[,pond.group:=factor(pond.group, levels=c("DWT-DWT", "DWT-D10", "DWT-W", "all"))]
 
 
-  save(cdl, gd, njo, file=out.fn)
+  save(cdl, gd, njo, d, file=out.fn)

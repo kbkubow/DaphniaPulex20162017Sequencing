@@ -1,3 +1,5 @@
+scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/Scaffold_1863_HRSCAF_2081_5825001_5850001.Rdata ~/.
+
 
 
   cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
