@@ -2,83 +2,36 @@
 
 #scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/region.fasta ~/.
 
+
+  #args = commandArgs(trailingOnly=TRUE)
+  #step.bp=as.numeric(args[[1]])
+  #window.bp=as.numeric(args[[2]])
+#
+  step.bp <- 25000
+  window.bp <- 250000
+
 ### libraries
-  library(ape)
+  #library(ape)
   library(data.table)
+  library(foreach)
 
-### get file name from input stream
+### chrs
+  chrs <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim", header=F)
+  chrs <- unique(chrs$V1)
+  chrs
 
-  args = commandArgs(trailingOnly=TRUE)
-  fasta.fn=args[[1]]
+### fai
+  fai <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/2018_Pulicaria_Pond22_62.1.fa.fai")
+  setkey(fai, V1)
 
-  #fasta.fn <- "/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/region.fasta"
+  use <- fai[J(chrs)]
 
-### load fasta as DNAbin
-  db <- read.FASTA(fasta.fn, type = "DNA")
+### make windows
 
-### dist
-  gd <- dist.dna(db, as.matrix=T)
-  gdm <- as.matrix(gd)
-  dim(gdm)
-  gdml <- as.data.table(expand.grid(gdm)[,1])
-  gdml
+  wins <- foreach(i=1:dim(use)[1], .combine="rbind")%do%{
+    data.table(chr=use[i]$V1,
+                start=seq(from=1, to=use[i]$V2, by=step.bp),
+                stop=seq(from=1, to=use[i]$V2, by=step.bp)+window.bp)
+  }
 
-### tree
-  njo <- bionj(gd)
-  njo <- root(njo, outgroup="March20_2018_DBunk_38.1.fa;Scaffold_2217_HRSCAF_2652:5173222-5223221")
-
-### make info object
-  d <- data.table(tip.label=njo$tip.label)
-  d[,pond:=tstrsplit(tip.label, "_")[[3]]]
-  d[,sample.id:=tstrsplit(tip.label, "\\.")[[1]]]
-
-  #d[,A:=ifelse(grepl("April_2017_D8_213", label), "A", "")]
-  #d[,C:=ifelse(grepl("April_2017_D8_151", label), "C", "")]
-  d[pond%in%c("D8", "DBunk", "DCat", "DOil", "Dramp", "Dcat"),group:="DWT"]
-  d[pond=="D10", group:="D10"]
-  d[grepl("W", pond), group:="W"]
-  d[grepl("Pond22", pond), group:="pulicaria"]
-  d[grepl("Pond22", pond), group:="pulicaria"]
-  d[grepl("March20_2018_DBunk_38", tip.label), group:="obtusa"]
-  d[grepl("April_2017_D8_213", tip.label), group:="A"]
-  d[grepl("April_2017_D8_151", tip.label), group:="C"]
-  d[group%in%c("pulicaria", "obtusa"), species:=group]
-  d[!group%in%c("pulicaria", "obtusa"), species:="pulex"]
-
-
-### cd
-  cd <- cophenetic(njo)
-  cd[diag(cd)] <- NA
-  cd[upper.tri(cd)] <- NA
-  cdl <-data.table(cd=expand.grid(cd)[,1],
-                    i1=rep(rownames(cd), length(rownames(cd))),
-                    i2=rep(colnames(cd), each=length(rownames(cd))))
-  cdl <- na.omit(cdl)
-
-  cdl[,clone1:=tstrsplit(i1, "\\.")[[1]]]
-  cdl[,clone2:=tstrsplit(i2, "\\.")[[1]]]
-
-  setnames(cdl, "i1", "tip.label")
-  cdl <- merge(cdl, d, by="tip.label",)
-  setnames(cdl, "tip.label", "i1")
-
-  setnames(cdl, "i2", "tip.label")
-  cdl <- merge(cdl, d, by="tip.label")
-  setnames(cdl, "tip.label", "i2")
-
-
-  cdl[species.x=="pulex" & species.y=="pulex", sp.group:="pulex-pulex"]
-  cdl[(species.x=="pulex" & species.y=="pulicaria") | (species.y=="pulex" & species.x=="pulicaria"), sp.group:="pulex-pulicaria"]
-  cdl[(species.x=="pulex" & species.y=="obtusa") | (species.y=="pulex" & species.x=="obtusa"), sp.group:="pulex-obtusa"]
-  cdl[,sp.group:=factor(sp.group, levels=c("pulex-pulex", "pulex-pulicaria", "pulex-obtusa"))]
-
-
-  cdl[(group.x=="DWT" & group.y=="DWT"), pond.group:="DWT-DWT"]
-  cdl[(group.x=="DWT" & group.y=="D10") | (group.y=="DWT" & group.x=="D10"), pond.group:="DWT-D10"]
-  cdl[(group.x=="DWT" & group.y=="W") | (group.y=="DWT" & group.x=="W"), pond.group:="DWT-W"]
-  cdl[sp.group!="pulex-pulex", pond.group:="all"]
-  cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), pond.group:="DWT-DWT"]
-  cdl[,pond.group:=factor(pond.group, levels=c("DWT-DWT", "DWT-D10", "DWT-W", "all"))]
-
-
-  save(cdl, gd, njo, file=paste(fasta.fn, ".Rdata", sep=""))
+  write.table(wins, file="/scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim", quote=F, row.names=F, col.names=F, sep=",")
