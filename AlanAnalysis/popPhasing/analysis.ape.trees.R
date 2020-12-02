@@ -15,9 +15,11 @@
   #fasta.fn <- "/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/region.fasta"
 
 ### load fasta as DNAbin
+  message("load ing fasta")
   db <- read.FASTA(fasta.fn, type = "DNA")
 
 ### dist
+  message("get distances")
   gd <- dist.dna(db, as.matrix=T)
   gdm <- as.matrix(gd)
   dim(gdm)
@@ -25,8 +27,10 @@
   gdml
 
 ### tree
+  message("making tree")
+
   njo <- bionj(gd)
-  njo <- root(njo, outgroup="March20_2018_DBunk_38.1.fa;Scaffold_2217_HRSCAF_2652:5173222-5223221")
+  #njo <- root(njo, outgroup=njo$tip.label[grepl("March20_2018_DBunk_38.1.fa", njo$tip.label)][1])
 
 ### make info object
   d <- data.table(tip.label=njo$tip.label)

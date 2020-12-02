@@ -31,7 +31,9 @@
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh` makes 12 fasta, one per chr
 
 # I. Build trees on windows
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh` slices individual FASTA file
+  0. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeWindows.trees.R` makes window definition file
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh` slices individual FASTA file to make trees and compute Cd. Runs `analysis.ape.trees.R`
+  2. 
 
 
 
