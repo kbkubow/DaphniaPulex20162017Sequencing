@@ -7,8 +7,8 @@
   #step.bp=as.numeric(args[[1]])
   #window.bp=as.numeric(args[[2]])
 #
-  step.bp <- 25000
-  window.bp <- 250000
+  step.bp <- 50000
+  window.bp <- 50000
 
 ### libraries
   #library(ape)
@@ -33,5 +33,12 @@
                 start=seq(from=1, to=use[i]$V2, by=step.bp),
                 stop=seq(from=1, to=use[i]$V2, by=step.bp)+window.bp)
   }
+
+### add special windows
+  load("/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
+
+  wins <- rbind(wins,
+                data.table(chr=peaks$CHROM, start=peaks$posMaxGprime-(window.bp/2), stop=peaks$posMaxGprime+(window.bp/2)))
+
 
   write.table(wins, file="/scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim", quote=F, row.names=F, col.names=F, sep=",")

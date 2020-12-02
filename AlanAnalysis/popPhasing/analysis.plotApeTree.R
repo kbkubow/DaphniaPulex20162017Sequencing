@@ -1,34 +1,38 @@
-scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/Scaffold_1863_HRSCAF_2081_5825001_5850001.Rdata ~/.
+scp aob2x@rivanna.hpc.virginia.edu:~/cdlo.Rdata ~/.
 
 
+#load("~/Scaffold_1863_HRSCAF_2081_5825001_5850001.Rdata")
 
-  cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
+library(ggplot2)
+library(data.table)
+library(ggtree)
 
-  cd.plot <- ggplot() +
-  geom_violin(data=cdl[!is.na(sp.group)][!is.na(pond.group)],
+load("~/cdlo.Rdata")
+  #cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
+
+
+  o.plot <- ggplot() +
+  geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)],
               aes(y=cd, x=sp.group, color=interaction(sp.group, pond.group), fill=pond.group)) +
-  geom_point(data=cdl.ag, aes(y=max_cd, x=sp.group))
-
-  cd.plot
-
-
-  ggplot() +
-  geom_violin(data=cdl[!is.na(sp.group)][!is.na(pond.group)],
-              aes(y=cd, x=sp.group, color=interaction(sp.group, pond.group), fill=pond.group)) +
-  geom_point(data=cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C")],
+  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")],
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
-            size=2)
+            size=2) +
+  facet_wrap(~window)
+
+
+  ggsave(o.plot, file="~/qtl_age.pdf")
 
 
 
 
-plot(njo)
-
-
-
-
-
+  p <- ggtree(njo) %<+% d +
+  geom_tiplab(aes(label=A)) +
+  geom_tiplab(aes(label=C)) +
+  #geom_tiplab(aes(label=pond, color=pond), offset=1, angle=90, align=T)  +
+  coord_flip() +
+  theme(legend.position = "none")
+  p
 
 
 
