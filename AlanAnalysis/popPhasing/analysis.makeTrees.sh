@@ -2,30 +2,39 @@
 #
 ##SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=20 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH --cpus-per-task=5 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-02:00:00 # Running time of 4 days
-#SBATCH --mem 100G # Memory request of 20GB
+#SBATCH --mem 1G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-# ijob -c1 -p standard -A berglandlab
-### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh
+### nJobs=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | wc -l )
+### sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
 ### sacct -u aob2x -j 19110776
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
-# sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
-# sacct -j 19141305
+### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
+### sacct -u aob2x -j 19110776
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### modules
   module load samtools parallel
+  module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3; R
 
 ### define parameters
-  chr=Scaffold_2217_HRSCAF_2652
-  start=5173221
-  stop=5223221
+  #chr=Scaffold_2217_HRSCAF_2652
+  #start=5173221
+  #stop=5223221
 
+  #SLURM_ARRAY_TASK_ID=100
+
+  chr=$( sed "${SLURM_ARRAY_TASK_ID}q;d" /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | cut -f1 -d',' )
+  start=$( sed "${SLURM_ARRAY_TASK_ID}q;d" /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | cut -f2 -d',' )
+  stop=$( sed "${SLURM_ARRAY_TASK_ID}q;d" /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | cut -f3 -d',' )
+
+  echo ${chr} $start $stop
 
 ## set up RAM disk
   ## rm /scratch/aob2x/test/*
@@ -67,13 +76,21 @@
   awk 'NR>1 && FNR==1{print ""};1' ${tmpdir}/*.fa > ${tmpdir}/${chr}_${start}_${stop}.fasta
 
 ### make tree
-  /home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \
-  -nt 20 \
-  -redo \
-  -s ${tmpdir}/${chr}_${start}_${stop}.fasta
+  #/home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \
+  #-nt 5 \
+  #-redo \
+  #-s ${tmpdir}/${chr}_${start}_${stop}.fasta
 
-  cp ${tmpdir}/${chr}_${start}_${stop}.fasta* /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
+
+### run this R script
+  Rscript --vanilla \
+  /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh \
+  ${tmpdir}/${chr}_${start}_${stop}.fasta
+
+  #cp ${tmpdir}/${chr}_${start}_${stop}.fasta /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
 
   rm -fr ${tmpdir}
 
 ##
+
+# scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/Scaffold_2217_HRSCAF_2652_5173221_5223221.fasta.treefile ~/.
