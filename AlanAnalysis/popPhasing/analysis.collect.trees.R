@@ -13,19 +13,21 @@
 
   fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
   length(fn)
-  cdl.o <- foreach(i=fn)%dopar%{
+  cdl.o <- foreach(i=fn[1:5])%dopar%{
     message(i)
     #i <- fn[1]
     load(i)
     #return(cdl)
     cdl[,window:=tstrsplit(i1, ";")[[2]]]
 
-    #cdl[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
-    return(cdl)
+    cdl[,cd_bin:=round(cd, 5)]
+    #cdl[,cd_bin:=factor(cd_bin, seq(from=0, to=.1, by=.001))]
+    cdl[,list(n=.N), list(sp.group, pond.group, window, cd_bin)]
+
   }
 
   cdl.o <- rbindlist(cdl.o)
-  cdl.genome <- cdl.o[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
+  cdl.genome <- cdl.o[,list(n=sum(n)), list(sp.group, pond.group, cd_bin)][!is.na(sp.group) & !is.na(pond.group)]
 
 ### qtl
   wins <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim")
