@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collectTrees.sh
-### sacct -u aob2x -j 19157690
+### sacct -u aob2x -j 19158308
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19149417
 
 ### modules
