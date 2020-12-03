@@ -4,15 +4,15 @@
 #SBATCH --ntasks=20
 #SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-02:00:00 # Running time of 4 days
-#SBATCH --mem 20G # Memory request of 20GB
+#SBATCH --mem 100G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collectTrees.sh
-### sacct -u aob2x -j 19149417
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19148067
+### sacct -u aob2x -j 19157429
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19149417
 
 ### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
 ### sacct -u aob2x -j 19143682
