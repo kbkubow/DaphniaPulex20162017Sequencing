@@ -13,7 +13,7 @@
 
   fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
   length(fn)
-  cdl.o <- foreach(i=fn[1:5])%dopar%{
+  cdl.o <- foreach(i=fn)%dopar%{
     message(i)
     #i <- fn[1]
     load(i)
