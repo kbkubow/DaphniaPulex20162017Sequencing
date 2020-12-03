@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collectTrees.sh
-### sacct -u aob2x -j 19144597
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
+### sacct -u aob2x -j 19148067
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19148067
 
 ### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
 ### sacct -u aob2x -j 19143682
