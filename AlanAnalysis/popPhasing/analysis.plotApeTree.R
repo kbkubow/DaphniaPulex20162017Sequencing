@@ -10,12 +10,15 @@ library(ggtree)
 load("~/cdlo.Rdata")
   #cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
 
+  setkey(cdl.qtl, window, sp.group, pond.group)
+  cdl.qtl[!duplicated(cdl.qtl)]
+  cdl.qtl
   cdl.genome.ag <- cdl.genome[,list(cd=mean(cd_mean), sd=mean(cd_sd)), list(sp.group, pond.group)]
 
   o.plot <- ggplot() +
   geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)],
               aes(y=cd, x=sp.group, color=interaction(sp.group, pond.group), fill=pond.group)) +
-  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")],
+  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2],
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
             size=2) +
@@ -24,10 +27,23 @@ load("~/cdlo.Rdata")
 
 
 
+  ggplot() +
+  geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)][grepl("17459", window)],
+              aes(y=cd, x=sp.group,fill=pond.group)) +
+  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2][grepl("17459", window)],
+            aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
+            position = position_nudge(x = -0.5),
+            size=2) +
+  geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
+  facet_wrap(~window)
+
+
+
+
   ggsave(o.plot, file="~/qtl_age.pdf", height=20, width=20)
 
 
-
+cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][window=="Scaffold_9199_HRSCAF_10755:4964452-5014451"]
 
   p <- ggtree(njo) %<+% d +
   geom_tiplab(aes(label=A)) +

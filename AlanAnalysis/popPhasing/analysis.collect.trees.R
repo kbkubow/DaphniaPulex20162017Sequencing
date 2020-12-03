@@ -22,7 +22,9 @@
 
     cdl[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
   }
-  cdl.genome <- rbindlist(cdl.o)
+
+  cdl.o <- rbindlist(cdl.o)
+  cdl.genome <- cdl.o[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
 
 ### qtl
   wins <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim")
@@ -45,4 +47,4 @@
 ### save
 
 
-  save(cdl.genome, cdl.qtl, file="~/cdlo.Rdata")
+  save(cdl.genome, cdl.qtl, cdl.o, file="~/cdlo.Rdata")
