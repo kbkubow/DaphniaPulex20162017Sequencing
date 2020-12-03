@@ -20,7 +20,8 @@
     #return(cdl)
     cdl[,window:=tstrsplit(i1, ";")[[2]]]
 
-    cdl[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
+    #cdl[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
+    return(cdl)
   }
 
   cdl.o <- rbindlist(cdl.o)
