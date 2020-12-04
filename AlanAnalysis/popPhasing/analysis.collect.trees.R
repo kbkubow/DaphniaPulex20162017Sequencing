@@ -14,7 +14,7 @@
   fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
   length(fn)
 
-  cdl.list <- foreach(i=fn)%dopar%{
+  cdl.list <- foreach(i=fn[1:5])%dopar%{
     message(i)
     #i <- fn[1]
     load(i)
@@ -25,17 +25,21 @@
     #cdl[,cd_bin:=factor(cd_bin, seq(from=0, to=.1, by=.001))]
 
 
-    list(cdl[,list(n=.N), list(sp.group, pond.group, window, cd_bin)],
+    o.tmp <- list(cdl[,list(n=.N), list(sp.group, pond.group, window, cd_bin)],
           njo)
 
+    names(o.tmp) <- c(cdl[1]$window, cdl[1]$window)
+
+    o.tmp
   }
 
   cdl.o <- lapply(cdl.list, function(x) x[[1]])
   cdl.o <- rbindlist(cdl.o)
   cdl.genome <- cdl.o[,list(n=sum(n)), list(sp.group, pond.group, cd_bin)][!is.na(sp.group) & !is.na(pond.group)]
 
-  cdl.tree <- lapply(cdl.list, function(x) x[[2]])
+  cdl.tree <- lapply(cdl.list, function(x) x[1])
 
+  names(cdl.tree) <- lapply(cdl.list, function(x) names(x)[1])
 ### qtl
   wins <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim")
 
@@ -57,4 +61,4 @@
 ### save
 
 
-  save(cdl.genome, cdl.qtl, cdl.o, file="~/cdlo.Rdata")
+  save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, file="~/cdlo.Rdata")
