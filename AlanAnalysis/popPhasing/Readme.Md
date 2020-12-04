@@ -33,7 +33,7 @@
 # I. Build trees on windows
   0. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeWindows.trees.R` makes window definition file
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh` slices individual FASTA file to make trees and compute Cd. Runs `analysis.ape.trees.R`
-  2. 
+  2.
 
 
 
