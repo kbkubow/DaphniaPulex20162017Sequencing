@@ -8,6 +8,8 @@ library(data.table)
 library(ggtree)
 
 load("~/cdlo.Rdata")
+load("~/gprime_peaks.replicates.Rdata")
+setnames(peaks, "CHROM", "chr")
   #cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
 
   setkey(cdl.qtl, window, sp.group, pond.group)
@@ -15,6 +17,50 @@ load("~/cdlo.Rdata")
   cdl.qtl
   cdl.genome.ag <- cdl.genome[,list(cd=mean(cd_mean), sd=mean(cd_sd)), list(sp.group, pond.group)]
 
+### genome-wide dist
+  cdl.o[,chr:=tstrsplit(window, ":")[[1]]]
+  cdl.o[,range:=tstrsplit(window, ":")[[2]]]
+  cdl.o[,start:=as.numeric(tstrsplit(range, "-")[[1]])]
+  cdl.o[,stop:=as.numeric(tstrsplit(range, "-")[[2]])]
+  cdl.o[,mid:=start/2 + stop/2]
+
+
+  mp <- ggplot(data=cdl.o[!is.na(sp.group)][!is.na(pond.group)][order(n)], aes(x=mid, y=cd_bin, color=log10(n))) + geom_point () +
+  facet_grid(sp.group+pond.group~chr, scales="free_x")
+
+  ggsave(mp, file="~/mp.png", height=10, w=20)
+
+
+  cdl.o.ag <- cdl.o[,list(mu=sum(cd_bin*n, na.rm=T)/sum(n), min=min(cd_bin), max=max(cd_bin)),
+                      list(chr, mid, sp.group, pond.group)]
+
+
+  cdl.o.ag <- cdl.o.ag[,list(mu=mu, min=min, max=max, xi=rank(max, ties="random"), chr=chr, mid=mid), list(sp.group, pond.group)]
+
+  cdl.o.ag[,target:=FALSE]
+  cdl.o.ag[round(mid-1.5, -2)!=(mid-1.5), target:=TRUE]
+
+  ggplot(data=cdl.o.ag[!is.na(sp.group)][!is.na(pond.group)][order(target)],
+        aes(x=xi, y=max, color=as.factor(target))) +
+  geom_point() +
+  geom_point(data=cdl.o.ag[!is.na(sp.group)][!is.na(pond.group)][target==T][chr=="Scaffold_2217_HRSCAF_2652"],
+        aes(x=xi, y=max), color="black") +
+  facet_grid(sp.group+pond.group~.)
+
+
+
+
+
+
+
+  mp_small <- ggplot(data=cdl.o.ag, aes(x=mid, y=mu, color=chr)) +
+  geom_vline(data=peaks, aes(xintercept=posMaxGprime)) +
+  geom_line() +
+  facet_grid(sp.group+pond.group~chr, scales="free")
+
+  ggsave(mp_small, file="~/mp_small.png", height=10, w=20)
+
+### all QTL
   o.plot <- ggplot() +
   geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)],
               aes(y=cd, x=sp.group, color=interaction(sp.group, pond.group), fill=pond.group)) +
@@ -26,6 +72,34 @@ load("~/cdlo.Rdata")
   facet_wrap(~window)
 
 
+### single QTL
+cdl.genome[, list(TT=sum(n[cd_bin>=3.187645e-03]),
+                  FF=sum(n[cd_bin<3.187645e-03]),
+                  pr=sum(n[cd_bin>=3.187645e-03]) /sum(n)),
+             list(sp.group, pond.group)]
+
+ cdl.genome.big <- cdl.genome[, list(cd=rep(cd_bin, n)),
+              list(sp.group, pond.group)]
+
+cdl.genome.big[,list(pr=mean(cd>0.007475457)), list(sp.group, pond.group)]
+
+
+cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][grepl("Scaffold_2217_HRSCAF_2652", window)]
+
+
+
+  ggplot() +
+  geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)][grepl("Scaffold_2217_HRSCAF_2652", window)],
+              aes(y=cd, x=sp.group,fill=pond.group)) +
+  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2][grepl("17459", window)],
+            aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
+            position = position_nudge(x = -0.5),
+            size=2) +
+  geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
+  facet_wrap(~window)
+
+
+
 
   ggplot() +
   geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)][grepl("17459", window)],
@@ -34,7 +108,8 @@ load("~/cdlo.Rdata")
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
             size=2) +
-  geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
+  geom_boxplot(data=cdl.genome[grepl("17459", window)],
+            aes(y=cd_mean, x=sp.group, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
   facet_wrap(~window)
 
 
