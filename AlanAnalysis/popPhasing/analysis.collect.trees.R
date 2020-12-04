@@ -26,7 +26,7 @@
 
 
     o.tmp <- list(cdl[,list(n=.N), list(sp.group, pond.group, window, cd_bin)],
-          njo)
+                  njo)
 
     names(o.tmp) <- c(cdl[1]$window, cdl[1]$window)
 
@@ -37,9 +37,11 @@
   cdl.o <- rbindlist(cdl.o)
   cdl.genome <- cdl.o[,list(n=sum(n)), list(sp.group, pond.group, cd_bin)][!is.na(sp.group) & !is.na(pond.group)]
 
-  cdl.tree <- lapply(cdl.list, function(x) x[1])
 
-  names(cdl.tree) <- lapply(cdl.list, function(x) names(x)[1])
+  cdl.tree <- lapply(cdl.list, function(x) x[2])
+  names(cdl.tree) <- lapply(cdl.list, function(x) names(x)[2])
+
+
 ### qtl
   wins <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim")
 
@@ -61,4 +63,4 @@
 ### save
 
 
-  save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, file="~/cdlo.Rdata")
+  save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, cdl.list, file="~/cdlo.Rdata")
