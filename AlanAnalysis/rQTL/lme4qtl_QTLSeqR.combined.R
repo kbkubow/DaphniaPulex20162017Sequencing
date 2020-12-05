@@ -22,8 +22,8 @@
   gprime[,rep:=gsub("NA", "", paste(rep, group, sep=""))]
 
   poolseq <- ggplot() +
-  geom_vline(data=peaks, aes(xintercept=posMaxGprime), color="black") +
-  geom_line(data=gprime, aes(x=POS, y=Gprime, color=chr)) +
+  geom_vline(data=peaks[is.na(group)], aes(xintercept=posMaxGprime), color="black") +
+  geom_line(data=gprime[is.na(group)], aes(x=POS, y=Gprime, color=chr)) +
   facet_grid(rep~chr, scales="free_x") +
   theme(legend.position = "none")
 
@@ -42,7 +42,7 @@
 
 
   f1.plot <- ggplot() +
-  geom_vline(data=peaks, aes(xintercept=posMaxGprime, linetype=as.factor(rep))) +
+  geom_vline(data=peaks[is.na(group)], aes(xintercept=posMaxGprime, linetype=as.factor(rep))) +
   geom_line(data=o.ag[perm==0], aes(x=pos, y=-log10(p.aov), color=chr)) +
   geom_hline(data=o.ag.perm, aes(yintercept=-log10(p.aov), linetype=as.factor(q))) +
   facet_grid(term~chr, scales="free_x") +
@@ -51,7 +51,7 @@
 ### combined plot
   combined <- poolseq / f1.plot
 
-  ggsave(combined, file="~/combined_mapping.pdf")
+  ggsave(combined, file="~/combined_mapping.png")
 
 ### overlap test
   setkey(o.ag, perm )
