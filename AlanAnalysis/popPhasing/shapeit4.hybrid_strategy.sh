@@ -20,7 +20,7 @@
 ## ijob -c1 -p standard -A berglandlab
 # SLURM_ARRAY_TASK_ID=1
 
-chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
+chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.hybrid_strategy.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
 echo $chr
 
@@ -28,12 +28,13 @@ echo $chr
 module load gcc/9.2.0 shapeit4
 
   shapeit4 \
-  --input /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.daphnid.bcf \
+  --input /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.bcf \
   --region ${chr} \
   --use-PS 0.0001 \
   --thread 20 \
   --sequencing \
-  --log /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.daphnid.log \
+  --log /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.hybrid_strategy.log \
   --ibd2-length 5 \
-  --ibd2-output /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.onPerSC.daphnid.IBD2blacklist.txt.gz \
-  --output /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.whatshapp.onPerSC.daphnid.shapeit.bcf
+  --ibd2-output /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.onPerSC.hybrid_strategy.IBD2blacklist.txt.gz \
+  --output /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.whatshapp.onPerSC.hybrid_strategy.shapeit.bcf
+  
