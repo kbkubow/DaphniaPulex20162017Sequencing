@@ -23,6 +23,7 @@
   module load gcc/7.1.0 openmpi/3.1.4 python/3.6.8 anaconda/5.2.0-py3.6 samtools htslib bcftools/1.9 gparallel/20170822
   export PATH=$HOME/.local/bin:$PATH
 
+### defunt. now is done by `onePerSC...R`
 #### make job file: run once
 ##  chr=$( cat /scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.delim | cut -f1  | sed '1d' | sort | uniq )
 ##
