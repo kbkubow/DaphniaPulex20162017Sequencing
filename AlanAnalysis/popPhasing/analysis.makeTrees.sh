@@ -21,7 +21,7 @@
 
 ### modules
   module load samtools parallel
-  module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3; R
+  module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3
 
 ### define parameters
   #chr=Scaffold_2217_HRSCAF_2652
@@ -67,6 +67,8 @@
     ${file} \
     ${tmpdir}/region.bed | sed "s/${chr}/${stem};${chr}/g" > ${tmpdir}/${chr}_${stem}
 
+    ~/seqtk/seqtk \
+    fqchk ${tmpdir}/${chr}_${stem}.fa
   }
   export -f getRegion
 
@@ -74,6 +76,10 @@
 
 ### combine
   awk 'NR>1 && FNR==1{print ""};1' ${tmpdir}/*.fa > ${tmpdir}/${chr}_${start}_${stop}.fasta
+
+### composition check (for how many Ns)
+  ~/seqtk/seqtk \
+  comp ${tmpdir}/${chr}_${start}_${stop}.fasta > /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
 
 ### make tree
   #/home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \

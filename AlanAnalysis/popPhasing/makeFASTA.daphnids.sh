@@ -21,7 +21,7 @@
 ## get job
   # SLURM_ARRAY_TASK_ID=2
   #chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f1 | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
-  samp=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f2 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
+  samp=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.hybrid_strategy.delim | cut -f2 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 
 ###
 getHaplos () {
@@ -36,7 +36,7 @@ getHaplos () {
   -s ${samp} \
   -m /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed \
   -o /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/${samp}.${whichHaplo}.fa \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.filter.daphnid.whatshap.bcf
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.whatshap.shapeit.bcf 
 
   head /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/${samp}.${whichHaplo}.fa
 }
