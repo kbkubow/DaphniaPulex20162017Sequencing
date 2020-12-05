@@ -21,7 +21,7 @@
 #/scratch/aob2x/daphnia_hwe_sims/popPhase/.
 
 ### first convert this Rdata file to a table
-
+### DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/extractSites.daphnid.R
 
 module load bcftools/1.9
 

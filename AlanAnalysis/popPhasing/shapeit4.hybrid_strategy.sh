@@ -9,8 +9,8 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.daphnids.sh
-### sacct -u aob2x -j 19104802
+### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.hybrid_strategy.sh
+### sacct -u aob2x -j 19179691
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.19104692_1.err
 ### run with: sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
 ### sacct -u aob2x -j 10267463

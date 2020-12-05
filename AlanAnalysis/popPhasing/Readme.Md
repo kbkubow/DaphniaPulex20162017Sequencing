@@ -1,32 +1,49 @@
 # A. Convert original VCF to BCF and filter on sites that pass quality filtering via one of two files (w/in pulex or across multiple)
   1. for within species `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/filterVCF.within.sh`
   2. for all available daphnids `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/filterVCF.daphnids.sh`
+  3. for pulex, but length of daphndis + consensus obtusa / pulicaria `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/filterVCF.hybrid_strategy.sh`
 
 # B. Make jobs file (1 line per chr X clone, downsampled to 1 clone/SC, no lab F1s)
   1. `onePerSC.within.R` this generates 1 file which is the 1 line per chr per SC (passing filter)
   2. `onePerSC.daphnids.R` this generates 1 file which is the 1 line per chr per SC (passing filter)
+  3. `onePerSC.hybrid_strategy.R` this generates job file for step C, and also the consensus vcf files for the outgroups
 
 # C. Run Whatshapp to generate read-backed phase-sets
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.within.sh`
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.daphnids.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.hybrid_strategy.sh`
 
 # D. merge individual vcfs
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.within.sh`
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.hybrid_strategy.sh`
 
 # E. Run shapeit on each chromosome separatley
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.within.sh`
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.daphnids.sh`
+  3. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.hybrid_strategy.sh`
 
 # F. concatenate the bcfs, and convert to VCF, convert to GDS
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/concatenate_convert.sh`
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/vcf2gds.R`
 
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/concatenate_convert.hybrid_strategy.sh`
+
+
 # G. Analysis (this is quick and dirty analysis using GDS file)
   1. Trees `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.trees.R`
 
 # H. Make FASTA formatted data, one per chromosome
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeFASTA.daphnids.sh` makes fasta files for each haplotype
+  0. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeBed.R` makes additional bed file to filter out based on snps that are not in the filter file
+      ```### concatenate bed files
+        sort -k1,1 -k2,2n /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.bed
+        bedtools merge /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.merge.bed
+
+        cat /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.merge.bed /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed | \
+        sort -k1,1 -k2,2n > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.bed
+        bedtools merge /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.merge.bed
+      ```
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeFASTA.hybrid_strategy.sh` makes fasta files for each haplotype
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/indexFASTA.daphnids.sh` indexes the fastas above
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh` makes 12 fasta, one per chr
 
