@@ -24,37 +24,38 @@
 
 
 # bgzip vcf files
-#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/*.${chr}.phase.vcf; do
-#  echo "bgzipping File -> $f"
-#  bgzip \
-#  -c \
-#  -@ 20 \
-#  -i \
-#  ${f} > ${f}.gz
-#done
-#
-## index bgzippped files
-#for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/*.${chr}.phase.vcf.gz; do
-#  #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
-#  echo "indexing File -> $f"
-#  tabix \
-#  -p vcf \
-#  -f \
-#  ${f}
-#done
+for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/*.${chr}.phase.vcf; do
+  echo "bgzipping File -> $f"
+  bgzip \
+  -c \
+  -@ 20 \
+  -i \
+  ${f} > ${f}.gz
+done
+
+# index bgzippped files
+for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/*.${chr}.phase.vcf.gz; do
+  #f=/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/April17_2018_D8_Male1.Scaffold_1931_HRSCAF_2197.phase.vcf.gz
+  echo "indexing File -> $f"
+  tabix \
+  -p vcf \
+  -f \
+  ${f}
+done
+
+
 
 ### make file list
-  ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/*.${chr}.phase.vcf.gz | \
-  grep -vE "April_2017_Dbarb_11|2018_Pulicaria_Pond21_22|2018_Pulicaria_Pond22_21|2018_Pulicaria_Pond22_53|2018_Pulicaria_Pond22_62|2018_Pulicaria_Pond22_72|March20_2018_DBunk_10|March20_2018_DBunk_18|March20_2018_DBunk_21|March20_2018_DBunk_22|March20_2018_DBunk_23|March20_2018_DBunk_26|March20_2018_DBunk_37|March20_2018_DBunk_38|March20_2018_DBunk_40|March20_2018_DBunk_41|March20_2018_DBunk_42|March20_2018_DBunk_43|March15_2019_DBunk_MomPE1|March15_2019_DBunk_MomPE20" > \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${chr}.pulexOnly.list
+  ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/*.${chr}.phase.vcf.gz > \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${chr}.pulexOnly.list
 
 
 bcftools \
 merge \
--l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${chr}.pulexOnly.list \
+-l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${chr}.pulexOnly.list \
 -o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.bcf \
 -O b \
 --threads 20
 
 # index
-  bcftools index --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.bcf
+  bcftools index -f --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.pulexOnly.bcf
