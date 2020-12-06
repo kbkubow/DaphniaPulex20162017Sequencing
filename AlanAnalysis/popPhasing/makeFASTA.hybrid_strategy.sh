@@ -37,7 +37,7 @@ getHaplos () {
   -s ${samp} \
   -m /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.merge.bed \
   -o /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/${samp}.${whichHaplo}.fa \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.whatshap.shapeit.bcf
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.bcf
 
   head /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/${samp}.${whichHaplo}.fa
 }
