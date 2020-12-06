@@ -12,8 +12,8 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.daphnids.delim | cut -f1 -d' ' )
-### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.dapnids.sh
+### nJobs=$( wc -l /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.hybrid_strategys.delim | cut -f1 -d' ' )
+### run with: sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.hybrid_strategy.sh
 ### sacct -j 19093224
 
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_whatshapp.10007523_507.err
@@ -58,12 +58,12 @@
 ### extract simplified vcf file per chromosome per sample
   echo "Getting simple vcf"
 
-  if [ ! -f "/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles/${sample}_${chr}.vcf" ]; then
+  if [ ! -f "/scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.vcf" ]; then
     bcftools view \
     -s ${sample} \
     -t ${chr} \
     -O v \
-    /scratch/aob2x/daphnia_hwe_sims/popPhase/MapJune2020_ann.daphnid.bcf | \
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/MapJune2020_ann.daphnids.bcf | \
     awk '{
       a=0
       if(substr($0, 0, 1)=="#") {
@@ -74,7 +74,7 @@
         printf sp[1]"\n"
       }
     }' > \
-    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.vcf
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.vcf
   fi
 
 ### extract reads from bam file per chromosome per sample
@@ -89,7 +89,7 @@
     -@ 1 \
     /project/berglandlab/Karen/MappingDec2019/bams/PulexBams/${sample}_finalmap_mdup.bam \
     ${chr} > \
-    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.bam
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.bam
   fi
 
   if [ -f "/project/berglandlab/Karen/MappingDec2019/bams/ObtusaBams/${sample}_finalmap_mdup.bam" ]; then
@@ -101,7 +101,7 @@
     -@ 1 \
     /project/berglandlab/Karen/MappingDec2019/bams/ObtusaBams/${sample}_finalmap_mdup.bam \
     ${chr} > \
-    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.bam
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.bam
   fi
 
   if [ -f "/project/berglandlab/Karen/MappingDec2019/bams/PulicariaBams/${sample}_finalmap_mdup.bam" ]; then
@@ -113,22 +113,22 @@
     -@ 1 \
     /project/berglandlab/Karen/MappingDec2019/bams/PulicariaBams/${sample}_finalmap_mdup.bam \
     ${chr} > \
-    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.bam
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.bam
   fi
 
-  samtools index /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.bam
+  samtools index /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.bam
 
 ### run whatshap
   echo "whatshapp"
 
   whatshap \
   phase \
-  -o /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}.${chr}.phase.vcf \
+  -o /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}.${chr}.phase.vcf \
   --chromosome ${chr} \
   --sample ${sample} \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.vcf \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.bam
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.vcf \
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.bam
 
 ### clean up
-  rm /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.vcf
-  rm /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.daphnid/${sample}_${chr}.bam
+  rm /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.vcf
+  rm /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${sample}_${chr}.bam

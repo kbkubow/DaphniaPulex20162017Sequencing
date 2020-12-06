@@ -37,4 +37,3 @@ module load gcc/9.2.0 shapeit4
   --ibd2-length 5 \
   --ibd2-output /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.onPerSC.hybrid_strategy.IBD2blacklist.txt.gz \
   --output /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/${chr}.whatshapp.onPerSC.hybrid_strategy.shapeit.bcf
-  
