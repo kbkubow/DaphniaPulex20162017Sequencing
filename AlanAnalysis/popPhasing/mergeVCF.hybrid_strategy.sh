@@ -43,7 +43,7 @@ for f in /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/*.${c
   ${f}
 done
 
-
+# ls -lh /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/*.${chr}.phase.vcf | nl
 
 ### make file list
   ls -d /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/*.${chr}.phase.vcf.gz > \
@@ -53,9 +53,9 @@ done
 bcftools \
 merge \
 -l /scratch/aob2x/daphnia_hwe_sims/popPhase/tmpFiles.hybrid_strategy/${chr}.pulexOnly.list \
--o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.bcf \
+-o  /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.pulexOnly.bcf \
 -O b \
 --threads 20
 
 # index
-  bcftools index -f --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.pulexOnly.bcf
+bcftools index -f --threads 20 /scratch/aob2x/daphnia_hwe_sims/popPhase/whatshappOut/${chr}.whatshapp.onePerSC.hybrid_strategy.pulexOnly.bcf
