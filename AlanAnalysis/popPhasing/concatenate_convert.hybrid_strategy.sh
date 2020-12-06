@@ -38,3 +38,7 @@ merge \
 bcftools view \
 /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.whatshap.shapeit.bcf |
 grep -v "##" | less -S
+
+
+bcftools view -h /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.whatshap.shapeit.bcf | \
+grep -v "##" | cut -f10- | tr '\t' '\n'  | nl

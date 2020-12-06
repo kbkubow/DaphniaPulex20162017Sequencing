@@ -10,10 +10,10 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### nJobs=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | wc -l )
+### nJobs=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | wc -l ); echo ${nJobs}
 ### sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
-### sacct -u aob2x -j 19144597
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
+### sacct -u aob2x -j 19180439
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19180439_1.err
 
 ### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
 ### sacct -u aob2x -j 19143682
@@ -67,8 +67,7 @@
     ${file} \
     ${tmpdir}/region.bed | sed "s/${chr}/${stem};${chr}/g" > ${tmpdir}/${chr}_${stem}
 
-    ~/seqtk/seqtk \
-    fqchk ${tmpdir}/${chr}_${stem}.fa
+
   }
   export -f getRegion
 
