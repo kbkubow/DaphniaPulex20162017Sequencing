@@ -14,7 +14,7 @@
   fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
   length(fn)
 
-  cdl.list <- foreach(i=fn[1:5])%dopar%{
+  cdl.list <- foreach(i=fn)%dopar%{
     message(i)
     #i <- fn[1]
     load(i)
@@ -38,7 +38,7 @@
   cdl.genome <- cdl.o[,list(n=sum(n)), list(sp.group, pond.group, cd_bin)][!is.na(sp.group) & !is.na(pond.group)]
 
 
-  cdl.tree <- lapply(cdl.list, function(x) x[2])
+  cdl.tree <- lapply(cdl.list, function(x) x[[2]])
   names(cdl.tree) <- lapply(cdl.list, function(x) names(x)[2])
 
 

@@ -13,7 +13,15 @@
   f.orig <- fread("/scratch/aob2x/daphnia_hwe_sims/dsuite/orig.bbaa.txt")
   f.orig[,data:="orig"]
 
-  f <- rbind(f.shapeit, f.orig)
+  f.hybrid <- fread("/scratch/aob2x/daphnia_hwe_sims/dsuite/hybrid_strategy_BBAA.txt")
+  f.hybrid[,data:="hybrid"]
+  setnames(f.hybrid, "Z-score", "z")
+
+  f.hybrid[P3=="pulicaria"][order(z)][,c('P1', 'P2', 'P3', 'z', 'Dstatistic', 'BBAA', 'ABBA', 'BABA'), with=F]
+
+
+  f <- rbindlist(list(f.shapeit, f.orig, f.hybrid))
+
   setnames(f, "Z-score", "z")
   fw <- dcast(f, P1 + P2 + P3 ~ data, value.var="z")
 
