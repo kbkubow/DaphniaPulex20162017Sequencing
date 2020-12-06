@@ -78,7 +78,7 @@
 
 ### composition check (for how many Ns)
   ~/seqtk/seqtk \
-  comp ${tmpdir}/${chr}_${start}_${stop}.fasta > /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
+  comp ${tmpdir}/${chr}_${start}_${stop}.fasta > /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/${chr}_${start}_${stop}.info
 
 ### make tree
   #/home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \
