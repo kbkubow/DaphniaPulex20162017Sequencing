@@ -63,7 +63,7 @@
     -s ${sample} \
     -t ${chr} \
     -O v \
-    /scratch/aob2x/daphnia_hwe_sims/popPhase/MapJune2020_ann.daphnids.bcf | \
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/MapJune2020_ann.daphnid.bcf | \
     awk '{
       a=0
       if(substr($0, 0, 1)=="#") {
