@@ -11,7 +11,7 @@
 # C. Run Whatshapp to generate read-backed phase-sets
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.within.sh`
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.daphnids.sh`
-  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.hybrid_strategy.sh`
+  3. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/whatshap_SplitVCF.hybrid_strategy.sh`
 
 # D. merge individual vcfs
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.within.sh`
@@ -36,16 +36,19 @@
 # H. Make FASTA formatted data, one per chromosome
   0. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeBed.R` makes additional bed file to filter out based on snps that are not in the filter file
       ```### concatenate bed files
-        sort -k1,1 -k2,2n /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.bed
-        bedtools merge /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.merge.bed
+        #sort -k1,1 -k2,2n /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.bed
+        sed 's/ /\t/g' /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.bed | bedtools merge -nobuf -i - > \
+        /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.merge.bed
 
-        cat /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.sort.merge.bed /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed | \
-        sort -k1,1 -k2,2n > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.bed
-        bedtools merge /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.bed > /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.merge.bed
+        cat /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.merge.bed /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed | \
+        sort -k1,1 -k2,2n | \
+        bedtools merge -nobuf -i - > \
+        /scratch/aob2x/daphnia_hwe_sims/popPhase/badSites.badRegion.sort.merge.bed
+
       ```
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/makeFASTA.hybrid_strategy.sh` makes fasta files for each haplotype
-  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/indexFASTA.daphnids.sh` indexes the fastas above
-  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh` makes 12 fasta, one per chr
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/indexFASTA.hybrid_strategy.sh` indexes the fastas above
+  ~~2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/combineFASTA.daphnids.sh` makes 12 fasta, one per chr~~
 
 # I. Build trees on windows
   0. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeWindows.trees.R` makes window definition file

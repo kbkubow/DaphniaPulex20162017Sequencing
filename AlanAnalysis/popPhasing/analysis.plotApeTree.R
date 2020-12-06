@@ -9,8 +9,12 @@ library(ggtree)
 
 load("~/cdlo.Rdata")
 load("~/gprime_peaks.replicates.Rdata")
+
 setnames(peaks, "CHROM", "chr")
-  #cdl.ag <- cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), list(max_cd=max(cd), pond.group="DWT-DWT"), list(sp.group)]
+
+
+### densitree
+  ggtree(data=cdl.tree[[1]])
 
   setkey(cdl.qtl, window, sp.group, pond.group)
   cdl.qtl[!duplicated(cdl.qtl)]
@@ -68,8 +72,9 @@ setnames(peaks, "CHROM", "chr")
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
             size=2) +
-  geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
   facet_wrap(~window)
+
+  ggsave(o.plot, file="~/qtl_age.pdf", height=20, width=20)
 
 
 ### single QTL
@@ -115,7 +120,6 @@ cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][grepl("Scaffold_2217_HR
 
 
 
-  ggsave(o.plot, file="~/qtl_age.pdf", height=20, width=20)
 
 
 cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][window=="Scaffold_9199_HRSCAF_10755:4964452-5014451"]
