@@ -11,7 +11,7 @@
 ### input files: genome-wide distribution
 
 
-  fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
+  fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees250K/", "Rdata", full.names=T)
   length(fn)
 
   cdl.list <- foreach(i=fn)%dopar%{
@@ -119,4 +119,4 @@
 ### save
 
 
-  save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, cdl.list, file="~/cdlo.Rdata")
+  save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, cdl.list, file="~/cdlo_250K.Rdata")
