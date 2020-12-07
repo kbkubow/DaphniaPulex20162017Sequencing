@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-00:30:00 # Running time of 4 days
-#SBATCH --mem 1G # Memory request of 20GB
+#SBATCH --mem 5G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.err # Standard error
 #SBATCH -p standard
@@ -91,7 +91,7 @@
   Rscript --vanilla \
   /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.ape.trees.R \
   ${tmpdir}/${chr}_${start}_${stop}.fasta \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/${chr}_${start}_${stop}.Rdata
+  /scratch/aob2x/daphnia_hwe_sims/popPhase/trees250K/${chr}_${start}_${stop}.Rdata
 
   #cp ${tmpdir}/${chr}_${start}_${stop}.fasta /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
 

@@ -1,6 +1,7 @@
 
 ### copy data
   scp aob2x@rivanna.hpc.virginia.edu:~/cdlo.Rdata ~/.
+  scp aob2x@rivanna.hpc.virginia.edu:~/regions.Rdata ~/.
 
 ### libraries
   library(ggplot2)
@@ -11,23 +12,59 @@
 ### load data
   load("~/cdlo.Rdata")
   load("~/gprime_peaks.replicates.Rdata")
+  load("~/regions.Rdata")
 
   setnames(peaks, "CHROM", "chr")
 
-### fix issue with sp.group and pond.group
-  
+  cdl.o <- merge(cdl.o, regions, by="window")
+  setnames(cdl.o, "N", "numMissing")
+  cdl.o[,fracMissing:=numMissing/size]
+
+  cdl.qtl <- merge(cdl.qtl, regions, by="window")
+  setnames(cdl.qtl, "N", "numMissing")
+
+  cdl.qtl[,fracMissing:=numMissing/size]
+
+### genome-wide distributions
+  cdl.o[fracMissing<.25,list(n=sum(n)), list(window, sp.group, pond.group)]
+
+  cdl.o.ag <- cdl.o[fracMissing<.25,list(n=sum(n)), list(cd_bin, pond.group, sp.group)]
+
+  ggplot(data=cdl.o.ag, aes(x=cd_bin, y=log10(n), group=pond.group, color=pond.group)) +
+  geom_line() + facet_grid(~sp.group+pond.group, scales="free_y") +
+  geom_vline(xintercept=0.004)
 
 
+### distance probabilities for each QTL:
+  cdl.o.ag <- cdl.o[fracMissing<.75, list(max=max(cd_bin[n>0])), list(window, pond.group, sp.group)]
+  cdl.o.ag[,region:=tstrsplit(window, ":")[[2]]]
+  cdl.o.ag[,start:=as.numeric(tstrsplit(region, "-")[[1]])]
+  cdl.o.ag[,stop:=as.numeric(tstrsplit(region, "-")[[2]])]
 
-### densitree
-  ggtree(data=cdl.tree[[1]])
+  cdl.qtl.ag <- cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2][,list(max=max(cd)), list(window, pond.group, sp.group)]
+  cdl.qtl.ag[,region:=tstrsplit(window, ":")[[2]]]
+  cdl.qtl.ag[,start:=as.numeric(tstrsplit(region, "-")[[1]])]
+  cdl.qtl.ag[,stop:=as.numeric(tstrsplit(region, "-")[[2]])]
 
-  setkey(cdl.qtl, window, sp.group, pond.group)
-  cdl.qtl[!duplicated(cdl.qtl)]
-  cdl.qtl
-  cdl.genome.ag <- cdl.genome[,list(cd=mean(cd_mean), sd=mean(cd_sd)), list(sp.group, pond.group)]
+  qtl.age <- foreach(i=1:dim(cdl.qtl.ag)[1])%do%{
+                cdl.o.ag[!(start<=cdl.qtl.ag[i]$start & stop>=cdl.qtl.ag[i]$stop),
+                           list(pr=mean(max >= cdl.qtl.ag[i]$max, na.rm=T),window=cdl.qtl.ag[i]$window),
+                            list(sp.group, pond.group)]
 
-### genome-wide dist
+              }
+  qtl.age <- rbindlist(qtl.age)
+
+  qtl.age[pond.group=="DWT-DWT"][order(pr)]
+  qtl.age[pond.group=="DWT-D10"][order(pr)]
+  qtl.age[pond.group=="DWT-W"][order(pr)]
+
+  ggplot(data=qtl.age, aes(x=pond.group, y=pr, group=window, color=window))+ geom_line()
+
+  ggplot(data=cdl.o.ag[pond.group!="all"], aes(max)) +
+  geom_histogram(bins=200) + facet_grid(pond.group~sp.group) +
+  geom_point(data=cdl.qtl.ag, aes(x=max, y=5), color="red")
+
+### manhattan plot
   cdl.o[,chr:=tstrsplit(window, ":")[[1]]]
   cdl.o[,range:=tstrsplit(window, ":")[[2]]]
   cdl.o[,start:=as.numeric(tstrsplit(range, "-")[[1]])]
@@ -35,11 +72,11 @@
   cdl.o[,mid:=start/2 + stop/2]
 
 
-  mp <- ggplot(data=cdl.o[!is.na(sp.group)][!is.na(pond.group)][order(n)], aes(x=mid, y=cd_bin, color=log10(n))) + geom_point () +
-  facet_grid(sp.group+pond.group~chr, scales="free_x")
-
-  ggsave(mp, file="~/mp.png", height=10, w=20)
-
+  #mp <- ggplot(data=cdl.o[!is.na(sp.group)][!is.na(pond.group)][order(n)], aes(x=mid, y=cd_bin, color=log10(n))) + geom_point () +
+  #facet_grid(sp.group+pond.group~chr, scales="free_x")
+#
+  #ggsave(mp, file="~/mp.png", height=10, w=20)
+#
 
   cdl.o.ag <- cdl.o[,list(mu=sum(cd_bin*n, na.rm=T)/sum(n), min=min(cd_bin), max=max(cd_bin)),
                       list(chr, mid, sp.group, pond.group)]
@@ -66,15 +103,15 @@
   mp_small <- ggplot(data=cdl.o.ag, aes(x=mid, y=mu, color=chr)) +
   geom_vline(data=peaks, aes(xintercept=posMaxGprime)) +
   geom_line() +
-  facet_grid(sp.group+pond.group~chr, scales="free")
+  facet_grid(chr~sp.group+pond.group, scales="free_x")
 
   ggsave(mp_small, file="~/mp_small.png", height=10, w=20)
 
 ### all QTL
   o.plot <- ggplot() +
-  geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)],
+  geom_violin(data=cdl.qtl[!is.na(sp.group)][!is.na(pond.group)][sp.group!="pulicaria-obtusa"],
               aes(y=cd, x=sp.group, color=interaction(sp.group, pond.group), fill=pond.group)) +
-  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2],
+  geom_point(data=cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2][sp.group!="pulicaria-obtusa"],
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
             size=2) +
@@ -84,9 +121,9 @@
 
 
 ### single QTL
-cdl.genome[, list(TT=sum(n[cd_bin>=3.187645e-03]),
-                  FF=sum(n[cd_bin<3.187645e-03]),
-                  pr=sum(n[cd_bin>=3.187645e-03]) /sum(n)),
+cdl.genome[, list(TT=sum(n[cd_bin>=0.0045432596]),
+                  FF=sum(n[cd_bin<0.0045432596]),
+                  pr=sum(n[cd_bin>=0.0045432596]) /sum(n)),
              list(sp.group, pond.group)]
 
  cdl.genome.big <- cdl.genome[, list(cd=rep(cd_bin, n)),
@@ -106,7 +143,7 @@ cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][grepl("Scaffold_2217_HR
             aes(y=cd, x=sp.group, shape=interaction(group.x, group.y)),
             position = position_nudge(x = -0.5),
             size=2) +
-  geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
+  #geom_hline(data=cdl.genome.ag, aes(yintercept=cd, group=interaction(sp.group, pond.group), color=interaction(sp.group, pond.group))) +
   facet_wrap(~window)
 
 
