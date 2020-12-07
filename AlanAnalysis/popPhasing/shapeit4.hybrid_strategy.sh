@@ -10,7 +10,7 @@
 #SBATCH --account berglandlab
 
 ### run with: sbatch --array=1-12 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.hybrid_strategy.sh
-### sacct -u aob2x -j 19179691
+### sacct -u aob2x -j 19189231
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_shapeit4.19104692_1.err
 ### run with: sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.sh
 ### sacct -u aob2x -j 10267463
@@ -19,6 +19,11 @@
 #
 ## ijob -c1 -p standard -A berglandlab
 # SLURM_ARRAY_TASK_ID=1
+
+#cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.hybrid_strategy.delim | cut -f2 | sort | uniq | sort | nl > ~/expected
+#bcftools view -h Scaffold_2373_HRSCAF_2879.whatshapp.onePerSC.hybrid_strategy.pulexOnly.bcf | grep "#CHROM" | cut -f10- | tr '\t' '\n' | sort | nl > ~/obs
+#
+#paste ~/obs ~/expected | less -S
 
 chr=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/jobs.id.hybrid_strategy.delim | cut -f1 | sort | uniq | grep -v "chr" | awk -v job=${SLURM_ARRAY_TASK_ID} '{if(NR==job) {print $0}}' )
 

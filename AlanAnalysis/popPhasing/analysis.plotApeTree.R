@@ -1,16 +1,22 @@
-scp aob2x@rivanna.hpc.virginia.edu:~/cdlo.Rdata ~/.
 
+### copy data
+  scp aob2x@rivanna.hpc.virginia.edu:~/cdlo.Rdata ~/.
 
-#load("~/Scaffold_1863_HRSCAF_2081_5825001_5850001.Rdata")
+### libraries
+  library(ggplot2)
+  library(data.table)
+  library(ggtree)
+  library(ape)
 
-library(ggplot2)
-library(data.table)
-library(ggtree)
+### load data
+  load("~/cdlo.Rdata")
+  load("~/gprime_peaks.replicates.Rdata")
 
-load("~/cdlo.Rdata")
-load("~/gprime_peaks.replicates.Rdata")
+  setnames(peaks, "CHROM", "chr")
 
-setnames(peaks, "CHROM", "chr")
+### fix issue with sp.group and pond.group
+  
+
 
 
 ### densitree

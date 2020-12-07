@@ -14,12 +14,39 @@
   fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/", "Rdata", full.names=T)
   length(fn)
 
-  cdl.list <- foreach(i=fn)%dopar%{
+  cdl.list <- foreach(i=fn[1:5])%dopar%{
     message(i)
     #i <- fn[1]
     load(i)
     #return(cdl)
     cdl[,window:=tstrsplit(i1, ";")[[2]]]
+
+    ### fix bug
+      cdl[sample.id.x=="pulicaria", group.x:=   "pulicaria"]
+      cdl[sample.id.x=="pulicaria", species.x:= "pulicaria"]
+      cdl[sample.id.x=="pulicaria", pond.x:=    "pulicaria"]
+
+      cdl[sample.id.y=="pulicaria", group.y:=   "pulicaria"]
+      cdl[sample.id.y=="pulicaria", species.y:= "pulicaria"]
+      cdl[sample.id.y=="pulicaria", pond.y:=    "pulicaria"]
+
+      cdl[sample.id.x=="obtusa", group.x:=   "pulicaria"]
+      cdl[sample.id.x=="obtusa", species.x:= "pulicaria"]
+      cdl[sample.id.x=="obtusa", pond.x:=    "pulicaria"]
+
+      cdl[sample.id.y=="obtusa", group.y:=   "obtusa"]
+      cdl[sample.id.y=="obtusa", species.y:= "obtusa"]
+      cdl[sample.id.y=="obtusa", pond.y:=    "obtusa"]
+
+      cdl[(species.x=="pulex" & species.y=="pulicaria") | (species.y=="pulex" & species.x=="pulicaria"), sp.group:="pulex-pulicaria"]
+      cdl[(species.x=="pulex" & species.y=="obtusa") | (species.y=="pulex" & species.x=="obtusa"), sp.group:="pulex-obtusa"]
+
+      cdl[(species.x=="pulicaria" & species.y=="obtusa") | (species.y=="pulicaria" & species.x=="obtusa"), sp.group:="pulicaria-obtusa"]
+      cdl[sp.group!="pulex-pulex", pond.group:="all"]
+
+      cdl <- cdl[sample.id.x!=sample.id.y]
+
+
 
     cdl[,cd_bin:=round(cd, 5)]
     #cdl[,cd_bin:=factor(cd_bin, seq(from=0, to=.1, by=.001))]
@@ -57,6 +84,32 @@
     load(i)
     #return(cdl)
     cdl[,window:=tstrsplit(i1, ";")[[2]]]
+
+    ### fix bug
+      cdl[sample.id.x=="pulicaria", group.x:=   "pulicaria"]
+      cdl[sample.id.x=="pulicaria", species.x:= "pulicaria"]
+      cdl[sample.id.x=="pulicaria", pond.x:=    "pulicaria"]
+
+      cdl[sample.id.y=="pulicaria", group.y:=   "pulicaria"]
+      cdl[sample.id.y=="pulicaria", species.y:= "pulicaria"]
+      cdl[sample.id.y=="pulicaria", pond.y:=    "pulicaria"]
+
+      cdl[sample.id.x=="obtusa", group.x:=   "pulicaria"]
+      cdl[sample.id.x=="obtusa", species.x:= "pulicaria"]
+      cdl[sample.id.x=="obtusa", pond.x:=    "pulicaria"]
+
+      cdl[sample.id.y=="obtusa", group.y:=   "obtusa"]
+      cdl[sample.id.y=="obtusa", species.y:= "obtusa"]
+      cdl[sample.id.y=="obtusa", pond.y:=    "obtusa"]
+
+      cdl[(species.x=="pulex" & species.y=="pulicaria") | (species.y=="pulex" & species.x=="pulicaria"), sp.group:="pulex-pulicaria"]
+      cdl[(species.x=="pulex" & species.y=="obtusa") | (species.y=="pulex" & species.x=="obtusa"), sp.group:="pulex-obtusa"]
+
+      cdl[(species.x=="pulicaria" & species.y=="obtusa") | (species.y=="pulicaria" & species.x=="obtusa"), sp.group:="pulicaria-obtusa"]
+      cdl[sp.group!="pulex-pulex", pond.group:="all"]
+
+      cdl <- cdl[sample.id.x!=sample.id.y]
+
 
     #cdl[,list(cd_mean=mean(cd), cd_sd=sd(cd)), list(sp.group, pond.group, window)]
   }
