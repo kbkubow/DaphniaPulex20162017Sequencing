@@ -24,6 +24,9 @@
     cdl[,cd_bin:=round(cd, 5)]
     #cdl[,cd_bin:=factor(cd_bin, seq(from=0, to=.1, by=.001))]
 
+    njo$tip.label <- gsub(".fa", "", tstrsplit(njo$tip.label, ";")[[1]])
+
+    njo <- root(njo, njo$tip.label[grepl("obtusa", njo$tip.label)])
 
     o.tmp <- list(cdl[,list(n=.N), list(sp.group, pond.group, window, cd_bin)],
                   njo)
