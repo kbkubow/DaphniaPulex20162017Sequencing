@@ -12,7 +12,7 @@
 
 ### nJobs=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | wc -l ); echo ${nJobs}
 ### sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
-### sacct -u aob2x -j 19180439
+### sacct -u aob2x -j 19189813
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19180439_1.err
 
 ### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
