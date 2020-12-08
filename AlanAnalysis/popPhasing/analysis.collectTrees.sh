@@ -19,3 +19,4 @@
   module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3
 
   Rscript --vanilla /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collect.trees.R
+  Rscript --vanilla /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collect.regionMetrics.R
