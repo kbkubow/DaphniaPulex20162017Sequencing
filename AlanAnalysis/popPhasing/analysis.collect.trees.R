@@ -44,6 +44,8 @@
       cdl[(species.x=="pulicaria" & species.y=="obtusa") | (species.y=="pulicaria" & species.x=="obtusa"), sp.group:="pulicaria-obtusa"]
       cdl[sp.group!="pulex-pulex", pond.group:="all"]
 
+      cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), pond.group:="A-C"]
+
       cdl <- cdl[sample.id.x!=sample.id.y]
 
 
@@ -107,6 +109,7 @@
 
       cdl[(species.x=="pulicaria" & species.y=="obtusa") | (species.y=="pulicaria" & species.x=="obtusa"), sp.group:="pulicaria-obtusa"]
       cdl[sp.group!="pulex-pulex", pond.group:="all"]
+      cdl[group.x%in%c("A", "C") & group.y%in%c("A", "C"), pond.group:="A-C"]
 
       cdl <- cdl[sample.id.x!=sample.id.y]
 

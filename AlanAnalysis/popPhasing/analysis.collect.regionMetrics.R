@@ -27,4 +27,4 @@
 ### save
   save(regions, file="~/regions_250K.Rdata")
 
-  $save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, cdl.list, file="~/cdlo.Rdata")
+  #save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, cdl.list, file="~/cdlo.Rdata")
