@@ -3,7 +3,7 @@
 ##SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 0-00:30:00 # Running time of 4 days
+#SBATCH -t 0-00:60:00 # Running time of 4 days
 #SBATCH --mem 5G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.%A_%a.err # Standard error
@@ -12,8 +12,10 @@
 
 ### nJobs=$( cat /scratch/aob2x/daphnia_hwe_sims/popPhase/windows.delim | wc -l ); echo ${nJobs}
 ### sbatch --array=1-${nJobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
-### sacct -u aob2x -j 19189813
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19180439_1.err
+### sacct -u aob2x -j 19206281
+
+### jobs=$( sacct --format ExitCode,JobID%50  -j 19206281 | grep -v "0:0" | cut -f2 -d'_' | sed '1d'| sed '1d'| sed 's/.batch//g' | sed '1d' | tr '\n' ',' | sed 's/ //g' )
+### sbatch --array=jobs /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
 
 ### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
 ### sacct -u aob2x -j 19143682
