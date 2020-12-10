@@ -1,6 +1,6 @@
 
 ### copy data
-  scp aob2x@rivanna.hpc.virginia.edu:~/cdlo.Rdata ~/.
+  scp aob2x@rivanna.hpc.virginia.edu:~/cdlo_250K.Rdata ~/.
   scp aob2x@rivanna.hpc.virginia.edu:~/regions.Rdata ~/.
 
 ### libraries
@@ -10,7 +10,7 @@
   library(ape)
 
 ### load data
-  load("~/cdlo.Rdata")
+  load("~/cdlo_250K.Rdata")
   load("~/gprime_peaks.replicates.Rdata")
   load("~/regions.Rdata")
 
@@ -25,21 +25,24 @@
 
   cdl.qtl[,fracMissing:=numMissing/size]
 
+
+  ### cdl.o[,fracMissing:=0]; cdl.qtl[,fracMissing:=0]
+
 ### genome-wide distributions
   cdl.o[fracMissing<.25,list(n=sum(n)), list(window, sp.group, pond.group)]
 
-  cdl.o.ag <- cdl.o[fracMissing<.25,list(n=sum(n)), list(cd_bin, pond.group, sp.group)]
+  cdl.o.genomeWideDist <- cdl.o[fracMissing<.25,list(n=sum(n)), list(cd_bin, pond.group, sp.group)]
 
-  ggplot(data=cdl.o.ag, aes(x=cd_bin, y=log10(n), group=pond.group, color=pond.group)) +
+  ggplot(data=cdl.o.genomeWideDist, aes(x=cd_bin, y=log10(n), group=pond.group, color=pond.group)) +
   geom_line() + facet_grid(~sp.group+pond.group, scales="free_y") +
   geom_vline(xintercept=0.004)
 
 
 ### distance probabilities for each QTL:
-  cdl.o.ag <- cdl.o[fracMissing<.75, list(max=max(cd_bin[n>0])), list(window, pond.group, sp.group)]
-  cdl.o.ag[,region:=tstrsplit(window, ":")[[2]]]
-  cdl.o.ag[,start:=as.numeric(tstrsplit(region, "-")[[1]])]
-  cdl.o.ag[,stop:=as.numeric(tstrsplit(region, "-")[[2]])]
+  cdl.o.distProb <- cdl.o[fracMissing<.75, list(max=max(cd_bin[n>0])), list(window, pond.group, sp.group)]
+  cdl.o.distProb[,region:=tstrsplit(window, ":")[[2]]]
+  cdl.o.distProb[,start:=as.numeric(tstrsplit(region, "-")[[1]])]
+  cdl.o.distProb[,stop:=as.numeric(tstrsplit(region, "-")[[2]])]
 
   cdl.qtl.ag <- cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][i1!=i2][,list(max=max(cd)), list(window, pond.group, sp.group)]
   cdl.qtl.ag[,region:=tstrsplit(window, ":")[[2]]]
@@ -47,7 +50,7 @@
   cdl.qtl.ag[,stop:=as.numeric(tstrsplit(region, "-")[[2]])]
 
   qtl.age <- foreach(i=1:dim(cdl.qtl.ag)[1])%do%{
-                cdl.o.ag[!(start<=cdl.qtl.ag[i]$start & stop>=cdl.qtl.ag[i]$stop),
+                cdl.o.distProb[!(start<=cdl.qtl.ag[i]$start & stop>=cdl.qtl.ag[i]$stop),
                            list(pr=mean(max >= cdl.qtl.ag[i]$max, na.rm=T),window=cdl.qtl.ag[i]$window),
                             list(sp.group, pond.group)]
 
@@ -60,7 +63,7 @@
 
   ggplot(data=qtl.age, aes(x=pond.group, y=pr, group=window, color=window))+ geom_line()
 
-  ggplot(data=cdl.o.ag[pond.group!="all"], aes(max)) +
+  ggplot(data=cdl.o.distProb[pond.group!="all"], aes(max)) +
   geom_histogram(bins=200) + facet_grid(pond.group~sp.group) +
   geom_point(data=cdl.qtl.ag, aes(x=max, y=5), color="red")
 
@@ -70,6 +73,136 @@
   cdl.o[,start:=as.numeric(tstrsplit(range, "-")[[1]])]
   cdl.o[,stop:=as.numeric(tstrsplit(range, "-")[[2]])]
   cdl.o[,mid:=start/2 + stop/2]
+
+
+  cdl.o.manhattanPlot <- cdl.o[,list(mu=sum(cd_bin*n, na.rm=T)/sum(n), min=min(cd_bin), max=max(cd_bin)),
+                      list(chr, mid, sp.group, pond.group)]
+
+
+  mp_small <- ggplot(data=cdl.o.manhattanPlot[!is.na(pond.group)], aes(x=mid, y=max, color=chr)) +
+  geom_vline(data=peaks, aes(xintercept=posMaxGprime)) +
+  geom_line(size=1) +
+  facet_grid(sp.group+pond.group~chr, scales="free")
+
+  ggsave(mp_small, file="~/mp_small.png", height=10, w=20)
+
+
+### phylogenetic tree
+  cdl.o.distProb[,chr:=tstrsplit(window, ":")[[1]]]
+  cdl.o.distProb[pond.group=="DWT-DWT"][,list(window=window[which.max(max)], max=max(max)), list(chr)
+
+  ### QTL 8
+    localPeak <- "Scaffold_2158_HRSCAF_2565:1750002-2000001"
+    QTLPeak <- "Scaffold_2158_HRSCAF_2565:1645971-1895970"
+
+  ### QTL10
+
+    ### local peak
+      njo <- cdl.tree$"Scaffold_2158_HRSCAF_2565:1750002-2000001"
+      njo <- root(njo, "pulicaria.1")
+
+      d <- data.table(label=njo$tip.label)
+      d[,pond:=tstrsplit(label, "_")[[3]]]
+      d[,A:=ifelse(grepl("April_2017_D8_213", label), "A", "")]
+      d[,C:=ifelse(grepl("April_2017_D8_151", label), "C", "")]
+      d <- as.data.frame(d)
+
+
+      p.local <- ggtree(njo) %<+% d +
+      geom_tiplab(aes(label=A)) +
+      geom_tiplab(aes(label=C)) +
+      geom_tiplab(aes(label=pond, color=pond), offset=0, angle=90, align=T)  +
+      coord_flip() +
+      theme(legend.position = "none") + ggtitle("local peak")
+      #p
+
+    ### qtl peak
+      njo <- cdl.tree$"Scaffold_2158_HRSCAF_2565:1645971-1895970"
+      njo <- root(njo, "pulicaria.1")
+
+      d <- data.table(label=njo$tip.label)
+      d[,label:=gsub("Dcat", "DCat", label)]
+      d[,pond:=tstrsplit(label, "_")[[3]]]
+      d[,A:=ifelse(grepl("April_2017_D8_213", label), "A", "")]
+      d[,C:=ifelse(grepl("April_2017_D8_151", label), "C", "")]
+
+      d[grepl("March20_2018_Dcat_2", label)]
+
+      d[A!="" | C!="" | pond=="DCat" | pond=="Dcat", clean:=label]
+      d[grepl("March20_2018_DCat_2", label)]
+
+      d[is.na(clean), clean:=""]
+      d <- as.data.frame(d)
+
+
+      p.qtl <- ggtree(njo) %<+% d +
+      geom_tiplab(aes(label=A)) +
+      geom_tiplab(aes(label=C)) +
+      geom_tiplab(aes(label=pond, color=pond), offset=0, angle=90, align=T)  +
+      coord_flip() +
+      theme(legend.position = "none")+ ggtitle("qtl-peak")
+      p.qtl
+
+
+      ggtree(njo) %<+% d +
+      geom_tiplab(aes(label=A)) +
+      geom_tiplab(aes(label=C)) +
+      geom_tiplab(aes(label=clean, color=pond), offset=0, angle=0, align=F)  +
+      geom_tiplab(aes(label=pond, color=pond), offset=0, angle=0, align=T)  +
+      theme(legend.position = "none")+ ggtitle("QTL10")
+
+
+    ### combined
+      p.qtl + p.local
+
+
+    ### cophyplot
+      njo.local <- cdl.tree$"Scaffold_2158_HRSCAF_2565:1750002-2000001"
+      njo.local <- root(njo.local, "pulicaria.1")
+
+      njo.qtl <- cdl.tree$"Scaffold_2158_HRSCAF_2565:1645971-1895970"
+      njo.qtl <- root(njo.qtl, "pulicaria.1")
+
+      mat
+
+      cophyloplot(njo.local, njo.qtl, assoc=cbind(matrix(njo.local$tip.label, ncol=1), matrix(njo.local$tip.label, ncol=1)),
+                  show.tip.label = F, length.line = 4, space = 28, gap = 3, type="cladogram")
+
+
+
+  ######
+  ## QTL 10 ##
+      ### qtl peak
+      #  njo <- cdl.tree$"Scaffold_2217_HRSCAF_2652:5073222-5323221"
+        njo <- cdl.tree$"Scaffold_9197_HRSCAF_10753:2452444-2702443"
+        njo <- root(njo, "pulicaria.1")
+
+
+        d <- data.table(label=njo$tip.label)
+        d[,label:=gsub("Dcat", "DCat", label)]
+        d[,pond:=tstrsplit(label, "_")[[3]]]
+
+
+        d[,A:=ifelse(grepl("April_2017_D8_213", label), "A", "")]
+        d[,C:=ifelse(grepl("April_2017_D8_151", label), "C", "")]
+
+        d[grepl("March20_2018_Dcat_2", label)]
+
+        d[A!="" | C!="" | pond=="DCat" | pond=="Dcat", clean:=label]
+        d[grepl("March20_2018_Dcat_2", label)]
+
+        d[is.na(clean), clean:=""]
+        d <- as.data.frame(d)
+
+        ggtree(njo) %<+% d +
+        geom_tiplab(aes(label=A)) +
+        geom_tiplab(aes(label=C)) +
+        geom_tiplab(aes(label=clean, color=pond), offset=0, angle=0, align=F)  +
+        geom_tiplab(aes(label=pond, color=pond), offset=0, angle=0, align=T)  +
+        theme(legend.position = "none")+ ggtitle("QTL10")
+
+
+
 
 
   #mp <- ggplot(data=cdl.o[!is.na(sp.group)][!is.na(pond.group)][order(n)], aes(x=mid, y=cd_bin, color=log10(n))) + geom_point () +
@@ -100,10 +233,10 @@
 
 
 
-  mp_small <- ggplot(data=cdl.o.ag, aes(x=mid, y=mu, color=chr)) +
+  mp_small <- ggplot(data=cdl.o.ag[!is.na(pond.group)], aes(x=mid, y=max, color=chr)) +
   geom_vline(data=peaks, aes(xintercept=posMaxGprime)) +
-  geom_line() +
-  facet_grid(chr~sp.group+pond.group, scales="free_x")
+  geom_line(size=1) +
+  facet_grid(sp.group+pond.group~chr, scales="free")
 
   ggsave(mp_small, file="~/mp_small.png", height=10, w=20)
 
@@ -170,13 +303,16 @@ cdl.qtl[group.x%in%c("A", "C") & group.y%in%c("A", "C")][window=="Scaffold_9199_
   p <- ggtree(njo) %<+% d +
   geom_tiplab(aes(label=A)) +
   geom_tiplab(aes(label=C)) +
-  #geom_tiplab(aes(label=pond, color=pond), offset=1, angle=90, align=T)  +
+  geom_tiplab(aes(label=pond, color=pond), offset=1, angle=90, align=T)  +
   coord_flip() +
   theme(legend.position = "none")
   p
 
 
 
+
+njo <- cdl.tree$"Scaffold_2158_HRSCAF_2565:1645971-1895970"
+njo <- root(njo, "pulicaria.1")
 
 
 
