@@ -8,7 +8,7 @@
   #window.bp=as.numeric(args[[2]])
 #
   step.bp <- 50000
-  window.bp <- 50000
+  window.bp <- 250000
 
 ### libraries
   #library(ape)
@@ -21,7 +21,7 @@
   chrs
 
 ### fai
-  fai <- fread("/scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/2018_Pulicaria_Pond22_62.1.fa.fai")
+  fai <- fread(list.files("/scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/", "fai", full.name=T)[1])
   setkey(fai, V1)
 
   use <- fai[J(chrs)]

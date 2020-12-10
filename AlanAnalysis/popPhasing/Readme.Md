@@ -16,7 +16,7 @@
 # D. merge individual vcfs
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.within.sh`
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.daphnids.sh`
-  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.hybrid_strategy.sh`
+  3. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/mergeVCF.hybrid_strategy.sh`
 
 # E. Run shapeit on each chromosome separatley
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/shapeit4.within.sh`
@@ -28,7 +28,6 @@
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/vcf2gds.R`
 
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/concatenate_convert.hybrid_strategy.sh`
-
 
 # G. Analysis (this is quick and dirty analysis using GDS file)
   1. Trees `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.trees.R`
@@ -53,9 +52,11 @@
 # I. Build trees on windows
   0. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeWindows.trees.R` makes window definition file
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh` slices individual FASTA file to make trees and compute Cd. Runs `analysis.ape.trees.R`
-  2.
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collectTrees.sh` collects the trees and summarizes
 
-
+# J. Plots and analysis
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.plotApeTree.R` makes some plots, does some analysis. Early version
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.polarizeHapolotypes_poolSeq.R` combines the phased haplotypes with the pool-seq to test these hypotheses: (A) 
 
 
 
@@ -94,7 +95,8 @@
 
   1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/duoHMM.sh`
 
-
+  cp /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.bcf \
+  /project/berglandlab/alan.
 
 
 

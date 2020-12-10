@@ -15,11 +15,9 @@
 ### sacct -u aob2x -j 19206281
 
 ### jobs=$( sacct --format ExitCode,JobID%50  -j 19206281 | grep -v "0:0" | cut -f2 -d'_' | sed '1d'| sed '1d'| sed 's/.batch//g' | sed '1d' | tr '\n' ',' | sed 's/ //g' )
-### sbatch --array=jobs /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
+### sbatch --array=${jobs} /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
+### sacct -j 19210696
 
-### sbatch --array=234 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.makeTrees.sh
-### sacct -u aob2x -j 19143682
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19110025_10.err
 
 ### modules
   module load samtools parallel
