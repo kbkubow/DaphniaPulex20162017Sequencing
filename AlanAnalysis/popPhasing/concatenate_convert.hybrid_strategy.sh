@@ -45,6 +45,10 @@ grep -v "##" | cut -f10- | tr '\t' '\n'  | nl
 
 bcftools index /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.bcf
 
+cp /scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.bcf \
+/project/berglandlab/alan/.
+
+/project/berglandlab/alan/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.bcf
 
 
 bcftools view -H \

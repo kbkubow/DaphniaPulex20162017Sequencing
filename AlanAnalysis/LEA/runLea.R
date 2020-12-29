@@ -1,6 +1,6 @@
 library(LEA)
 
-dap.snmf <- snmf("/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno",
+dap.snmf <- snmf("/scratch/aob2x/daphnia_hwe_sims/lea/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.geno",
     K=c(1:20),
     project = "new",
     repetitions=30,
@@ -10,4 +10,4 @@ dap.snmf <- snmf("/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno",
     iterations = 100000)
 
 
-save(dap.snmf, file="/scratch/aob2x/daphnia_hwe_sims/dap.snmf.Rdata")
+save(dap.snmf, file="/scratch/aob2x/daphnia_hwe_sims/lea/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit/dap.snmf.Rdata")

@@ -5,49 +5,61 @@
   library(viridis)
   library(ggplot2)
   #library(deSolve)
+  library(doMC)
+  registerDoMC(4)
 
 ### function
-  fun <- function(c, mZZ, mZW, mWW, x) {
-    W <- x[1]
-    X <- x[2]
-    Y <- x[3]
-    Z <- x[4]
-    A <- x[5]
-    B <- x[6]
+  fun <- function(c, mZZ, mZW, mWW, x, lethal) {
+    ### c is the probabilty of clonal reproduction
+    ### mZZ, mZW, mWW are the male production rates of these genotypes
+    ### x is the vector of genotype frequencies at time t
+    ### return: the vector of genotype frequencies at time t+1
 
-    W.prime <- c*mZZ*X    ### Male ZZ
-    X.prime <- c*(1-mZZ)*X + 2*(1-c)*(W*X + X*Y/2 + Z*Y/4 + Z*W/2)    ### Female ZZ
+    U <- x[1]
+    V <- x[2]
+    W <- x[3]
+    X <- x[4]
+    Y <- x[5]
+    Z <- x[6]
 
-    Y.prime <- c*(mZW)*Z    ### Male ZW
-    Z.prime <- c*(1-mZW)*Z + 2*(1-c)*(X*Y/2 + 2*Z*Y/4 + Z*W/2)    ### Female ZW
+    U.prime <- c*mZZ*V*(1-lethal[1])   ### Male ZZ
+    V.prime <- (c*(1-mZZ)*V + 2*(1-c)*(U*V + W*V/2 + U*X/2 + W*X/4))*(1-lethal[1])   ### Female ZZ
 
-    A.prime <- c*(mWW)*B    ### Male WW
-    B.prime <- c*(1-mWW)*B + 2*(1-c)*(A*B + Z*Y/4 + A*Y/2 + B*Z/2)           ### Female WW
+    W.prime <- c*(mZW)*X    ### Male ZW
+    X.prime <- c*(1-mZW)*X + 2*(1-c)*(W*X/2 + U*X/2 + W*V/2 + W*Z/2 + Y*X/2)    ### Female ZW
 
-    c(W.prime, X.prime, Y.prime, Z.prime, A.prime, B.prime)/(sum(c(W.prime, X.prime, Y.prime, Z.prime, A.prime, B.prime)))
+    Y.prime <- c*(mWW)*Z*(1-lethal[2])    ### Male WW
+    Z.prime <- (c*(1-mWW)*Z + 2*(1-c)*(Y*Z + W*X/4 + W*Z/2 + Y*X/2))*(1-lethal[2])           ### Female WW
+
+    c(U.prime, V.prime, W.prime, X.prime, Y.prime, Z.prime)/(sum(c(U.prime, V.prime, W.prime, X.prime, Y.prime, Z.prime)))
   }
 
-  sim <- function(c, mZZ, mZW, nGens, init) {
-    #c=.01
-    #mZZ=.15
-    #mZW=.01
+  sim <- function(c, mZZ, mWW, d, nGens, init, lethal) {
+    #c=.5
+    #mZZ=.5
+    #mWW=.5
     #nGens=200
-    #  init <- c(.25, .25, .25, .25)
+    #d=.5
+    #lethal=0
+    #init <- rep(1,6)/6
 
-    mat <- matrix(NA, nrow=nGens, ncol=4)
+    mZW <- mZZ + d*(mWW - mZZ)
+
+    mat <- matrix(NA, nrow=nGens, ncol=6)
     mat[1,] <- init
 
     for(i in 2:nGens) {
-      mat[i,] <- fun(c=c, mZZ=mZZ, mZW=mZW, x=mat[i-1,])
+      mat[i,] <- fun(c=c, mZZ=mZZ, mZW=mZW, mWW=mWW, lethal, x=mat[i-1,])
     }
 
     mat <- cbind(mat,
                 (mat[,1]+mat[,2]) + .5*(mat[,3] + mat[,4]))
 
-    mat.dt <- data.table(freq=expand.grid(mat)[,1], gen=rep(c(1:nGens), 5),
-                        class=rep(c("m.ZZ", "f.ZZ", "m.ZW", "f.ZW", "fZ"), each=nGens), c=c, mZZ=mZZ, mZW=mZW)
+    mat.dt <- data.table(freq=expand.grid(mat)[,1], gen=rep(c(1:nGens), 7),
+                        class=rep(c("m.ZZ", "f.ZZ", "m.ZW", "f.ZW", "m.WW", "f.WW", "fZ"), each=nGens), c=c, d=d, mZZ=mZZ, mZW=mZW, mWW=mWW,
+                        lethal=paste(lethal, collapse=";"))
 
-
+    #ggplot(mat.dt, aes(x=gen, y=freq, group=class, color=class)) + geom_line() + facet_grid(~I(class=="fZ")) + ylim(0,1)
 
     return(mat.dt)
   }
@@ -114,19 +126,39 @@
   }
 
 ### simulation
-  o <- foreach(c.i=c(0.01, .51, .991), .combine="rbind")%do%{
+  o <- foreach(c.i=c(0.01, .5, .991), .combine="rbind")%dopar%{
     print(c.i)
-    foreach(mZZ.i=seq(from=.01, to=.99, by=.05), .combine="rbind")%do%{
-      foreach(mZW.i=seq(from=.01, to=.99, by=.05), .combine="rbind")%do%{
-        sim(c=c.i, mZZ=mZZ.i, mZW=mZW.i,
-                nGens=50, init=c(.25, .25, .25, .05))[gen==50]
+    foreach(mZZ.i=seq(from=.01, to=.5, by=.005), .combine="rbind")%do%{
+      foreach(mWW.i=seq(from=.01, to=.5, by=.005), .combine="rbind")%do%{
+        foreach(d.i=c(0, .5, 1), .combine="rbind")%do%{
+          foreach(l.i=list(c(0,1), c(.01, .01), c(.05, .05), c(0,0)), .combine="rbind")%do%{
+          #c.i=0; mZZ.i=.5; mWW.i=.5; d.i=.5; l.i=0
+            message(paste(c.i, mZZ.i, mWW.i, d.i, sep=" / "))
+            sim(c=c.i, mZZ=mZZ.i, mWW=mWW.i, d=d.i, lethal=l.i,
+                    nGens=200, init=rep(1,6)/6)[gen==200]
+          }
+        }
       }
     }
   }
 
-  ggplot(data=o[class=="fZ"], aes(x=mZW, y=mZZ, fill=freq)) + geom_raster() + facet_wrap(~c) + scale_fill_viridis() +
-  geom_abline(intercept = 0, slope = 1)
+  fixation <- 0.01
 
+  lethal_1 <- ggplot(data=o[class=="fZ"][lethal=="0;1"][freq>fixation & freq<(1-fixation)], aes(x=mWW, y=mZZ, fill=freq)) +
+  geom_raster() + facet_grid(d~c ) + scale_fill_viridis(limits=c(-.05,1.05)) +
+  geom_abline(intercept = 0, slope = 1) + ggtitle("WW lethal")
+
+  lethal_01 <- ggplot(data=o[class=="fZ"][lethal=="0.01;0.01"][freq>fixation & freq<(1-fixation)], aes(x=mWW, y=mZZ, fill=freq)) + geom_raster() + facet_grid(d~c ) + scale_fill_viridis(limits=c(-.05,1.05)) +
+  geom_abline(intercept = 0, slope = 1) + ggtitle("1% inbreeding depression")
+
+
+  lethal_05 <- ggplot(data=o[class=="fZ"][lethal=="0.05;0.05"][freq>fixation & freq<(1-fixation)], aes(x=mWW, y=mZZ, fill=freq)) + geom_raster() + facet_grid(d~c ) + scale_fill_viridis(limits=c(-.05,1.05)) +
+  geom_abline(intercept = 0, slope = 1) + ggtitle("5% inbreeding depression")
+
+  lethal_0 <- ggplot(data=o[class=="fZ"][lethal=="0;0"][freq>fixation & freq<(1-fixation)], aes(x=mWW, y=mZZ, fill=freq)) + geom_raster() + facet_grid(d~c ) + scale_fill_viridis(limits=c(-.05,1.05)) +
+  geom_abline(intercept = 0, slope = 1) + ggtitle("No inbreeding depression")
+
+  lethal_0 + lethal_01 + lethal_05 + lethal_1  + plot_layout(guides = 'collect')
 
 ### contrast simulation to analytical model
   #o <- slim_analytic(loadSlim("~/slim_out.delim"))
