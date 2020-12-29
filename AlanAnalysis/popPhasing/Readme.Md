@@ -55,8 +55,17 @@
   2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.collectTrees.sh` collects the trees and summarizes
 
 # J. Plots and analysis
-  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.plotApeTree.R` makes some plots, does some analysis. Early version
-  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.polarizeHapolotypes_poolSeq.R` combines the phased haplotypes with the pool-seq to test these hypotheses: (A) 
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.plotApeTree.R` makes some phylo plots, does some analysis re allele age. Early version
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.polarizeHapolotypes_poolSeq.R` combines the phased haplotypes with the pool-seq to test these hypotheses: (A) A haplotypes should be more common in PE pool & C haplotypes more common in male pool; (B) Dcat_supercloneB should be the same haplotype as male-, ; (C) male+ haplotypes should be more commin in Dbunk
+
+
+
+
+
+
+
+
+
 
 
 

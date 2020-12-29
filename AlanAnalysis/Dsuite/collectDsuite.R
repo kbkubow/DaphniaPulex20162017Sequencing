@@ -20,6 +20,9 @@
   f.hybrid[P3=="pulicaria"][order(z)][,c('P1', 'P2', 'P3', 'z', 'Dstatistic', 'BBAA', 'ABBA', 'BABA'), with=F]
 
 
+  f.hyrbid.sp3 <- fread("/scratch/aob2x/daphnia_hwe_sims/dsuite/hybrid_strategy.3species__BBAA.txt")
+
+
   f <- rbindlist(list(f.shapeit, f.orig, f.hybrid))
 
   setnames(f, "Z-score", "z")
