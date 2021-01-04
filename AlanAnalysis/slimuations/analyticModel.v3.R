@@ -1,5 +1,3 @@
-### this model incorporates symmetric lethality of homozygoes (inbreeding depression)
-
 #### libraries
   library(data.table)
   library(foreach)
