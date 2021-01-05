@@ -37,6 +37,11 @@ setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/")
             output.file = "/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno",
             force = TRUE)
 
+	vcf2geno("/scratch/aob2x/daphnia_hwe_sims/dsuite/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.vcf",
+            output.file = "/scratch/aob2x/daphnia_hwe_sims/lea/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.geno",
+            force = TRUE)
+
+
 ### ancestry test
 #snmf("/scratch/aob2x/daphnia_hwe_sims/daps4lea.geno",
 #    K=c(1:10),

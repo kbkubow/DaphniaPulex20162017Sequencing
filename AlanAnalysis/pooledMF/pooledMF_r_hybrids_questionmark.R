@@ -1,51 +1,123 @@
 #ijob -c1 -p standard -A berglandlab
 #module load gcc/7.1.0  openmpi/3.1.4 R/3.6.0; R
 
+
 ### libraries
   library(data.table)
   library(SeqArray)
   library(foreach)
 
-### load genotyping data
-  #load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
-  load(file="/scratch/aob2x/daphnia_hwe_sims/subFiles.Rdata")
-  sc[,year:=tstrsplit(clone, "_")[[2]]]
+### set wd
+  setwd("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020")
 
-  ### open GDS object
-  #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
-  #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-  genofile <- seqOpen("/scratch/aob2x/daphnia_hwe_sims/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+### load SuperClone
+  sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
 
-### get differences between A&B
-  genodat <- foreach(sc.i=c("A", "B"))%do%{
+### open GDS
+  genofile <- seqOpen("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds", allow.duplicate=TRUE)
+
+### load in filter file
+  snpFilter <- fread("snpsvarpulexpresentinhalf_table_20200623")
+
+### make snp.dt
+  snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
+                       pos=seqGetData(genofile, "position"),
+                       id=seqGetData(genofile, "variant.id"),
+                       numAlleles=seqNumAllele(genofile),
+                       key="chr")
+  setkey(snpFilter, chr, pos)
+  setkey(snp.dt, chr, pos)
+
+  snp.dt <- merge(snpFilter, snp.dt)
+
+
+
+### make majority rule (consensus) genotype calls for
+  ac.fd <- foreach(sc.i=c("A", "C"), .combine="cbind")%do%{
     seqResetFilter(genofile)
-    seqSetFilter(genofile, sample.id=sc[SC==sc.i][pond=="D8"]$clone)
+    seqSetFilter(genofile, sample.id=sc[SC==sc.i]$clone, variant.id=snp.dt$id)
 
-    tmp <- data.table(chr=seqGetData(genofile, "chromosome"),
-                     pos=seqGetData(genofile, "position"),
-                     variant.id=seqGetData(genofile, "variant.id"),
-
-                     sc=sc.i,
-                     af= 1 - seqAlleleFreq(genofile))
+    data.table(af=seqAlleleFreq(genofile, ref.allele=1L)) ### alternate allele
   }
-  genodat <- rbindlist(genodat)
+  setnames(ac.fd, c(1,2), c("af.A", "af.C"))
+  ac.fd <- cbind(ac.fd, snp.dt)
 
-  genodat.w <- dcast(genodat, chr + pos + variant.id ~ sc)
+
+  ac.fd[!is.na(af.A),A.geno := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
+  ac.fd[!is.na(af.C),C.geno := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) c("11","12","22")[which.min(abs(x-c(0,.5,1)))]))]
+
+  ac.fd[!is.na(af.A),A.delta := unlist(sapply(ac.fd[!is.na(af.A)]$af.A, function(x) min(abs(x-c(0,.5,1)))))]
+  ac.fd[!is.na(af.C),C.delta := unlist(sapply(ac.fd[!is.na(af.C)]$af.C, function(x) min(abs(x-c(0,.5,1)))))]
+
+
+  ac.inform <- ac.fd[(A.geno=="12" & C.geno=="11") |
+                     (A.geno=="12" & C.geno=="22") |
+                     (A.geno=="11" & C.geno=="12") |
+                     (A.geno=="22" & C.geno=="12") |
+                     (A.geno=="12" & C.geno=="12") |
+                     (A.geno=="11" & C.geno=="22") |
+                     (A.geno=="22" & C.geno=="11")]
+
+  #ac.inform <- ac.inform[A.delta < 0.05 & C.delta < 0.05]
+  #save(ac.inform, file="/scratch/aob2x/daphnia_hwe_sims/ac_inform.Rdata")
 
 
 ### pooled data
   load("/nv/vol186/bergland-lab/alan/totalADRDlongall.Rdata")
-
+  geno <- geno[pond=="D8"]
   geno[,effRD:=floor(RRD)]
   geno[,effPA:=round(propalt*effRD)/effRD]
 
   geno.w <- dcast(geno[pond=="D8"], chr + pos ~ Sample, value.var=c("effRD", "effPA"))
+  geno.w[, f.hat := (effPA_D8Male1 + effPA_D8Male2 + effPA_D8PE1+ effPA_D8PE2)/4]
+  geno.w[f.hat>0 & f.hat<1]
 
-### merge
-  setkey(genodat.w, chr, pos)
+
+### save object
+  save(geno, geno.w, ac.inform, snp.dt, file="~/pooled_f1_hybrids_questionmark.Rdata")
+
+#### download
+  scp aob2x@rivanna.hpc.virginia.edu:~/pooled_f1_hybrids_questionmark.Rdata ~/.
+  R
+
+### libraries
+  library(data.table)
+  library(ggplot2)
+
+### load data
+  load("~/pooled_f1_hybrids_questionmark.Rdata")
+
+### basics
+  hist(geno.w$f.hat, breaks=100)
+
+  hist(geno.w[f.hat>0 & f.hat<1]$f.hat, breaks=1000)
+
+### SNP that were retained in the individual based VCF file
   setkey(geno.w, chr, pos)
+  setkey(snp.dt, chr, pos)
+  geno.w.use <- merge(geno.w[f.hat>0 & f.hat<1], snp.dt)
 
-  m <- merge(genodat.w, geno.w, all.x=T, all.y=T)
+### merge with "informative" A&C sites
+  setkey(ac.inform, chr, pos)
+  setkey(geno.w.use , chr, pos)
+
+  dim(merge(ac.inform, geno.w.use))
+  dim(geno.w.use)
+  dim(ac.inform)
+
+  m <- merge(ac.inform, geno.w.use, all.x=T, all.y=T)
+
+### table
+  prop.table(table(poolSeq= !is.na(m[f.hat>.05 & f.hat<.95]$effRD_D8Male1),
+                   ACPoly = !is.na(m[f.hat>.05 & f.hat<.95]$A.geno))
+
+
+
+  dim(ac.inform)
+  dim(geno.w)
+  dim(m)
+### how many?
+  table(poolSeq=!is.na(m$effRD_D8Male1), ACPoly=!is.na(m$A.geno))
 
 ### are pooled D8 samples basically F1s?
   m <- na.omit(m)

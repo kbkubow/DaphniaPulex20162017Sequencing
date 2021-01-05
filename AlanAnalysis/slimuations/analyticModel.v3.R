@@ -1,3 +1,5 @@
+### this model incorporates seasonal death of clonal individuals
+
 #### libraries
   library(data.table)
   library(foreach)
@@ -9,7 +11,7 @@
   registerDoMC(4)
 
 ### function
-  fun <- function(c, mZZ, mZW, mWW, x, lethal) {
+  fun <- function(c, mZZ, mZW, mWW, x, cs) {
     ### c is the probabilty of clonal reproduction
     ### mZZ, mZW, mWW are the male production rates of these genotypes
     ### x is the vector of genotype frequencies at time t
@@ -22,19 +24,19 @@
     Y <- x[5]
     Z <- x[6]
 
-    U.prime <- c*mZZ*V*(1-lethal[1])   ### Male ZZ
-    V.prime <- (c*(1-mZZ)*V + 2*(1-c)*(U*V + W*V/2 + U*X/2 + W*X/4))*(1-lethal[1])   ### Female ZZ
+    U.prime <- c*mZZ*V*cs   ### Male ZZ
+    V.prime <- (c*(1-mZZ)*V*cs + 2*(1-c)*(U*V + W*V/2 + U*X/2 + W*X/4))   ### Female ZZ
 
-    W.prime <- c*(mZW)*X    ### Male ZW
-    X.prime <- c*(1-mZW)*X + 2*(1-c)*(W*X/2 + U*X/2 + W*V/2 + W*Z/2 + Y*X/2)    ### Female ZW
+    W.prime <- c*(mZW)*X*cs    ### Male ZW
+    X.prime <- c*(1-mZW)*X*cs + 2*(1-c)*(W*X/2 + U*X/2 + W*V/2 + W*Z/2 + Y*X/2)    ### Female ZW
 
-    Y.prime <- c*(mWW)*Z*(1-lethal[2])    ### Male WW
-    Z.prime <- (c*(1-mWW)*Z + 2*(1-c)*(Y*Z + W*X/4 + W*Z/2 + Y*X/2))*(1-lethal[2])           ### Female WW
+    Y.prime <- c*(mWW)*Z*cs    ### Male WW
+    Z.prime <- (c*(1-mWW)*Z*cs + 2*(1-c)*(Y*Z + W*X/4 + W*Z/2 + Y*X/2))           ### Female WW
 
     c(U.prime, V.prime, W.prime, X.prime, Y.prime, Z.prime)/(sum(c(U.prime, V.prime, W.prime, X.prime, Y.prime, Z.prime)))
   }
 
-  sim <- function(c, mZZ, mWW, d, nGens, init, lethal) {
+  sim <- function(c, mZZ, mWW, d, nGens, init, clonal_survival) {
     #c=.5
     #mZZ=.5
     #mWW=.5
@@ -42,6 +44,7 @@
     #d=.5
     #lethal=0
     #init <- rep(1,6)/6
+    #clonal_survival=c(rep(1, 9), .1)
 
     mZW <- mZZ + d*(mWW - mZZ)
 
@@ -49,20 +52,75 @@
     mat[1,] <- init
 
     for(i in 2:nGens) {
-      mat[i,] <- fun(c=c, mZZ=mZZ, mZW=mZW, mWW=mWW, lethal, x=mat[i-1,])
+      mat[i,] <- fun(c=c, mZZ=mZZ, mZW=mZW, mWW=mWW, x=mat[i-1,], cs=clonal_survival[i%%10+1])
     }
 
     mat <- cbind(mat,
                 (mat[,1]+mat[,2]) + .5*(mat[,3] + mat[,4]))
 
     mat.dt <- data.table(freq=expand.grid(mat)[,1], gen=rep(c(1:nGens), 7),
-                        class=rep(c("m.ZZ", "f.ZZ", "m.ZW", "f.ZW", "m.WW", "f.WW", "fZ"), each=nGens), c=c, d=d, mZZ=mZZ, mZW=mZW, mWW=mWW,
-                        lethal=paste(lethal, collapse=";"))
+                        class=rep(c("m.ZZ", "f.ZZ", "m.ZW", "f.ZW", "m.WW", "f.WW", "fZ"), each=nGens),
+                        c=c, d=d, mZZ=mZZ, mZW=mZW, mWW=mWW,
+                        cs=clonal_survival[rep(c(1:nGens), 7)%%10+1])
 
     #ggplot(mat.dt, aes(x=gen, y=freq, group=class, color=class)) + geom_line() + facet_grid(~I(class=="fZ")) + ylim(0,1)
 
     return(mat.dt)
   }
+
+### simulation
+  o <- foreach(c.i=c(0.01, .5, .991), .combine="rbind")%dopar%{
+    print(c.i)
+    foreach(mZZ.i=seq(from=.01, to=.99, by=.05), .combine="rbind")%do%{
+      foreach(mWW.i=seq(from=.01, to=.99, by=.05), .combine="rbind")%do%{
+        foreach(d.i=c(.5), .combine="rbind")%do%{
+          #c.i=.5; mZZ.i=.5; mWW.i=.5; d.i=.5; l.i=0
+            message(paste(c.i, mZZ.i, mWW.i, d.i, sep=" / "))
+            o.tmp <- sim(c=c.i, mZZ=mZZ.i, mWW=mWW.i, d=d.i,
+                    clonal_survival=c(rep(1, 9), 0),
+                    nGens=1000,
+                    init=rep(1,6)/6)
+            #o.tmp[gen>500, list(freq=mean(freq), var.freq=var(freq)), list(c, d, mZZ, mZW, mWW, class)]
+            o.tmp
+        }
+      }
+    }
+  }
+  o.ag <-o[gen>500, list(freq=mean(freq), var.freq=var(freq)), list(c, d, mZZ, mZW, mWW, class)]
+
+
+  ggplot(data=o[class=="fZ"], aes(x=gen, y=freq, group=interaction(mZZ, mWW))) + geom_line() + facet_wrap(~c)
+
+  o[gen>900][c==.5][class=="fZ"][freq>.6 & freq<.66]
+  o.ag[class=="fZ"][d==.5 & mZZ==.01 & mZW==.26 & mWW==.51]
+
+  ggplot(data=o[class=="fZ"][d==.5 & mZZ==.01 & mZW==.26 & mWW==.51],
+          aes(x=gen, y=freq, group=interaction(mZZ, mWW))) + geom_line() + facet_wrap(~c)
+  o.ag[class=="fZ"][d==.5 & mZZ==.01 & mZW==.26 & mWW==.51]
+
+  ggplot(data=o.ag[class=="fZ"], aes(x=mWW, y=mZZ, fill=freq)) +
+  geom_raster() + facet_grid(d~c) + scale_fill_viridis(limits=c(-.05,1.05)) +
+  geom_abline(intercept = 0, slope = 1) + ggtitle("Overwintering death of clonally produced individuals every 10 gens")
+
+  ggplot(data=o.ag[class=="fZ"], aes(x=mWW, y=mZZ, fill=freq/sqrt(var.freq))) +
+  geom_raster() + facet_grid(d~c) + scale_fill_viridis() +
+  geom_abline(intercept = 0, slope = 1) + ggtitle("Overwintering Death every 10 gens")
+
+
+
+fixation <- -0.5
+
+ggplot(data=o[class=="fZ"][freq>fixation & freq<(1-fixation)], aes(x=mWW, y=mZZ, fill=freq)) +
+geom_raster() + facet_grid(d~c) + scale_fill_viridis(limits=c(-.05,1.05)) +
+geom_abline(intercept = 0, slope = 1) + ggtitle("Overwintering Death every 10 gens")
+
+
+
+
+
+
+
+
 
   loadSlim <- function(fn) {
     dat <- fread(fn)
@@ -125,22 +183,8 @@
     dat
   }
 
-### simulation
-  o <- foreach(c.i=c(0.01, .5, .991), .combine="rbind")%dopar%{
-    print(c.i)
-    foreach(mZZ.i=seq(from=.01, to=.5, by=.005), .combine="rbind")%do%{
-      foreach(mWW.i=seq(from=.01, to=.5, by=.005), .combine="rbind")%do%{
-        foreach(d.i=c(0, .5, 1), .combine="rbind")%do%{
-          foreach(l.i=list(c(0,1), c(.01, .01), c(.05, .05), c(0,0)), .combine="rbind")%do%{
-          #c.i=0; mZZ.i=.5; mWW.i=.5; d.i=.5; l.i=0
-            message(paste(c.i, mZZ.i, mWW.i, d.i, sep=" / "))
-            sim(c=c.i, mZZ=mZZ.i, mWW=mWW.i, d=d.i, lethal=l.i,
-                    nGens=200, init=rep(1,6)/6)[gen==200]
-          }
-        }
-      }
-    }
-  }
+
+
 
   fixation <- 0.01
 
@@ -159,6 +203,8 @@
   geom_abline(intercept = 0, slope = 1) + ggtitle("No inbreeding depression")
 
   lethal_0 + lethal_01 + lethal_05 + lethal_1  + plot_layout(guides = 'collect')
+
+
 
 ### contrast simulation to analytical model
   #o <- slim_analytic(loadSlim("~/slim_out.delim"))

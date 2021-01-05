@@ -41,6 +41,12 @@ Dinvestigate \
   /scratch/aob2x/daphnia_hwe_sims/dsuite/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.vcf \
   /scratch/aob2x/daphnia_hwe_sims/dsuite/hybrid_strategy.3species.txt
 
+  cat hybrid_strategy.3species_BBAA.txt | awk '{if($3=="pulicaria") print $0}'
+
+
+
+
+
 
   nano /scratch/aob2x/daphnia_hwe_sims/dsuite/DBunk_D8_pulicaria.txt
 

@@ -136,20 +136,22 @@ plotQ.sp <- function(k.i) {
   puli.k <- k.i[Species=="pulicaria"][which.max(value)]$variable
   obt.k <- k.i[Species=="obtusa"][which.max(value)]$variable
 
-  puli.plot <- ggplot(data=k.i[variable==puli.k], aes(x=set, y=log10(value), color=col)) +
+  puli.plot <- ggplot(data=k.i[variable==puli.k][!is.na(set)], aes(x=set, y=log10(value), color=col)) +
   geom_jitter(width = 0.25) +
   #geom_jitter(data=k.i[variable==puli.k][SC=="A"], aes(x=set, y=log10(value)), color="blue", size=1, width = 0.25) +
   #geom_jitter(data=k.i[variable==puli.k][SC=="C"], aes(x=set, y=log10(value)), color="red", size=1, width = 0.25) +
   coord_flip() +
-  labs(title=puli.k) +
+  xlab("% D. pulicaria ancestry") +
   theme(legend.position="none")
 
-  obt.plot <- ggplot(data=k.i[variable==obt.k], aes(x=set, y=log10(value), color=col)) +
+  obt.plot <- ggplot(data=k.i[variable==obt.k][!is.na(set)], aes(x=set, y=log10(value), color=col)) +
   geom_jitter(width = 0.25) +
   #geom_jitter(data=k.i[variable==puli.k][SC=="A"], aes(x=set, y=log10(value)), color="blue", size=1, width = 0.25) +
   #geom_jitter(data=k.i[variable==puli.k][SC=="C"], aes(x=set, y=log10(value)), color="red", size=1, width = 0.25) +
   coord_flip() +
-  labs(title=obt.k) +
+  #labs(title=obt.k) +
+  xlab("% D. obtusa ancestry") +
+
   theme(legend.position="none")
 
 

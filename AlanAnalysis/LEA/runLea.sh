@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 # sbatch ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/LEA/runLea.sh
-# sacct -j 14469824
-
+# sacct -j 19319072
+# cat  /scratch/aob2x/lea.19319072
 module load intel/18.0 intelmpi/18.0 R/3.6.3
 
 wd=/scratch/aob2x/daphnia_hwe_sims/

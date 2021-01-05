@@ -6,32 +6,16 @@
   library(SeqArray)
   library(foreach)
 
-### load genotyping data
-  #load(file="/mnt/spicy_3/AlanDaphnia/LD_HWE_slidingWindow/subFiles.Rdata")
-  load(file="/scratch/aob2x/daphnia_hwe_sims/subFiles.Rdata")
-  sc[,year:=tstrsplit(clone, "_")[[2]]]
+# Question:
+## Are the pooled F1s from 2018 D8 basically an even mixture of F1s between A & C?
 
-  ### open GDS object
-  #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Afiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds", allow.duplicate=TRUE)
-  #genofile <- seqOpen("/mnt/spicy_3/Karen/201620172018FinalMapping/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
-  genofile <- seqOpen("/scratch/aob2x/daphnia_hwe_sims/totalnewmapwMarch2018_Dfiltsnps10bpindels_snps_filter_pass_lowGQmiss.seq.gds")
+# Answser: There are two ways to test this.
+## The first asks what fraction of polymorphisms in the pooled data exist as informative markers between A & C.
+### `DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/old/pooledMF_r_hybrids_questionmark.R` implements the first approach
+## The second is to calculate the average frequency of the unique gneotypes among the A & C
+### `DaphniaPulex20162017Sequencing/AlanAnalysis/pooledMF/old/pooledMF_r_hybrids_questionmark.R` implements the first approach
 
-### get differences between A&B
-  genodat <- foreach(sc.i=c("A", "B"))%do%{
-    seqResetFilter(genofile)
-    seqSetFilter(genofile, sample.id=sc[SC==sc.i][pond=="D8"]$clone)
-
-    tmp <- data.table(chr=seqGetData(genofile, "chromosome"),
-                     pos=seqGetData(genofile, "position"),
-                     variant.id=seqGetData(genofile, "variant.id"),
-
-                     sc=sc.i,
-                     af= 1 - seqAlleleFreq(genofile))
-  }
-  genodat <- rbindlist(genodat)
-
-  genodat.w <- dcast(genodat, chr + pos + variant.id ~ sc)
-
+### load
 
 ### pooled data
   load("/nv/vol186/bergland-lab/alan/totalADRDlongall.Rdata")
