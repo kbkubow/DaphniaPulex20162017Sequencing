@@ -1,0 +1,85 @@
+module load  gcc/7.1.0  openmpi/3.1.4
+module load R/3.5.3
+R
+
+### libraries
+		library(gdsfmt)
+		library(SNPRelate)
+		library(data.table)
+		library(ggplot2)
+		library(foreach)
+		library(lattice)
+		library(tidyr)
+		library(SeqArray)
+		library(tidyverse)
+
+### Load genotype file
+		genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapJune2020_ann.seq.gds")
+
+    snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+        chr = seqGetData(genofile, "chromosome"),
+        pos = seqGetData(genofile, "position"),
+        dp = seqGetData(genofile, "annotation/info/DP"))
+
+### Load superclone file
+    sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+
+### Load SNP file
+    load("dpfiltsnps_20200623.Rdata")
+    dpfiltsnpsids <- dpfiltsnps$variant.ids
+
+  	seqSetFilter(genofile, variant.id=dpfiltsnpsids)
+
+    SCstotest <- c("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "P")
+
+    goodsnps <- foreach(i=1:length(SCstotest), .combine="rbind")%do%{
+
+      s=SCstotest[i]
+      seqResetFilter(genofile)
+      sctmp <- sc[SC==s & medrd > 4 & Nonindependent==0]
+      sctmpids <- sctmp$clone
+
+      seqSetFilter(genofile, sample.id=sctmpids)
+      seqSetFilter(genofile, variant.id=snpsvarPulexids)
+
+      snps.dt <- data.table(variant.ids=seqGetData(genofile, "variant.id"),
+          chr = seqGetData(genofile, "chromosome"),
+          pos = seqGetData(genofile, "position"),
+    		  af=seqAlleleFreq(genofile, .progress=T))
+
+      hetsnps <- snps.dt[af > 0.49 & af < 0.51]
+
+      hetsnps
+
+    }
+
+    goodsnpsunique <- unique(goodsnps)
+    goodsnpsuniqueids <- goodsnpsunique$variant.ids
+
+    seqResetFilter(genofile)
+
+    seqSetFilter(genofile, variant.id=goodsnpsuniqueids)
+
+    sctouse <- sc[Nonindependent==0 & medrd > 9 & LabGenerated==0]
+    sctouseids <- sctouse$clone
+
+    seqSetFilter(genofile, sample.id=sctouseids)
+
+    seqGDS2VCF(genofile, "GoodSiteswOGs.vcf")
+
+
+### Trying again
+
+    scsub <- sc[population=="D8" | population=="DBunk" | population=="DCat"]
+    scsub <- scsub[LabGenerated==0 & Species=="pulex" & Nonindependent==0 & medrd > 4]
+    scsubids <- scsub$clone
+    seqSetFilter(genofile, sample.id=scsubids)
+
+    snps.dt <- data.table(variant.ids=seqGetData(genofile, "variant.id"),
+        chr = seqGetData(genofile, "chromosome"),
+        pos = seqGetData(genofile, "position"),
+        af=seqAlleleFreq(genofile, .progress=T))
+
+    goodsnps <- snps.dt[af>0.5 & af<0.85]
+
+    seqGDS2VCF(genofile, "GoodSitesB.vcf")

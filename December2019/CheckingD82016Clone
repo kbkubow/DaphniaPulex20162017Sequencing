@@ -1,0 +1,66 @@
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+#Load genotype file
+        genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+#Load superclone file
+        sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+
+#Load SNP file
+        load("finalsetsnpset01pulex_20200207.Rdata")
+        seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+        snps <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+          chr = seqGetData(genofile, "chromosome"),
+          pos = seqGetData(genofile, "position"))
+
+# Pull out D82016 superclone H
+
+        scHids <- sc$clone[sc$SC=="H"]
+        seqSetFilter(genofile, sample.id=scHids)
+
+# Pull out genotypes
+
+        het <- t(seqGetData(genofile, "$dosage"))
+        het <- as.data.table(het)
+
+        colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        hetlong <- melt(het, measure.vars=scHids, variable.name="clone", value.name="dosage")
+
+        genoclone <- hetlong[, .N, by=list(variant.ids, dosage)]
+
+        #Remove NAs
+          genoclone <- genoclone[dosage!="NA"]
+
+        #Transform to wide format
+          genoclonewide <- dcast(genoclone, variant.ids ~ dosage, value.var="N")
+          colnames(genoclonewide) <- c("variant.id", "dos0", "dos1", "dos2")
+          genoclonewide[is.na(dos0),dos0:=0]
+          genoclonewide[is.na(dos1),dos1:=0]
+          genoclonewide[is.na(dos2),dos2:=0]
+
+          genoclonewide$total <- genoclonewide$dos0+genoclonewide$dos1+genoclonewide$dos2
+          genoclonewide$propalt <- (genoclonewide$dos1+(genoclonewide$dos0*2))/(genoclonewide$total*2)
+          genoclonewide$foldedfreq <- ifelse(genoclonewide$propalt > 0.5, 1-genoclonewide$propalt, genoclonewide$propalt)
+
+          ggplot(data=genoclonewide, aes(x=foldedfreq)) + geom_histogram()
+          ggplot(data=genoclonewide[foldedfreq>0 & foldedfreq<0.5 & dos1>1], aes(x=foldedfreq)) + geom_histogram()
+
+          genoclonewide$prophet <- genoclonewide$dos1/genoclonewide$total
+
+          ggplot(data=genoclonewide, aes(x=prophet)) + geom_histogram()
+
+          setkey(genoclonewide, variant.id)
+          setkey(snps, variant.id)
+          mgenoclonewide <- merge(genoclonewide, snps)

@@ -70,8 +70,26 @@
       obs.rd <- merge(obs.rd, obs.geno)
 
     ### try adding in only keeping gene conversion type sites
+    # First get allele frequency spectrum by aggregating genotype calls across sites
+      #genocountbysite <- obs.rd[, .N, by=list(variant.id, obsGeno)]
 
-    ### remove individuals with missing genotype calls the first time arounbd
+    # Transform to wide format
+      #genocountbysite <- genocountbysite[obsGeno!="NA"]
+      #genocountbysitewide <- dcast(genocountbysite, variant.id ~ obsGeno, value.var="N")
+      #colnames(genocountbysitewide) <- c("variant.id", "dos0", "dos1", "dos2")
+      #genocountbysitewide[is.na(dos0),dos0:=0]
+      #genocountbysitewide[is.na(dos1),dos1:=0]
+      #genocountbysitewide[is.na(dos2),dos2:=0]
+      #genocountbysitewide$total <- genocountbysitewide$dos0+genocountbysitewide$dos1+genocountbysitewide$dos2
+      #genocountbysitewide$prophet <- genocountbysitewide$dos1/genocountbysitewide$total
+      #genocountbysitewidehet <- genocountbysitewide[prophet > 0.5]
+      #sitetofilt <- data.table(variant.id=genocountbysitewidehet$variant.id)
+      #setkey(sitetofilt, variant.id)
+      #setkey(obs.rd, variant.id)
+      #mobs.rd <- merge(obs.rd, sitetofilt)
+      #obs.rd <- mobs.rd
+
+    ### remove individuals with missing genotype calls the first time around
       obs.rd <- obs.rd[!is.na(af) & !is.na(obsGeno)]
 
     ## Set biased af for genotyping Simulation
@@ -129,7 +147,7 @@
 
 ### run
 
-sim <- simGeno(SC.i="B", afs=0.5, nSNPs=length(finalsetsnpset01))
+sim <- simGeno(SC.i="C", afs=0.5, nSNPs=length(finalsetsnpset01))
 
     totalibsout <- foreach(i=c("A", "B", "C", "D", "E", "F", "H", "I", "J", "K", "L", "M",
     "N", "O", "P", "Q", "R"), .combine="rbind")%do%{
@@ -173,6 +191,10 @@ sim <- simGeno(SC.i="B", afs=0.5, nSNPs=length(finalsetsnpset01))
   save(ibsbychrlong, file="ibsbychrlong_20200205.Rdata")
 
   ggplot(data=ibsbychrlong, aes(x=variable, y=value, color=variable)) + geom_beeswarm() + facet_wrap(~chr)
+
+  ibs.out.l <- melt(ibs.out, id.vars=c("cloneA", "cloneB"))
+  ggplot(data=ibs.out.l, aes(x=variable, y=value, color=variable)) + geom_beeswarm()
+
 
 #!/usr/bin/env Rscript
 
@@ -219,6 +241,44 @@ sim <- simGeno(SC.i="B", afs=0.5, nSNPs=length(finalsetsnpset01))
   #ggsave(IBSsim_0.51, file="~/IBSsim_0.51.pdf")
   #ggsave(IBSsim_0.55, file="~/IBSsim_0.55.pdf")
   #ggsave(IBSsim_0.6, file="~/IBSsim_0.6.pdf")
+
+
+
+  load("totalibsout_geneconv_afs0.5_202002010.Rdata")
+  totalibsoutgc <- totalibsout
+  totalibsoutgc$type <- c("geneconversion")
+  load("totalibsout_newmut_afs0.5_202002010.Rdata")
+  totalibsoutnm <- totalibsout
+  totalibsoutnm$type <- c("mutation")
+  load("totalibsout_afs0.50_20200204.Rdata")
+  totalibsout$type <- c("all")
+
+  ibs.out.lgc <- melt(totalibsoutgc, id.vars=c("cloneA", "cloneB", "SC", "afs", "type"))
+  ibs.out.lnm <- melt(totalibsoutnm, id.vars=c("cloneA", "cloneB", "SC", "afs", "type"))
+  ibs.out.l <- melt(totalibsout, id.vars=c("cloneA", "cloneB", "SC", "afs", "type"))
+  IBSalltogether <- rbind(ibs.out.lgc, ibs.out.lnm, ibs.out.l)
+
+
+
+  ggplot(data=IBSalltogether[SC=="H"], aes(x=variable, y=value, color=variable)) + geom_beeswarm() + facet_wrap(~type)
+
+
+  load("totalibsout_geneconvB_afs0.5_202002010.Rdata")
+  totalibsoutgc <- totalibsout
+  totalibsoutgc$type <- c("geneconversion")
+  load("totalibsout_newmut_afs0.5_202002010.Rdata")
+  totalibsoutnm <- totalibsout
+  totalibsoutnm$type <- c("mutation")
+  load("totalibsout_afs0.50_20200204.Rdata")
+  totalibsout$type <- c("all")
+
+  ibs.out.lgc <- melt(totalibsoutgc, id.vars=c("cloneA", "cloneB", "SC", "afs", "type"))
+  ibs.out.lnm <- melt(totalibsoutnm, id.vars=c("cloneA", "cloneB", "SC", "afs", "type"))
+  ibs.out.l <- melt(totalibsout, id.vars=c("cloneA", "cloneB", "SC", "afs", "type"))
+  IBSalltogether <- rbind(ibs.out.lgc, ibs.out.lnm, ibs.out.l)
+
+  ggplot(data=IBSalltogether[SC=="H"], aes(x=variable, y=value, color=variable)) + geom_beeswarm() + facet_wrap(~type)
+
 
 
   temp <- unlist(strsplit(as.character(ibs.out.l$cloneA), split="_"))

@@ -77,13 +77,13 @@
 #Count occurrence of each genotype for each clone
   countgc <- obs.geno[, .N, by=list(clone, obsGeno)]
   countwide <- dcast(countgc, clone ~ obsGeno, value.var="N")
-  colnames(countwide) <- c("clone", "obsaltgc", "obshet", "obsrefgc")
-  countwide[is.na(obsrefgc),obsrefgc:=0]
+  colnames(countwide) <- c("clone", "obsalt", "obshet", "obsref")
+  countwide[is.na(obsref),obsref:=0]
   countwide[is.na(obshet),obshet:=0]
-  countwide[is.na(obsaltgc),obsaltgc:=0]
+  countwide[is.na(obsalt),obsalt:=0]
   countwide$SC <- c(varA)
 
-  write.csv(countwide, file=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobsmut/IBSindobsmut_", varA, ".csv", sep=""), quote=F, row.names=F)
+  write.csv(countwide, file=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSobsmut/IBSindobsmut_2N_", varA, ".csv", sep=""), quote=F, row.names=F)
 
 
   write.table(PulexSCsover4dt, file="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/PulexSCover4", quote=F, row.names=F, col.names=F)

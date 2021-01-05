@@ -60,7 +60,8 @@
 
   genoclonewide$total <- genoclonewide$dos0+genoclonewide$dos1+genoclonewide$dos2
   genoclonewide$prophet <- genoclonewide$dos1/genoclonewide$total
-  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5]
+  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5 &
+    genoclonewide$total-genoclonewide$dos1 > 1]
 
   seqSetFilter(genofile, variant.id=sitestouse)
 

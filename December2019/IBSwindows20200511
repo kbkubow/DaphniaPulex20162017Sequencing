@@ -1,0 +1,96 @@
+#!/usr/bin/env Rscript
+
+    ### libraries
+      library(data.table)
+      library(foreach)
+      library(ggplot2)
+
+  ### Load processed IBS by window files
+      inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", pattern="mscACvsrest.ag_20200424")
+
+      totalibsag <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
+        f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", inputfiles[i], sep="")
+        load(f)
+        mscACvsrest.ag
+      }
+
+      inputfilesPO <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", pattern="mscACvsrest_POBC_20200424")
+
+      totalibsagPO <- foreach(i=1:length(inputfilesPO), .combine="rbind")%do%{
+        f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", inputfilesPO[i], sep="")
+        load(f)
+        mscACvsrest_POBC
+      }
+
+      inputfilesDBunkD8 <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", pattern="mscD8DBunknoAC_20200424")
+
+      totalibsagD8DBunk <- foreach(i=1:length(inputfilesDBunkD8), .combine="rbind")%do%{
+        f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", inputfilesDBunkD8[i], sep="")
+        load(f)
+        mscD8DBunkBnoAC.ag
+      }
+
+
+      inputfilesD8214D823 <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", pattern="mscD8DBunkBACD8823vsD8214tot")
+
+      totalibsD8214D823 <- foreach(i=1:length(inputfilesD8214D823), .combine="rbind")%do%{
+        f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/", inputfilesD8214D823[i], sep="")
+        load(f)
+        mscD8DBunkBACD8823vsD8214tot
+      }
+
+### trial with subset of data
+    #load("mscACvsrest.ag_20200424_G.Rdata")
+    #load("mscACvsrest_POBC_20200424G.Rdata")
+    #load("mscD8DBunknoAC_20200424G.Rdata")
+
+    mscD8DBunkBnoAC.ag <- totalibsagD8DBunk
+
+    colnames(mscD8DBunkBnoAC.ag) <- c("window", "chr", "start", "stop", "SCA_C",
+      "SCB_C", "yearA", "yearB", "popA", "popB", "compinfo", "speciesA",
+      "speciesB", "meanIBS", "sd_IBS")
+
+    wins <- unique(totalibsag$window)
+
+    AvsCvsD8DBunk <- foreach(i=1:length(wins), .combine="rbind")%do%{
+    AvsCvsD8DBunk <- foreach(i=12001:12169, .combine="rbind")%do%{
+        tmp <- data.table(window=c(i), chr=(unique(totalibsag$chr[totalibsag$window==i])),
+          start=(unique(totalibsag$start[totalibsag$window==i])),
+          stop=(unique(totalibsag$stop[totalibsag$window==i])),
+          AvsCIBS=totalibsag$meanIBS[totalibsag$ACvspond=="A_D8DBunk_C_D8DBunk" & totalibsag$window==i],
+          D8DBunkmeanIBS=mean(mscD8DBunkBnoAC.ag$meanIBS[mscD8DBunkBnoAC.ag$window==i]),
+          D8DBunk5IBS=((quantile(mscD8DBunkBnoAC.ag$meanIBS[mscD8DBunkBnoAC.ag$window==i],probs=c(0.05, 0.95)))[1]),
+          D8DBunk95IBS=((quantile(mscD8DBunkBnoAC.ag$meanIBS[mscD8DBunkBnoAC.ag$window==i],probs=c(0.05, 0.95)))[2]))
+        tmp$outlier <- ifelse(tmp$AvsCIBS > tmp$D8DBunk5IBS & tmp$AvsCIBS < tmp$D8DBunk95IBS, 0, 1)
+        tmp
+    }
+
+    save(AvsCvsD8DBunk, file="AvsCvsD8DBunk_20200511.Rdata")
+
+    AvsCvsD8DBunk$id <- "test"
+
+    IBS <- ggplot() + geom_line(data=AvsCvsD8DBunk, aes(x=as.factor(window), y=D8DBunk5IBS, group=id, color="95percentileD8DBunk")) +
+      geom_line(data=AvsCvsD8DBunk, aes(x=as.factor(window), y=D8DBunk95IBS, group=id, color="95percentileD8DBunk")) +
+      geom_line(data=AvsCvsD8DBunk, aes(x=as.factor(window), y=AvsCIBS, group=id, color="AvsCIBS"))
+
+
+
+    mscD8DBunkBnoAC.ag$ACvspond <- ifelse(mscD8DBunkBnoAC.ag$popA=="D8" & mscD8DBunkBnoAC.ag$popB=="D8", "D8_D8",
+      ifelse(mscD8DBunkBnoAC.ag$popA=="DBunk" & mscD8DBunkBnoAC.ag$popB=="DBunk", "DBunk_DBunk", "D8_DBunk"))
+    mscD8DBunkBnoAC.ag$SCcompare <- mscD8DBunkBnoAC.ag$ACvspond
+    mscD8DBunkBnoAC.ag <- mscD8DBunkBnoAC.ag[speciesA!="obtusa" & speciesB!="obtusa"]
+
+    #mscACvsrest_AW.ag <- rbind(mscACvsrest.ag, mscACvsrest_POBC)
+    mscACvsrest_AW.ag <- rbind(totalibsag, totalibsagPO)
+
+    mscACvsrest_AW.ag$SCcompare <- paste(mscACvsrest_AW.ag$SCA_C,mscACvsrest_AW.ag$SCB_C,sep="_")
+
+    mscACvsrest_AW.ag$ACvspond <- ifelse(mscACvsrest_AW.ag$SCA_C=="C" & mscACvsrest_AW.ag$SCB_C=="G", "C_Obtusa", ifelse(
+      mscACvsrest_AW.ag$SCA_C=="C" & mscACvsrest_AW.ag$SCB_C=="P", "C_Pulicaria", mscACvsrest_AW.ag$ACvspond))
+
+    mscACvsrest_AW.ag$ACvspond <- factor(mscACvsrest_AW.ag$ACvspond, levels=c("A_D8DBunk_C_D8DBunk",
+      "A_D10", "C_D10", "A_W1", "A_W6", "C_W1", "C_W6", "A_pulicaria", "C_Pulicaria", "A_obtusa", "C_Obtusa"))
+
+    mscACvsrest_AW.ag$SCcompare <- factor(mscACvsrest_AW.ag$SCcompare, levels=c("A_C", "A_D", "A_AF", "A_OO_Fall_2016_D10_41",
+      "C_D", "C_AF", "C_OO_Fall_2016_D10_41", "A_OO_Spring_2016_W1_1.1", "A_OO_Spring_2016_W6_6.1", "A_OO_Spring_2016_W6_6.3",
+      "C_OO_Spring_2016_W1_1.1", "C_OO_Spring_2016_W6_6.1", "C_OO_Spring_2016_W6_6.3", "A_P", "C_P", "A_G", "C_G"))

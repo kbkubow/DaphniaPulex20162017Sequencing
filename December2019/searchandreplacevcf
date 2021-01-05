@@ -1,0 +1,29 @@
+sed -i 's/Scaffold_1931_HRSCAF_2197/1/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_9198_HRSCAF_10754/2/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_9199_HRSCAF_10755/3/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_9197_HRSCAF_10753/4/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_9200_HRSCAF_10757/5/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_2373_HRSCAF_2879/6/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_7757_HRSCAF_8726/7/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_6786_HRSCAF_7541/8/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_1863_HRSCAF_2081/9/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_2217_HRSCAF_2652/10/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_9201_HRSCAF_10758/11/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+sed -i 's/Scaffold_2158_HRSCAF_2565/12/g' polyDorsetMAF005withlabgeneratedrecal.vcf
+
+
+grep "^#" polyDorsetMAF005withlabgeneratedrecal.vcf > polyDorsetMAF005withlabgeneratedrecal.sorted.vcf && grep -v "^#" polyDorsetMAF005withlabgeneratedrecal.vcf | \
+  sort -V -k1,1 -k2,2n >> polyDorsetMAF005withlabgeneratedrecal.sorted.vcf
+
+grep -v "^Scaff" polyDorsetMAF005withlabgeneratedrecal.sorted.vcf > polyDorsetMAF005withlabgeneratedrecal.sortedB.vcf
+
+mv polyDorsetMAF005withlabgeneratedrecal.sortedB.vcf polyDorsetMAF005withlabgeneratedrecal.sorted.vcf
+
+module load plink
+
+plink --vcf polyDorsetMAF005withlabgeneratedrecal.sorted.vcf --out polyDorsetMAF005withlabgeneratedrecal.sorted --const-fid
+
+
+grep -v "^#" polyDorsetMAF005withlabgeneratedrecal.sorted.vcf | grep -v "^Scaff" > polyDorsetMAF005withlabgeneratedrecal.sorted_tmp
+
+awk '{print $1, $1"_"$2, "0", $2}' polyDorsetMAF005withlabgeneratedrecal.sorted_tmp > polyDorsetMAF005withlabgeneratedrecal.sorted.map

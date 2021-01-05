@@ -1,0 +1,91 @@
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(SeqArray)
+
+### format data properly to work with SNPRelate
+        ### subsetted data for PCA stuff
+                vcf.fn <- "/scratch/kbb7sh/Daphnia/mitoP3SpFall2016_newerfiltSNPs25bpinqdels_snps_filter_pass.vcf"
+                snpgdsVCF2GDS(vcf.fn, "/scratch/kbb7sh/Daphnia/MappingDecember2019/Mito_ann.gds",
+                                        method=c("biallelic.only"), snpfirstdim = FALSE)
+
+                seqVCF2GDS(vcf.fn, "/scratch/kbb7sh/Daphnia/MappingDecember2019/Mito_ann.seq.gds")
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(tidyverse)
+
+        genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/Mito_ann.seq.gds")
+
+        snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+            chr = seqGetData(genofile, "chromosome"),
+            pos = seqGetData(genofile, "position"),
+            dp = seqGetData(genofile, "annotation/info/DP"))
+
+
+        sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+        sc$population <- str_replace(sc$population, "Dcat", "DCat")
+
+        scAC <- sc[SC=="A" | SC=="C"]
+        scACids <- scAC$clone
+
+        seqResetFilter(genofile)
+        seqSetFilter(genofile, sample.id=scACids)
+
+        # Pull out genotypes
+        	het <- t(seqGetData(genofile, "$dosage"))
+        	het <- as.data.table(het)
+
+        	colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        	het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        	setkey(het, variant.ids)
+        	setkey(snps, variant.ids)
+
+        	mhet <- merge(snps, het)
+
+          sampids <- c(seqGetData(genofile, "sample.id"))
+
+        	mhetlong <- melt(mhet, measure.vars=sampids, variable.name="clone", value.name="dosage")
+
+        	setkey(scAC, clone)
+        	setkey(mhetlong, clone)
+        	mmhetlong <- merge(mhetlong, scAC)
+        	mmhetlong <- mmhetlong[Nonindependent==0]
+
+        	SCcounts <- mmhetlong[, .N, by=list(SC, variant.ids, dosage)]
+
+        #Remove NAs
+        	SCcounts <- SCcounts[dosage!="NA"]
+        	SCcountsA <- SCcounts[SC=="A"]
+        	SCcountsC <- SCcounts[SC=="C"]
+
+        	SCcountsAwide <- dcast(SCcountsA, variant.ids ~ dosage, value.var="N")
+        	colnames(SCcountsAwide) <- c("variant.ids", "Ados1", "Ados2")
+        	SCcountsAwide[is.na(Ados1),Ados1:=0]
+        	SCcountsAwide[is.na(Ados2),Ados2:=0]
+
+        	SCcountsCwide <- dcast(SCcountsC, variant.ids ~ dosage, value.var="N")
+        	colnames(SCcountsCwide) <- c("variant.ids", "Cdos1", "Cdos2")
+        	SCcountsCwide[is.na(Cdos1),Cdos1:=0]
+        	SCcountsCwide[is.na(Cdos2),Cdos2:=0]
+
+        	setkey(SCcountsAwide, variant.ids)
+        	setkey(SCcountsCwide, variant.ids)
+        	SCcountsAC <- merge(SCcountsAwide, SCcountsCwide)
+
+        	SCcountsAC$Atot <- SCcountsAC$Ados0+SCcountsAC$Ados1+SCcountsAC$Ados2
+        	SCcountsAC$Ctot <- SCcountsAC$Cdos0+SCcountsAC$Cdos1+SCcountsAC$Cdos2
+
+        	SCcountsACfilt <- SCcountsAC[Atot>59 & Ctot>19]
+
+        	SCcountsACfiltACfix <- SCcountsACfilt[Ados0==Atot & Cdos2==Ctot]
+        	SCcountsACfiltCAfix <- SCcountsACfilt[Ados2==Atot & Cdos0==Ctot]

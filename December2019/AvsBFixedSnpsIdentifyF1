@@ -313,9 +313,58 @@
             setkey(dosagecountsABfixedwide, clone)
             setkey(sc, clone)
             mdosagecountsABfixedwide <- merge(sc, dosagecountsABfixedwide)
-            save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_D82019.Rdata")
+            save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_DBunk2018.Rdata")
 
-        #We see that 2 of 23 individuals look like AxB F1 hybrids.
+        #We see that 1 of 40 individuals look like AxB F1 hybrids.
+
+### Lets pull out the DBunk 2019 individuals
+            DBunk2019clones <- sc[population=="DBunk" & year=="2019"]
+            DBunk2019clonesids <- DBunk2019clones$clone
+
+            seqSetFilter(genofile, sample.id=DBunk2019clonesids)
+
+            het <- t(seqGetData(genofile, "$dosage"))
+            het <- as.data.table(het)
+
+            colnames(het) <- c(seqGetData(genofile, "sample.id"))
+            het$variant.ids <- seqGetData(genofile, "variant.id")
+
+            setkey(het, variant.ids)
+            setkey(snps, variant.ids)
+
+            mhetABfixed <- merge(snps, het)
+
+            mhetABfixedlong <- melt(mhetABfixed, measure.vars=DBunk2019clonesids, variable.name="clone", value.name="dosage")
+
+      #Remove NAs
+            mhetABfixedlong <- mhetABfixedlong[dosage!="NA"]
+
+            setkey(mhetABfixedlong, variant.ids)
+            setkey(ABfixedsub, variant.ids)
+            mmhetABfixedlong <- merge(ABfixedsub, mhetABfixedlong)
+            mmhetABfixedlong$dosageB <- ifelse(mmhetABfixedlong$ref=="B" & mmhetABfixedlong$dosage==2, 0, ifelse(
+            mmhetABfixedlong$ref=="B" & mmhetABfixedlong$dosage==0, 2, mmhetABfixedlong$dosage))
+
+            dosagecountsABfixed <- mmhetABfixedlong[, .N, by=list(clone, dosageB)]
+
+      #Transform to wide format
+            dosagecountsABfixedwide <- dcast(dosagecountsABfixed, clone ~ dosageB, value.var="N")
+            colnames(dosagecountsABfixedwide) <- c("clone", "dos0", "dos1", "dos2")
+            dosagecountsABfixedwide[is.na(dos0),dos0:=0]
+            dosagecountsABfixedwide[is.na(dos1),dos1:=0]
+            dosagecountsABfixedwide[is.na(dos2),dos2:=0]
+            dosagecountsABfixedwide$total <- dosagecountsABfixedwide$dos0+dosagecountsABfixedwide$dos1+
+                dosagecountsABfixedwide$dos2
+            dosagecountsABfixedwide$prophet <- dosagecountsABfixedwide$dos1/dosagecountsABfixedwide$total
+            dosagecountsABfixedwide$propA <- dosagecountsABfixedwide$dos2/dosagecountsABfixedwide$total
+            dosagecountsABfixedwide$propB <- dosagecountsABfixedwide$dos0/dosagecountsABfixedwide$total
+
+            setkey(dosagecountsABfixedwide, clone)
+            setkey(sc, clone)
+            mdosagecountsABfixedwide <- merge(sc, dosagecountsABfixedwide)
+            save(mdosagecountsABfixedwide, file="mdosagecountsABfixedwide_DBunk2019.Rdata")
+
+                #We see that 0 of 18 individuals look like AxB F1 hybrids.
 
 
 ### Next lets subset the F1 hybrids to keep one individual per superclone, preferably a high read depth individual

@@ -209,7 +209,8 @@
   ggplot(data=mtab[population=="D8"], aes(x=EV1, y=EV2, color=as.factor(SC))) + geom_point()
 
   sc$population <- ifelse(sc$population=="Dcat", "DCat", sc$population)
-  scsuper <- sc[SC!="OO"]
+  scsub <- sc[Nonindependent==0]
+  scsuper <- scsub[SC!="OO"]
   abundancebypondyearsc <- scsuper[, .N, by=list(SC, population, year)]
 
   mtabsuper <- mtab[SC!="OO"]
@@ -218,8 +219,10 @@
   setkey(abundancebypondyearsc, SC)
   setkey(mtabsuper, SC)
   mmtabsuper <- merge(abundancebypondyearsc, mtabsuper)
+  mmtabsuper[, c("population.y", "year.y") := NULL][]
+  setnames(mmtabsuper, old = c("population.x", "year.x"), new = c("population", "year"))
 
-  scunique <- sc[SC=="OO"]
+  scunique <- scsub[SC=="OO"]
   abundancebypondyearscunique <- scunique[, .N, by=list(SC, population, year)]
   abundancebypondyearscunique$N <- c(1)
   mtabunique <- mtab[SC=="OO"]
@@ -229,16 +232,9 @@
   setkey(mtabunique, SC, population, year)
   mmtabunique <- merge(abundancebypondyearscunique, mtabunique)
 
+  totaltab <- rbind(mmtabsuper, mmtabunique)
 
-  abundancebypondyear <- sc[, .N, by=list(SC, population, year)]
-  abundancebypondyear$N <- ifelse(abundancebypondyear$SC=="OO", 1, abundancebypondyear$N)
-
-  setkey(mtab, SC, population, year)
-  abundancebypondyear$year <- as.character(abundancebypondyear$year)
-  setkey(abundancebypondyear, SC, population, year)
-  mmtab <- merge(mtab, abundancebypondyear)
-
-  ggplot(data=mmtab[population=="D8" & EV2 < 0.2], aes(x=EV1, y=EV2, color=as.factor(SC))) + geom_point(aes(size=N))
+  ggplot(data=totaltab[population=="D8" & Nonindependent==0], aes(x=EV1, y=EV2, color=as.factor(SC))) + geom_point(aes(size=N))
 
 
 ### Three clear outlier clones in D82016

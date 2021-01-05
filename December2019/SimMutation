@@ -1,0 +1,139 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(gdsfmt)
+  library(SNPRelate)
+  library(data.table)
+  library(ggplot2)
+  library(foreach)
+  library(lattice)
+  library(tidyr)
+  library(SeqArray)
+
+### args ###
+############
+  args=commandArgs(trailingOnly=TRUE)
+  varA=args[1]
+  varB=args[2]
+
+### set working directory
+  setwd("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC")
+
+### open GDS file
+  genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+### Load SuperClone file
+  sc <- fread("CloneInfoFilePulexandObtusa_20200207.txt")
+  sc <- sc[Nonindependent==0 & Species=="pulex"]
+
+### Load LD-pruned SNP-set
+  load("finalsetsnpset01pulex_20200207.Rdata")
+  seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+  snps <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+    chr = seqGetData(genofile, "chromosome"),
+    pos = seqGetData(genofile, "position"))
+
+### Pull out individuals from a specific superclone
+  ids <- sc$clone[sc$Nonindependent==0 & sc$Species=="pulex" & sc$SC==varB]
+  seqSetFilter(genofile, sample.id=ids)
+
+### Pull out genotypes
+  het <- t(seqGetData(genofile, "$dosage"))
+  het <- as.data.table(het)
+
+  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+  het$variant.ids <- seqGetData(genofile, "variant.id")
+
+  hetlong <- melt(het, measure.vars=ids, variable.name="clone", value.name="dosage")
+
+  genoclone <- hetlong[, .N, by=list(variant.ids, dosage)]
+
+#Remove NAs
+  genoclone <- genoclone[dosage!="NA"]
+
+#Transform to wide format
+  genoclonewide <- dcast(genoclone, variant.ids ~ dosage, value.var="N")
+  colnames(genoclonewide) <- c("variant.id", "dos0", "dos1", "dos2")
+  genoclonewide[is.na(dos0),dos0:=0]
+  genoclonewide[is.na(dos1),dos1:=0]
+  genoclonewide[is.na(dos2),dos2:=0]
+
+  genoclonewide$total <- genoclonewide$dos0+genoclonewide$dos1+genoclonewide$dos2
+  genoclonewide$prophet <- genoclonewide$dos1/genoclonewide$total
+  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet < 0.5]
+
+  seqSetFilter(genofile, variant.id=sitestouse)
+
+
+
+### Simulation function
+  simGeno <- function(C.i="B", afs=0.51, nSNPs=length(sitestouse)) {
+    #C.i <- "April_2017_D8_125"; nSNPs <- 5000; afs <- 0.001
+
+    ### get focal individual's genotype
+      seqResetFilter(genofile)
+      seqSetFilter(genofile, sample.id=C.i, variant.id=sitestouse[1:nSNPs])
+
+      focal.genotype <- cbind(snps[1:nSNPs], data.table(af=abs(1-seqAlleleFreq(genofile))))
+
+    ### get empirical read depths for focal clone
+      obs.rd <- cbind(snps[1:nSNPs], as.data.frame(t(seqGetData(genofile, "annotation/format/DP")$data)))
+      setnames(obs.rd, names(obs.rd)[grepl("V[0-9]*", names(obs.rd))], seqGetData(genofile, "sample.id"))
+      obs.rd <- melt(obs.rd, id.vars=c("variant.id", "chr", "pos"), variable.name="clone", value.name="rd")
+
+
+    ### combine read depth and genotype
+      setkey(focal.genotype, variant.id, chr, pos)
+      setkey(obs.rd, variant.id, chr, pos)
+      obs.rd <- merge(focal.genotype, obs.rd)
+
+    ### remove individuals with missing genotype calls the first time around
+      obs.rd <- obs.rd[!is.na(af)]
+
+    ## Set biased af as 0.5 for all sites for genotyping Simulation
+      obs.rd$afs <- c(afs)
+
+    ### simulate the observed genotype based on empirical read depth & "true" genotype
+      obs.rd[,alt.rd:=rbinom(dim(obs.rd)[1], obs.rd$rd, obs.rd$afs)]
+      obs.rd[,ref.rd:=rd - alt.rd]
+
+    ### Add GATK look up table
+      gatkprob <- fread("gtProbabilities.txt")
+      gtprobfilt <- gatkprob[2:3212]
+      gtprobfiltsub <- gtprobfilt[,c("ref.rd", "alt.rd", "GTprob2", "GTprob1", "GTprob0")]
+
+      setkey(obs.rd, ref.rd, alt.rd)
+      setkey(gtprobfiltsub, ref.rd, alt.rd)
+      mtmp <- merge(obs.rd, gtprobfiltsub)
+      mtmp$uniqueid <- paste(mtmp$variant.id,mtmp$clone, sep="_")
+      mtmp[,simGeno:= sample(c("2","1","0"), prob=c(GTprob2, GTprob1, GTprob0), size=1), by=uniqueid]
+      countgc <- mtmp[, .N, by=list(simGeno)]
+      countgc$clone <- c(C.i)
+      countwide <- dcast(countgc, clone ~ paste0("dos", countgc[, unique(simGeno), by=clone]$V1), value.var="N")
+      countwide$dos0 <- ifelse(countwide$dos0 > 1, countwide$dos0, 0)
+      countwide[is.na(dos0),dos0:=0]
+      countwide$afs <- c(afs)
+
+
+
+    ### return
+      countwide
+    }
+
+###Run
+
+    C.i=varA
+    tmp <- foreach(1:10, .combine="rbind")%do%{
+      sim <- simGeno(C.i=C.i, afs=0.0021, nSNPs=length(sitestouse))
+      sim
+    }
+
+
+  write.csv(tmp, file=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimB/IBSindsim_", varB, "_", varA, ".csv", sep=""), quote=F, row.names=F)
+
+
+
+
+  write.table(Cclones, file="Cclones", quote=F, row.names=F, col.names=F)
+  write.table(idsdt, file="Kclones", quote=F, row.names=F, col.names=F)

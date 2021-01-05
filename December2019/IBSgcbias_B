@@ -52,6 +52,16 @@
   snpsids <- msnps$variant.id
   seqSetFilter(genofile, variant.id=snpsids)
 
+  snpsB <- data.table(variant.id = seqGetData(genofile, "variant.id"),
+    chr = seqGetData(genofile, "chromosome"),
+    pos = seqGetData(genofile, "position"))
+
+  all <-  (seqGetData(genofile, "allele"))
+  alldt <- as.data.table(all)
+  refalt <- separate(alldt, all, c("ref", "alt"), sep=",")
+  snpsB$ref <- refalt$ref
+  snpsB$alt <- refalt$alt
+
 
 ### Pull out individuals from a specific superclone
   seqResetFilter(genofile)
@@ -119,20 +129,24 @@
   gctabledtwide$propgc <- gctabledtwide$gc/(gctabledtwide$gc+gctabledtwide$nongc)
 
 
-  #sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5]
-  sitestouse <- genoclonewide$variant.id[genoclonewide$prophet > 0.5 & genoclonewide$total-genoclonewide$dos1 > 1]
-
   seqSetFilter(genofile, variant.id=sitestouse)
 
 
-  obs.geno <- cbind(snps[1:length(sitestouse)], as.data.frame(t(seqGetData(genofile, "$dosage"))))
+  obs.geno <- cbind(snpsB[1:length(sitestouse)], as.data.frame(t(seqGetData(genofile, "$dosage"))))
   setnames(obs.geno, names(obs.geno)[grepl("V[0-9]*", names(obs.geno))], seqGetData(genofile, "sample.id"))
   obs.geno <- melt(obs.geno, id.vars=c("variant.id", "chr", "pos", "ref", "alt"), variable.name="clone", value.name="obsGeno")
-
+  obs.genodp <- cbind(snpsB, as.data.frame(t((seqGetData(genofile, "annotation/format/DP"))$data)))
+  setnames(obs.genodp, names(obs.genodp)[grepl("V[0-9]*", names(obs.genodp))], seqGetData(genofile, "sample.id"))
+  obs.genodp <- melt(obs.genodp, id.vars=c("variant.id", "chr", "pos", "ref", "alt"), variable.name="clone", value.name="obsRD")
+  setkey(obs.geno, variant.id, chr, pos, ref, alt, clone)
+  setkey(obs.genodp, variant.id, chr, pos, ref, alt, clone)
+  obs.geno <- merge(obs.geno, obs.genodp)
+  obs.geno$obsGenoB <- ifelse(obs.geno$obsRD>9, obs.geno$obsGeno, "NA")
   obs.geno$refalt <- paste(obs.geno$ref, obs.geno$alt, sep="_")
-  genoclone <- obs.geno[, .N, by=list(variant.id, obsGeno, refalt)]
-  genoclone <- genoclone[obsGeno!="NA"]
-  genoclonewide <- dcast(genoclone, variant.id~obsGeno, value.var="N")
+
+  genoclone <- obs.geno[, .N, by=list(clone, obsGenoB, refalt)]
+  genoclone <- genoclone[obsGenoB!="NA"]
+  genoclonewide <- dcast(genoclone, clone~obsGenoB, value.var="N")
   colnames(genoclonewide) <- c("variant.id", "dos0", "dos1", "dos2")
   genoclonewide[is.na(dos0),dos0:=0]
   genoclonewide[is.na(dos1),dos1:=0]
@@ -149,9 +163,10 @@
   refaltsub$Ts <- ifelse(refaltsub$ref=="T" & refaltsub$dos2>0, 1, ifelse(refaltsub$alt=="T" & refaltsub$dos0>0, 1, 0))
 
 
-  tmptable <- table(obs.geno$refalt, obs.geno$obsGeno)
+  tmptable <- table(obs.geno$refalt, obs.geno$obsGenoB)
   tmptable <- as.data.table(tmptable)
   colnames(tmptable) <- c("refalt", "obsGeno", "Num")
+  tmptable <- tmptable[obsGeno!="NA"]
   tmptablewide <- dcast(tmptable, refalt~obsGeno, value.var="Num")
   colnames(tmptablewide) <- c("refalt", "gchomalt", "het", "gchomref")
   tmptablewidesub <- tmptablewide[refalt!="A_T" & refalt!="C_G" & refalt!="G_C" & refalt!="T_A"]

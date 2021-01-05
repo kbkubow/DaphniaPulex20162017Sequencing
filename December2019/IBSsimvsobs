@@ -21,10 +21,10 @@
   }
 
 ### Load simulated IBS files
-  inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimE/", pattern="IBSindsim_")
+  inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimF100/", pattern="IBSindsim_")
 
   totalibssim <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
-    f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimE/", inputfiles[i], sep="")
+    f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/IBSsimF100/", inputfiles[i], sep="")
     sim <- fread(f)
     sim
   }
@@ -98,10 +98,21 @@
   totalibsobsmutclone$population <- matdat$V3
   totalibsobsmutclone$year <- matdat$V2
 
-  mIBSsimvsobsclonesub <- data.table(clone=mIBSsimvsobsclone$clone, excesstot=mIBSsimvsobsclone$excesstot)
+  mIBSsimvsobsclonesub <- data.table(clone=mIBSsimvsobsclone$clone, excesstot=mIBSsimvsobsclone$excesstot,
+    meantotalsites=mIBSsimvsobsclone$meantotalsites)
   setkey(totalibsobsmutclone, clone)
   setkey(mIBSsimvsobsclonesub, clone)
   mm <- merge(mIBSsimvsobsclonesub, totalibsobsmutclone)
+  mm$totmutsites <- mm$obsalt+mm$obshet+mm$obsref
+  mm$totexcesspersite <- mm$excesstot/mm$meantotalsites
+  mm$mutpersite <- mm$obshet/mm$totmutsites
+  mm$mutpermoresite <- mm$obshet/(155605-mm$meantotalsites)
+
+  ggplot(data=mm, aes(x=excesstot, y=obshet)) + geom_point()
+  ggplot(data=mm[medrd>5], aes(x=totexcesspersite, y=mutpersite, color=SC)) + geom_point()
+  ggplot(data=mm[medrd>5], aes(x=totexcesspersite, y=obshet, color=SC)) + geom_point()
+  ggplot(data=mm[medrd>5], aes(x=totexcesspersite, y=mutpermoresite, color=SC)) + geom_point()
+  ggplot(data=mm[medrd>5 & SC!="H"], aes(x=totexcesspersite, y=mutpermoresite, color=SC)) + geom_point()
 
   ggplot(data=totalibsobsmutclone[SC=="B" & medrd > 0 & clone!="April_2017_DCat_5"], aes(x=as.factor(year), y=obshet)) + geom_point()
   ggplot(data=totalibsobsmutclone[SC=="B" & medrd > 5 & clone!="April_2017_DCat_5"], aes(x=as.factor(year), y=obshet)) + geom_point()

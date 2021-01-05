@@ -1,0 +1,42 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(data.table)
+  library(foreach)
+  library(doMC)
+  registerDoMC(20)
+  library(ggplot2)
+  library(ggbeeswarm)
+  library(tidyverse)
+
+### Read in KING output file
+  kinship <- fread("truffle.ibd")
+
+### Read in SC file
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+
+  ### Add SC info to king output
+    scsubA <- data.table(ID1=sc$clone, SCA=sc$SC)
+    scsubB <- data.table(ID2=sc$clone, SCB=sc$SC)
+    setkey(kinship, ID2)
+    setkey(scsubB, ID2)
+    tmpm <- merge(kinship, scsubB)
+    setkey(tmpm, ID1)
+    setkey(scsubA, ID1)
+    kinshipsc <- merge(tmpm, scsubA)
+
+  ### Add in year and population info
+    temp <- unlist(strsplit(as.character(kinshipsc$ID1), split="_"))
+    mat <- matrix(temp, ncol=4, byrow=TRUE)
+    matdat <- as.data.table(mat)
+    kinshipsc$populationA <- matdat$V3
+    kinshipsc$yearA <- matdat$V2
+
+    temp <- unlist(strsplit(as.character(kinshipsc$ID2), split="_"))
+    mat <- matrix(temp, ncol=4, byrow=TRUE)
+    matdat <- as.data.table(mat)
+    kinshipsc$populationB <- matdat$V3
+    kinshipsc$yearB <- matdat$V2
+
+    kinshipsc$pondcompare <- paste(kinshipsc$populationA, kinshipsc$populationB, sep="_")
+    kinshipsc$SCcompare <- paste(kinshipsc$SCA, kinshipsc$SCB, sep="_")

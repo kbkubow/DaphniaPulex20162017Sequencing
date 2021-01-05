@@ -8,11 +8,12 @@
   library(tidyverse)
 
 ### Read in KING output file
-  kinship <- fread("plink.genome_nosubset")
+  #kinship <- fread("plink.genome_nosubset")
+  kinship <- fread("plink.genome")
 
 ### Read in SC file
   #sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/CloneInfoFilePulexandObtusa_withmedrd_20200207")
-  sc <- fread("./../KingRelate/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/Superclones201617182019withObtusaandPulicaria_kingcorr_20200402_wmedrd.txt")
   sc <- sc[Species=="pulex" & Nonindependent==0]
 
   ### Add SC info to king output

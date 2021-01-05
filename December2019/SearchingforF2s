@@ -1,0 +1,254 @@
+#!/usr/bin/env Rscript
+
+			### libraries
+						library(gdsfmt)
+						library(SNPRelate)
+						library(data.table)
+						library(ggplot2)
+						library(foreach)
+						library(lattice)
+						library(tidyr)
+						library(SeqArray)
+
+### Load genotype file
+  genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+### Load file designating F1s
+  load("mclonecountswide_ACfixedSNPs_20200417.Rdata")
+
+  # subset to keep only F1 hybrids
+    mclonecountswideF1 <- mclonecountswide[ACF1hybrid==1]
+
+  # make another SC variable that is unique for each other
+    mclonecountswideF1$SCB <- ifelse(mclonecountswideF1$SC=="OO", paste(mclonecountswideF1$SC,
+      mclonecountswideF1$clone, sep="_"), mclonecountswideF1$SC)
+
+  # make an input list of each F1 clonal lineage
+    F1input <- unique(mclonecountswideF1$SCB)
+
+  # make a table with each pairwise comparison of F1s listed
+    F1complist <- foreach(i=1:(length(F1input)-1), .combine="rbind")%do%{
+        focal=F1input[i]
+        start=i+1
+        stop=length(F1input)
+
+        tmp <- F1input[start:stop]
+        data.table(SCA=c(focal), SCB=tmp)
+
+    }
+
+    #save(F1complist, file="F1complist_AxC_20200421.Rdata")
+
+  # Now I need to try to pull out the fixed SNPs for each comparison
+  #!/usr/bin/env Rscript
+
+  			### libraries
+  						library(gdsfmt)
+  						library(SNPRelate)
+  						library(data.table)
+  						library(ggplot2)
+  						library(foreach)
+  						library(lattice)
+  						library(tidyr)
+  						library(SeqArray)
+
+  ### Load genotype file
+    genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+        load("mclonecountswide_ACfixedSNPs_20200417.Rdata")
+        load("F1complist_AxC_20200421.Rdata")
+        load("pulexD8DCatDBunkPoly_20200420.Rdata")
+        pulexD8DCatDBunkPolyids <- pulexD8DCatDBunkPoly$variant.ids
+        seqSetFilter(genofile, variant.id=pulexD8DCatDBunkPolyids)
+
+        # subset to keep only F1 hybrids
+          mclonecountswideF1 <- mclonecountswide[ACF1hybrid==1]
+
+        # make another SC variable that is unique for each other
+          mclonecountswideF1$SCB <- ifelse(mclonecountswideF1$SC=="OO", paste(mclonecountswideF1$SC,
+            mclonecountswideF1$clone, sep="_"), mclonecountswideF1$SC)
+
+
+    F1fixedSNPs <- foreach(i=1:dim(F1complist)[1], .combine="rbind")%do%{
+
+      # Select pairwise comparison and filter for only those clones
+        focalA=F1complist$SCA[[i]]
+        focalB=F1complist$SCB[[i]]
+        tmpclone <- mclonecountswideF1$clone[mclonecountswideF1$SCB==focalA | mclonecountswideF1$SCB==focalB]
+        seqSetFilter(genofile, sample.id=tmpclone)
+
+      # Pull out genotypes
+        het <- t(seqGetData(genofile, "$dosage"))
+  		  het <- as.data.table(het)
+
+  		  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+  	    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+	      setkey(het, variant.ids)
+  		  setkey(pulexD8DCatDBunkPoly, variant.ids)
+
+  		  mhet <- merge(pulexD8DCatDBunkPoly, het)
+
+  		  mhetlong <- melt(mhet, measure.vars=tmpclone, variable.name="clone", value.name="dosage")
+
+  		  setkey(mclonecountswideF1, clone)
+  		  setkey(mhetlong, clone)
+  		  mmhetlong <- merge(mhetlong, mclonecountswideF1)
+  		  mmhetlong <- mmhetlong[Nonindependent==0]
+
+  		  SCcounts <- mmhetlong[, .N, by=list(SCB, variant.ids, dosage)]
+
+        #Remove NAs
+          SCcounts <- SCcounts[dosage!="NA"]
+          SCcountsA <- SCcounts[SCB==focalA]
+          SCcountsC <- SCcounts[SCB==focalB]
+
+          SCcountsAwide <- dcast(SCcountsA, variant.ids ~ dosage, value.var="N")
+          colnames(SCcountsAwide) <- c("variant.ids", "Ados0", "Ados1", "Ados2")
+          SCcountsAwide[is.na(Ados0),Ados0:=0]
+          SCcountsAwide[is.na(Ados1),Ados1:=0]
+          SCcountsAwide[is.na(Ados2),Ados2:=0]
+
+          SCcountsCwide <- dcast(SCcountsC, variant.ids ~ dosage, value.var="N")
+          colnames(SCcountsCwide) <- c("variant.ids", "Cdos0", "Cdos1", "Cdos2")
+          SCcountsCwide[is.na(Cdos0),Cdos0:=0]
+          SCcountsCwide[is.na(Cdos1),Cdos1:=0]
+          SCcountsCwide[is.na(Cdos2),Cdos2:=0]
+
+          setkey(SCcountsAwide, variant.ids)
+          setkey(SCcountsCwide, variant.ids)
+          SCcountsAC <- merge(SCcountsAwide, SCcountsCwide)
+
+          SCcountsAC$Atot <- SCcountsAC$Ados0+SCcountsAC$Ados1+SCcountsAC$Ados2
+          SCcountsAC$Ctot <- SCcountsAC$Cdos0+SCcountsAC$Cdos1+SCcountsAC$Cdos2
+
+          SCcountsACfiltACfix <- SCcountsAC[Ados0==Atot & Cdos2==Ctot]
+          SCcountsACfiltCAfix <- SCcountsAC[Ados2==Atot & Cdos0==Ctot]
+
+          ACfixed <- rbind(SCcountsACfiltACfix, SCcountsACfiltCAfix)
+          ACfixed$SCB_A <- c(focalA)
+          ACfixed$SCB_C <- c(focalB)
+          ACfixed
+
+      }
+
+      save(F1fixedSNPs, file="F1fixedSNPs_AxC_20200421.Rdata")
+
+### Now need to call all these sets of SNPs in the other clones and look for F1 hybrids
+      #!/usr/bin/env Rscript
+
+      			### libraries
+      						library(gdsfmt)
+      						library(SNPRelate)
+      						library(data.table)
+      						library(ggplot2)
+      						library(foreach)
+      						library(lattice)
+      						library(tidyr)
+      						library(SeqArray)
+
+    ### Load genotype file
+      genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+          load("mclonecountswide_ACfixedSNPs_20200417.Rdata")
+          load("F1complist_AxC_20200421.Rdata")
+          load("pulexD8DCatDBunkPoly_20200420.Rdata")
+          pulexD8DCatDBunkPolyids <- pulexD8DCatDBunkPoly$variant.ids
+          seqSetFilter(genofile, variant.id=pulexD8DCatDBunkPolyids)
+          sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/Superclones201617182019withObtusaandPulicaria_kingcorr_20200402_wmedrd.txt")
+          sc$yearB <- ifelse(sc$clone=="December17_2018_D8_1", 2019, sc$year)
+
+      # subset to keep only F1 hybrids
+          mclonecountswideF1 <- mclonecountswide[ACF1hybrid==1]
+
+      # make another SC variable that is unique for each other
+          mclonecountswideF1$SCB <- ifelse(mclonecountswideF1$SC=="OO", paste(mclonecountswideF1$SC,
+          mclonecountswideF1$clone, sep="_"), mclonecountswideF1$SC)
+
+      # Load F1 snps file
+          load("F1fixedSNPs_AxC_20200421.Rdata")
+
+      # Filter input individuals
+
+      sample.ids <- seqGetData(genofile, "sample.id")
+      sampleidsdt <- as.data.table(sample.ids)
+
+      temp <- unlist(strsplit(as.character(sampleidsdt$sample.ids), split="_"))
+      mat <- matrix(temp, ncol=4, byrow=TRUE)
+      matdat <- as.data.table(mat)
+      sampleidsdt$population <- matdat$V3
+      sampleidsdtD8DBunkDCat <- sampleidsdt[population=="D8" | population=="DBunk" | population=="DCat"]
+
+      samplestouseB <- sampleidsdtD8DBunkDCat$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
+        sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
+        sample.ids!="March20_2018_D8_19" & sample.ids!="March15_2019_DBunk_MomPE1" &
+        sample.ids!="March15_2019_DBunk_MomPE20" & sample.ids!="April_2017_Dbarb_11" &
+        sample.ids!="March20_2018_DBunk_26" & sample.ids!="March20_2018_DBunk_37" &
+        sample.ids!="March20_2018_DBunk_42" & sample.ids!="March20_2018_DBunk_10" &
+        sample.ids!="March20_2018_DBunk_18" & sample.ids!="March20_2018_DBunk_21" &
+        sample.ids!="March20_2018_DBunk_22" & sample.ids!="March20_2018_DBunk_23" &
+        sample.ids!="March20_2018_DBunk_38" & sample.ids!="March20_2018_DBunk_40" &
+        sample.ids!="March20_2018_DBunk_41" & sample.ids!="March20_2018_DBunk_43"]
+
+      samplestouseB <- samplestouseB[1:457]
+
+      seqSetFilter(genofile, sample.id=samplestouseB)
+
+
+    PutativeF2s <- foreach(i=1:dim(F1complist)[1], .combine="rbind")%do%{
+
+      # Select pairwise comparison and filter for fixed SNPs
+              focalA=F1complist$SCA[[i]]
+              focalB=F1complist$SCB[[i]]
+              tmp <- F1fixedSNPs[SCB_A==focalA & SCB_C==focalB]
+              tmpsnpsids <- tmp$variant.ids
+              seqSetFilter(genofile, variant.id=tmpsnpsids)
+
+      # Get genotypes
+
+    		het <- t(seqGetData(genofile, "$dosage"))
+    		het <- as.data.table(het)
+
+    		colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    		het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    		setkey(het, variant.ids)
+    		setkey(pulexD8DCatDBunkPoly, variant.ids)
+
+    		mhet <- merge(pulexD8DCatDBunkPoly, het)
+
+    		mhetlong <- melt(mhet, measure.vars=samplestouseB, variable.name="clone", value.name="dosage")
+
+    		setkey(mhetlong, variant.ids)
+    		setkey(tmp, variant.ids)
+    		mhetlongACinfo <- merge(mhetlong, tmp)
+
+    		mhetlongACinfo$ACsnp <- ifelse(mhetlongACinfo$Ados0 > mhetlongACinfo$Cdos0, "Asnp", "Csnp")
+    		mhetlongACinfo$dosageB <- ifelse(mhetlongACinfo$dosage==1, 1, ifelse(mhetlongACinfo$dosage==0 & mhetlongACinfo$ACsnp=="Asnp", 2, ifelse(
+    		mhetlongACinfo$dosage==2 & mhetlongACinfo$ACsnp=="Asnp", 0, mhetlongACinfo$dosage
+    		)))
+
+    		clonecounts <- mhetlongACinfo[, .N, by=list(clone, dosageB)]
+    		clonecounts <- clonecounts[dosageB!="NA"]
+
+    		clonecountswide <- dcast(clonecounts, clone ~ dosageB, value.var="N")
+    		colnames(clonecountswide) <- c("clone", "HomC", "Het", "HomA")
+    		clonecountswide[is.na(HomC),HomC:=0]
+    		clonecountswide[is.na(Het),Het:=0]
+    		clonecountswide[is.na(HomA),HomA:=0]
+
+    		clonecountswide$total <- clonecountswide$HomC+clonecountswide$Het+clonecountswide$HomA
+    		clonecountswide$propC <- clonecountswide$HomC/clonecountswide$total
+    		clonecountswide$propHet <- clonecountswide$Het/clonecountswide$total
+    		clonecountswide$propA <- clonecountswide$HomA/clonecountswide$total
+
+    		setkey(clonecountswide, clone)
+    		setkey(sc, clone)
+    		mclonecountswide <- merge(clonecountswide, sc)
+
+        F2s <- mclonecountswide[propHet > 0.9 & year==2019]
+        F2s$ParentA <- c(focalA)
+        F2s$ParentB <- c(focalB)
+        F2s
+
+      }
+
+      save(PutativeF2s, file="PutativeF2s_AxC_20200422.Rdata")

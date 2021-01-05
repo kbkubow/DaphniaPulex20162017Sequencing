@@ -1,0 +1,191 @@
+module load  gcc/7.1.0  openmpi/3.1.4
+module load R/3.5.3
+
+R
+
+#!/usr/bin/env Rscript
+
+### libraries
+  library(data.table)
+  library(foreach)
+  library(doMC)
+  registerDoMC(20)
+  library(ggplot2)
+  library(tidyverse)
+
+### Load good chromosome bed file
+  chrfile <- fread("/scratch/kbb7sh/genomefiles/D84Agoodscaffstouse1start.bed")
+  colnames(chrfile) <- c("chr", "start", "stop")
+
+### Load reconstruction file
+  recon <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/all.vitPath.pio.csv")
+
+  # Pull out A and C
+    reconsub <- recon[, c("clone", "chr", "pos", "phase.geno"), with=TRUE]
+    reconsubA <- reconsub[clone=="A"]
+    reconsubC <- reconsub[clone=="C"]
+
+  # Separate phased genotype into two haplotypes
+    reconsubA <- separate(reconsubA, phase.geno, c("A1", "A2"), sep=1)
+    reconsubA <- reconsubA[, c("chr", "pos", "A1", "A2")]
+    reconsubC <- separate(reconsubC, phase.geno, c("C1", "C2"), sep=1)
+    reconsubC <- reconsubC[, c("chr", "pos", "C1", "C2")]
+
+  # Merge A and C files
+    setkey(reconsubA, chr, pos)
+    setkey(reconsubC, chr, pos)
+    phasehaploAC <- merge(reconsubA, reconsubC)
+
+### make windows
+  chrtouse <- chrfile[stop>1000000]
+  chrtouseids <- chrtouse$chr
+
+  window.size <- 250000
+  step.size <- 10000
+  wins <- foreach(chr.i=chrtouseids, .combine="rbind")%do%{
+    #chr.i <- "Scaffold_1863_HRSCAF_2081"
+    chrtousesub <- chrtouse[chr==chr.i]
+
+    data.table(chr=chr.i, start=seq(from=chrtousesub$start,
+                                    to=chrtousesub$stop - window.size,
+                                    by=step.size),
+                          stop =seq(from=chrtousesub$start,
+                                    to=chrtousesub$stop - window.size,
+                                    by=step.size) + window.size)
+  }
+
+  wins$totalbp <- wins$stop-wins$start
+
+### Ok, now to calculate the total number of black listed base pairs in each widow
+  # Load total blacklist bed file
+      blacklist <- fread("/scratch/kbb7sh/genomefiles/totalblacklist.bed")
+      colnames(blacklist) <- c("chr", "start", "stop")
+      setkey(blacklist, chr, start, stop)
+
+  # Go through each window and pull out bed file entries that correspond, calculate length, and add
+
+      winsblbp <- foreach(win.i=1:dim(wins)[1], .combine="rbind")%do%{
+        #win.i <- 1
+        c <- wins$chr[[win.i]]
+        strt <- wins$start[[win.i]]
+        stp <- wins$stop[[win.i]]
+
+        tmp <- blacklist[chr==c & start >= strt & stop <= stp]
+        tmp$length <- tmp$stop-tmp$start
+        data.table(chr=c, start=strt, stop=stp, totalblbp=sum(tmp$length))
+
+      }
+### Add count of blacklisted sites into windows file via merging
+  setkey(wins, chr, start, stop)
+  setkey(winsblbp, chr, start, stop)
+  mwins <- merge(wins, winsblbp)
+
+  #Calculate number of analyzed basepairs per window via subtracting blacklisted from total
+  mwins$truesitesperwin <- mwins$totalbp - mwins$totalblbp
+
+### Ok, the hard part now, calculate the number of matches versus mismatches for each haplotypic comparison by window
+  # Do this by window, with every comparison by window, or do this by comparison for every window?
+  # What are all the comparisons? A1 vs A2, A1 vs B1, A1 vs B2, A2 vs B1, A2 vs B2, B1 vs B2, can we do this in table form?
+  comparisons <- data.table(H1=c("A1", "A1", "A1", "A2", "A2", "B1"), H2=c("A2", "B1", "B2", "B1", "B2", "B2"))
+  # Maybe this isn't the right approach. Maybe just make new columns for each comparison with 1 being a mismatch and 0 being a match?
+  phasehaploAC$A1A2 <- ifelse(phasehaploAC$A1==phasehaploAC$A2, 0, 1)
+  phasehaploAC$A1C1 <- ifelse(phasehaploAC$A1==phasehaploAC$C1, 0, 1)
+  phasehaploAC$A1C2 <- ifelse(phasehaploAC$A1==phasehaploAC$C2, 0, 1)
+  phasehaploAC$A2C1 <- ifelse(phasehaploAC$A2==phasehaploAC$C1, 0, 1)
+  phasehaploAC$A2C2 <- ifelse(phasehaploAC$A2==phasehaploAC$C2, 0, 1)
+  phasehaploAC$C1C2 <- ifelse(phasehaploAC$C1==phasehaploAC$C2, 0, 1)
+
+
+  winsdist <- foreach(win.i=1:dim(wins)[1], .combine="rbind")%do%{
+    #win.i <- 1
+    c <- wins$chr[[win.i]]
+    strt <- wins$start[[win.i]]
+    stp <- wins$stop[[win.i]]
+
+    tmp <- phasehaploAC[chr==c & pos >= strt & pos <= stp]
+    data.table(chr=c, start=strt, stop=stp, A1A2diff=sum(tmp$A1A2), A1C1diff=sum(tmp$A1C1),
+      A1C2diff=sum(tmp$A1C2), A2C1diff=sum(tmp$A2C1), A2C2diff=sum(tmp$A2C2),
+      C1C2diff=sum(tmp$C1C2))
+  }
+
+### Ok, now lets add the counts of differences into our mwins file to get a final proportion of differences per basepairs by widow
+  setkey(mwins, chr, start, stop)
+  setkey(winsdist, chr, start, stop)
+  m2wins <- merge(mwins, winsdist)
+
+  # Could we make this long format instead of wide? I think that would be preferable
+
+  comps <- c("A1A2diff", "A1C1diff", "A1C2diff", "A2C1diff", "A2C2diff", "C1C2diff")
+
+  m2winslong <- melt(m2wins, measure.vars=comps, variable.name="comparison", value.name="numdist")
+
+  m2winslong$diffperbp <- m2winslong$numdist/m2winslong$truesitesperwin
+
+  m2winslong$chrstart <- paste(m2winslong$chr, m2winslong$start, sep="_")
+
+  ggplot(data=m2winslong, aes(x=as.numeric(start), y=diffperbp, group=comparison, color=comparison)) + geom_line() + facet_wrap(~chr, scale="free_x")
+  ggplot(data=m2winslong[chr=="Scaffold_1863_HRSCAF_2081"], aes(x=as.numeric(start), y=diffperbp, group=comparison, color=comparison)) + geom_line() + facet_wrap(~chr, scale="free_x")
+
+### Ok, so need to designate each window as being inside or outside of the PoolSeq peaks (which file needs to be updated still)
+  # Load in peaks file
+    #peaks <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/peaks.csv")
+    load("gprime_peaks.replicates.250K.05.Rdata")
+
+
+  # Figure out which windows fall in peaks
+
+  winsinpeaks <- foreach(peak.i=1:dim(peaks)[1], .combine="rbind")%do%{
+    #peak.i <- 1
+    c <- peaks$CHROM[[peak.i]]
+    strt <- peaks$start[[peak.i]]
+    stp <- peaks$end[[peak.i]]
+
+    tmp <- wins[chr==c & start >= strt-125000 & stop <= stp+125000]
+    tmp$inpeak <- c("yes")
+    tmp$peaknum <- c(peak.i)
+    tmp
+  }
+
+  # Now need to add these in to the m2winslong file
+  setkey(m2winslong, chr, start, stop, totalbp)
+  setkey(winsinpeaks, chr, start, stop, totalbp)
+  m3winslong <- merge(m2winslong, winsinpeaks, all.x=TRUE)
+
+  m3winslong[is.na(inpeak),inpeak:="no"]
+  m3winslong[is.na(peaknum),peaknum:="0"]
+
+
+  save(m3winslong, file="m3winslong.Rdata")
+
+
+  foreach(chr.i=)
+
+  ggplot(data=m3winslong, aes(x=diffperbp, fill=inpeak)) + geom_histogram() + facet_grid(peaknum~comparison, scales="free_y")
+
+  m3winslongpeaks <- m3winslong[peaknum!=0]
+  m3winslong.ag <- m3winslongpeaks[,list(median_diffperbp = median(diffperbp, na.rm=TRUE)), list(chr, peaknum, comparison) ]
+
+  fractdiv <- foreach(comp.i=1:dim(m3winslong.ag)[1], .combine="rbind")%do%{
+    #comp.i=1
+    c <- m3winslong.ag$comparison[[comp.i]]
+    d <- m3winslong.ag$median_diffperbp[[comp.i]]
+    tmp <- m3winslong[peaknum==0 & comparison==c]
+    tmp2 <- tmp[diffperbp>d]
+    tmp3 <- m3winslong.ag[comp.i]
+    tmp3$propdiv <- dim(tmp2)[[1]]/dim(tmp)[[1]]
+    tmp3
+  }
+
+  fractdiv.ag <- fractdiv[,list(minpropdiv=min(propdiv)), list(chr, peaknum)]
+
+  m3winslong.agB <- m3winslongpeaks[,list(median_diffperbp = median(diffperbp, na.rm=TRUE)), list(chr, peaknum) ]
+
+  fractdiv <- foreach(comp.i=1:dim(m3winslong.agB)[1], .combine="rbind")%do%{
+    #comp.i=1
+    d <- m3winslong.agB$median_diffperbp[[comp.i]]
+    tmp <- m3winslong[peaknum==0]
+    tmp2 <- tmp[diffperbp>d]
+    tmp3 <- m3winslong.agB[comp.i]
+    tmp3$propdiv <- dim(tmp2)[[1]]/dim(tmp)[[1]]
+    tmp3
+  }

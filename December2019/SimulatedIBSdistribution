@@ -68,7 +68,7 @@
 
 ### Simulation function
   simGeno <- function(C.i="B", afs=0.51, nSNPs=length(sitestouse)) {
-    #C.i <- "April_2017_D8_125"; nSNPs <- 5000; afs <- 0.51
+    #C.i <- "April_2017_D8_125"; nSNPs <- 500; afs <- 0.51
 
     ### get focal individual's genotype
       seqResetFilter(genofile)
@@ -109,9 +109,12 @@
       mtmp[,simGeno:= sample(c("2","1","0"), prob=c(GTprob2, GTprob1, GTprob0), size=1), by=uniqueid]
       countgc <- mtmp[, .N, by=list(simGeno)]
       countgc$clone <- c(C.i)
-      countwide <- dcast(countgc, clone ~ simGeno, value.var="N")
-      colnames(countwide) <- c("clone", "refgc", "het", "altgc")
+      countwide <- dcast(countgc, clone ~ paste0("dos", countgc[, unique(simGeno), by=clone]$V1), value.var="N")
+      countwide$dos0 <- ifelse(countwide$dos0 > 1, countwide$dos0, 0)
+      countwide$dos2 <- ifelse(countwide$dos2 > 1, countwide$dos2, 0)
+      countwide[is.na(dos0),dos0:=0]
       countwide$afs <- c(afs)
+
 
 
     ### return
@@ -131,55 +134,3 @@
 
   write.table(Cclones, file="Cclones", quote=F, row.names=F, col.names=F)
   write.table(idsdt, file="Kclones", quote=F, row.names=F, col.names=F)
-
-  scout <- foreach(i=1:length(ids), .combine="rbind")%do%{
-    C.i=ids[i]
-    tmp <- foreach(1:1000, .combine="rbind")%do%{
-      sim <- simGeno(C.i=C.i, afs=0.5, nSNPs=length(sitestouse))
-      sim
-    }
-    tmp
-  }
-
-
-### IBS function
-  ibs.fun <- function(dt) {
-    #dt <- sim
-
-    uniq.clones <- unique(dt$clone)
-    setkey(dt, clone)
-
-    o <- foreach(i=1:(length(uniq.clones) - 1), .combine="rbind")%do%{
-    #o <- foreach(i=1:2, .combine="rbind")%do%{
-
-      foreach(j=(i+1):length(uniq.clones), .combine="rbind")%do%{
-        print(paste(i, j, sep=" / "))
-
-        tmp <- merge(dt[J(uniq.clones[i])], dt[J(uniq.clones[j])], by="variant.id")
-
-
-        data.table(cloneA=uniq.clones[i],
-                   cloneB=uniq.clones[j],
-                   sim.IBS=1-(mean(abs(as.integer(tmp$simGeno.x) - as.integer(tmp$simGeno.y)), na.rm=TRUE)/2),
-                   obs.IBS=1-(mean(abs(tmp$obsGeno.x - tmp$obsGeno.y), na.rm=TRUE)/2))
-
-        }
-      }
-    }
-
-
-### run
-
-sim <- simGeno(SC.i="C", afs=0.5, nSNPs=length(finalsetsnpset01))
-
-    totalibsout <- foreach(i=c("A", "B", "C", "D", "E", "F", "H", "I", "J", "K", "L", "M",
-    "N", "O", "P", "Q", "R"), .combine="rbind")%do%{
-      sim <- simGeno(SC.i=i, afs=0.5, nSNPs=length(finalsetsnpset01))
-      ibs.out <- ibs.fun(sim)
-      ibs.out$SC <- c(i)
-      ibs.out$afs <- c(0.5)
-      ibs.out
-
-      }
-
-    save(totalibsout, file="totalibsout_afs0.5_20200204.Rdata")

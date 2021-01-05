@@ -1,0 +1,25 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(data.table)
+  library(foreach)
+  library(ggplot2)
+  library(ggbeeswarm)
+  library(tidyverse)
+
+### Load SC file
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaC/CloneInfoFilePulexandObtusa_withmedrd_20200207")
+
+### Edit superclones based on KING and PLINK
+# April_2017_D8_214 appears to belong to superclone C (original B)
+# March20_2018_DBunk_5 appears to belong to superclone K
+# Spring_2016_D8_8.31 appears to belong to superclone Z
+# Spring_2016_D8_8.24 appears to belong to superclone H
+# Spring_2016_D8_8.23 appears to belong to superclone C (original B)
+# April_2017_DCat_10 appears to belong to superclone B
+
+  sc$SC <- ifelse(sc$clone=="April_2017_D8_214", "C", ifelse(sc$clone=="March20_2018_DBunk_5", "K", ifelse(
+    sc$clone=="Spring_2016_D8_8.31", "Z", ifelse(sc$clone=="Spring_2016_D8_8.24", "H", ifelse(
+    sc$clone=="Spring_2016_D8_8.23", "C", ifelse(sc$clone=="April_2017_DCat_10", "B", sc$SC))))))
+
+  write.table(sc, file="CloneInfoFilePulexandObtusa_withmedrd_update20200324", sep="\t", row.names=FALSE, quote=FALSE)

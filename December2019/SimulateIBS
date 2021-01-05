@@ -73,6 +73,7 @@
 
 
       fullsummarymodIBS <- foreach(x=1:(length(scBids)), .combine="rbind")%do%{
+#      fullsummarymodIBS <- foreach(x=1:2), .combine="rbind")%do%{
 
         testclone <- scBids[x]
 
@@ -83,13 +84,15 @@
           ifelse(mhetlongrefsub$dosage==1, mhetlongrefsub$rbinommod,
           ifelse(mhetlongrefsub$dosage==0, 0, "NA"))))
         mhetlongrefsub$alt.rd <- mhetlongrefsub$testrd-mhetlongrefsub$ref.rd
-        mhetlongrefsubB <- mhetlongrefsub[mhetlongrefsub$testdosage==0 | mhetlongrefsub$testdosage==2 |
+        mhetlongrefsubB <- mhetlongrefsub[mhetlongrefsub$testdosage==0 | mhetlongrefsub$testdosage==1 |
           mhetlongrefsub$testdosage==2]
 
         setkey(mhetlongrefsubB, ref.rd, alt.rd)
         setkey(gtprobfiltsub, ref.rd, alt.rd)
         mtmp <- merge(mhetlongrefsubB, gtprobfiltsub)
         mtmp[,Ocall:= sample(c("2","1","0"), prob=c(GTprob2, GTprob1, GTprob0), size=1), by=variant.ids]
+        #mtmp$Ocall <- ifelse(mtmp$ref.rd > 0 & mtmp$alt.rd > 0, 1, ifelse(mtmp$alt.rd==0 &
+        #  mtmp$ref.rd > 0, 2, ifelse(mtmp$alt.rd > 0 & mtmp$ref.rd==0, 0, "NA")))
         mtmpsub <- mtmp[,c("variant.ids", "Ocall")]
         colnames(mtmpsub) <- c("variant.ids", testclone)
         mhetlongrefsubsub <- mhetlongrefsub[,"variant.ids"]
@@ -213,5 +216,3 @@
         ggplot(data=allelespectra, aes(x=foldedminorallele, fill=type)) + geom_histogram() + facet_wrap(~type)
         ggplot(data=allelespectra[foldedminorallele!=0 & foldedminorallele!=0.5],
           aes(x=foldedminorallele, fill=type)) + geom_histogram() + facet_wrap(~type)
-
-  

@@ -1,0 +1,172 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(SeqArray)
+  library(data.table)
+  library(foreach)
+  library(doMC)
+  registerDoMC(20)
+  library(ggplot2)
+  library(SNPRelate)
+  library(ggbeeswarm)
+
+
+### open genotype file
+genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+###Use non LD pruned dataset
+  load("snpsvarPulex_20200224.Rdata")
+  filtsnptb <- snpsvarPulex
+  colnames(filtsnptb) <- c("oldvariantids", "chr", "pos", "olddp", "af")
+
+### Filter SNPs
+  snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+      chr = seqGetData(genofile, "chromosome"),
+      pos = seqGetData(genofile, "position"))
+  setkey(snps, chr, pos)
+  setkey(filtsnptb, chr, pos)
+  msnps <- merge(filtsnptb, snps)
+  msnps[,final.use:=T]
+
+
+### Load superclone file
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/Superclones201617182019withObtusaandPulicaria_kingcorr_20200402_wmedrd.txt")
+
+###
+  blacklistbed <- fread("/scratch/kbb7sh/Daphnia/genomefiles/totsortmerge.bed")
+  colnames(blacklistbed) <- c("chr", "start", "stop")
+
+  chrlist <- fread("/scratch/kbb7sh/Daphnia/genomefiles/D84Agoodscaffstouse1start.bed")
+  colnames(chrlist) <- c("chr", "start", "stop")
+  chrlistsub12 <- chrlist[stop > 1000000]
+
+  totblackfull <- foreach(i=1:dim(chrlist)[1], .combine="rbind")%do%{
+    c <- chrlist$chr[[i]]
+    tmp <- blacklistbed[chr==c]
+    tmp$length <- tmp$stop-tmp$start
+    tmpdt <- data.table(chr=c(c), length=(chrlist$stop[[i]]-chrlist$start[[i]]), sumblack=sum(tmp$length))
+    tmpdt
+  }
+
+  totblackfull$goodbp <- totblackfull$length-totblackfull$sumblack
+  summgoodbp <- sum(totblackfull$goodbp) #78312222
+  summgoodbp12chr <- sum(totblackfull$goodbp[totblackfull$goodbp>100000]) #78121093
+
+  ### Let's look at heterozygosity in various clones
+  ### Do some filtering on read depth and independence
+    load("./mclonecountswide_ACfixedSNPs_20200417.Rdata")
+    AxCF1hybrid <- mclonecountswide[ACF1hybrid==1 & medrd > 4]
+    AxCF1hybridids <- AxCF1hybrid$clone
+    scrd5 <- sc[medrd>4 & Nonindependent==0]
+    scrd5C <- scrd5[SC=="C" | SC=="A" | SC=="B" | SC=="H" | SC=="W" | SC=="R" | SC=="poW" | SC=="poH" | SC=="poB" | SC=="poC" | SC=="M"]
+    subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+    clonestouse <- subscrd5
+    clonestouseids <- clonestouse$clone
+    finalclonestouse <- c(AxCF1hybridids, clonestouseids)
+
+    sc$population <- ifelse(sc$population=="Dcat", "DCat", sc$population)
+    scrd5 <- sc[medrd>4 & Nonindependent==0 & Species=="pulex" & population=="D8"]
+    subscrd5 <- scrd5[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+    clonestouse <- subscrd5
+    clonestouseids <- clonestouse$clone
+    finalclonestouse <- clonestouseids
+
+
+
+  ### Filter and then examine variation in number of heterozyous sites among individuals
+    # Set filters
+      seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=finalclonestouse)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=finalclonestouse, variable.name="clone", value.name="dosage")
+
+      dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+    #Remove NAs and find sites that are heterozygous
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      #dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      #dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+      dosagecountswide$prophet <- dosagecountswide$dos1/summgoodbp
+
+      setkey(dosagecountswide, clone)
+      setkey(sc, clone)
+      mdosagecountswide <- merge(dosagecountswide, sc)
+      mdosagecountswide$SCB <- ifelse(mdosagecountswide$SC=="OO", paste(mdosagecountswide$SC,
+        mdosagecountswide$clone, sep="_"), mdosagecountswide$SC)
+
+      mdosagecountswideother <- mdosagecountswide[SC=="OO"]
+      mdosagecountswideSC <- mdosagecountswide[SC!="OO"]
+      mdosagecountswideSC.ag <- mdosagecountswideSC[,list(meanprophet=mean(prophet)),
+        list(SCB, year)]
+      mdosagecountswideothersub <- data.table(SCB=mdosagecountswideother$clone, year=mdosagecountswideother$year, meanprophet=mdosagecountswideother$prophet)
+      mdosagecountswide.ag <- rbind(mdosagecountswideSC.ag, mdosagecountswideothersub)
+      colnames(mdosagecountswide.ag) <- c("clone", "year", "meanprophet")
+
+      ggplot(data=mdosagecountswide, aes(x=as.factor(year), y=prophet)) + geom_point()
+      ggplot(data=mdosagecountswide, aes(x=as.factor(year), y=prophet, group=as.factor(year))) + geom_boxplot() + ylim(0.1, 0.25)
+      ggplot(data=mdosagecountswide.ag, aes(x=as.factor(year), y=meanprophet, group=as.factor(year))) + geom_boxplot() + ylim(0.1, 0.25)
+
+      mdosagecountswideSC.agDCat <- mdosagecountswide.ag
+      mdosagecountswideSC.agDBunk <- mdosagecountswide.ag
+      mdosagecountswideSC.agD8 <- mdosagecountswide.ag
+      mdosagecountswideSC.agDCat$pop <- c("DCat")
+      mdosagecountswideSC.agDBunk$pop <- c("DBunk")
+      mdosagecountswideSC.agD8$pop <- c("D8")
+      mdosagecountswideSCtot <- rbind(mdosagecountswideSC.agDCat, mdosagecountswideSC.agDBunk, mdosagecountswideSC.agD8)
+
+      save(mdosagecountswideSCtot, file="mdosagecountswideSCtot_hetdivbygenome_20200517.Rdata")
+
+      mclonecountswidesub <- data.table(SC=mclonecountswide$SC, ACF1hybrid=mclonecountswide$ACF1hybrid)
+      mclonecountswidesubunique <- unique(mclonecountswidesub)
+      mclonecountswidesub2 <- data.table(clone=mclonecountswide$clone, ACF1hybrid=mclonecountswide$ACF1hybrid)
+
+      mdosagecountswideSCtotOO <- mdosagecountswideSCtot[nchar(mdosagecountswideSCtot$clone) > 5]
+      mdosagecountswideSCtotnotOO <- mdosagecountswideSCtot[nchar(mdosagecountswideSCtot$clone) < 5]
+      colnames(mdosagecountswideSCtotnotOO) <- c("SC", "year", "meanprophet", "pop")
+
+      setkey(mdosagecountswideSCtotnotOO, SC)
+      setkey(mclonecountswidesubunique, SC)
+      mmdosagecountswideSCtotnotOO <- merge(mdosagecountswideSCtotnotOO, mclonecountswidesubunique, all.x=TRUE)
+      colnames(mmdosagecountswideSCtotnotOO) <- c("clone", "year", "meanprophet", "pop", "ACF1hybrid")
+
+      setkey(mdosagecountswideSCtotOO, clone)
+      setkey(mclonecountswidesub2, clone)
+      mmdosagecountswideSCtotOO <- merge(mdosagecountswideSCtotOO, mclonecountswidesub2, all.x=TRUE)
+
+      tothet <- rbind(mmdosagecountswideSCtotnotOO, mmdosagecountswideSCtotOO)
+
+      tothet$type <- ifelse(tothet$clone=="A", "A", ifelse(tothet$clone=="C", "C", ifelse(
+        tothet$ACF1hybrid=="1", "ACF1hybrid", ifelse(tothet$clone=="B" | tothet$clone=="H" |
+        tothet$clone=="W" | tothet$clone=="C", "selfed_lineage", "other")
+      )))
+
+      tothet$type <- ifelse(tothet$clone=="poW" |
+      tothet$clone=="poB" | tothet$clone=="poH" | tothet$clone=="poC", "parent_of_selfed", tothet$type)
+      tothet[is.na(type),type:="other"]
+
+      setkey(sc, clone)
+      setkey(tothet, clone)
+      mtmp <- merge(tothet, sc)
+
+      ggplot(data=tothet, aes(x=as.factor(year), y=meanprophet, group=as.factor(year))) + geom_boxplot() + facet_wrap(~pop)
+
+      hetscatter <- ggplot(data=tothet, aes(x=year, y=meanprophet, color=type)) + geom_point() + facet_wrap(~pop)

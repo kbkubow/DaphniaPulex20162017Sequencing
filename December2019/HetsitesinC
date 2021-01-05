@@ -1,0 +1,1718 @@
+#!/usr/bin/env Rscript
+
+### libraries
+  library(SeqArray)
+  library(data.table)
+  library(foreach)
+  library(doMC)
+  registerDoMC(20)
+  library(ggplot2)
+  library(SNPRelate)
+  library(ggbeeswarm)
+
+
+### open genotype file
+genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapDec19PulexandObtusaandPulicaria_filtsnps10bpindels_snps_filter_pass_lowGQmiss_ann.seq.gds")
+
+###Use non LD pruned dataset
+  load("snpsvarPulex_20200224.Rdata")
+  filtsnptb <- snpsvarPulex
+  colnames(filtsnptb) <- c("oldvariantids", "chr", "pos", "olddp", "af")
+
+### Filter SNPs
+  snps <- data.table(variant.ids = seqGetData(genofile, "variant.id"),
+      chr = seqGetData(genofile, "chromosome"),
+      pos = seqGetData(genofile, "position"))
+  setkey(snps, chr, pos)
+  setkey(filtsnptb, chr, pos)
+  msnps <- merge(filtsnptb, snps)
+  msnps[,final.use:=T]
+
+
+### Load superclone file
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/WithPulicaria/Superclones201617182019withObtusaandPulicaria_kingcorr_20200402_wmedrd.txt")
+
+### Do some filtering on read depth and independence
+  scrd5C <- sc[medrd>4 & Nonindependent==0 & SC=="C" & clone!="April_2017_D8_214" & clone!="Spring_2016_D8_8.23"]
+  subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+  clonestouse <- subscrd5
+  clonestouseids <- clonestouse$clone
+
+### Filter and then pull out heterozygous sites
+  # Set filters
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+  # Pull out genotypes
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+    dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+  #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+    dosagecounts <- dosagecounts[dosage!="NA"]
+
+    dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+    colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+    dosagecountswide[is.na(dos0),dos0:=0]
+    dosagecountswide[is.na(dos1),dos1:=0]
+    dosagecountswide[is.na(dos2),dos2:=0]
+
+    dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+    dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+    Chetsites <- dosagecountswide[prophet==1]
+
+### Now see what these heterozygous sites look like in the two outliers
+    seqSetFilter(genofile, variant.id=Chetsites$variant.ids)
+    seqSetFilter(genofile, sample.id=c("April_2017_D8_214", "Spring_2016_D8_8.23"))
+
+  # Pull out genotypes
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    mhetlong <- melt(mhet, measure.vars=c("April_2017_D8_214", "Spring_2016_D8_8.23"), variable.name="clone", value.name="dosage")
+
+    #99.7 (D8.23) and 98.6% (D8214) of SNPs are heterozygous
+
+    dosagecounts <- mhetlong[, .N, by=list(clone, chr, dosage)]
+
+  #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+    dosagecounts <- dosagecounts[dosage!="NA"]
+
+    dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+    colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+    dosagecountswide[is.na(dos0),dos0:=0]
+    dosagecountswide[is.na(dos1),dos1:=0]
+    dosagecountswide[is.na(dos2),dos2:=0]
+
+    dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+    dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+### Ok, so sites that are heterozygous in all but the outlier Cs are generally heterozygous in the outliers too, what about the other way
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("April_2017_D8_214", "Spring_2016_D8_8.23"))
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=c("April_2017_D8_214", "Spring_2016_D8_8.23"), variable.name="clone", value.name="dosage")
+
+      table(mhetlong$clone, mhetlong$dosage)
+      #0      1      2
+      #April_2017_D8_214    30518  99139 326582
+      #Spring_2016_D8_8.23  28844 128218 307199
+
+      het823 <- mhetlong[clone=="Spring_2016_D8_8.23" & dosage==1]
+      hetD8214 <- mhetlong[clone=="April_2017_D8_214" & dosage==1]
+      all823 <- mhetlong[clone=="Spring_2016_D8_8.23"]
+      allD8214 <- mhetlong[clone=="April_2017_D8_214"]
+      privatehet214 <- mhet[April_2017_D8_214=="1" & Spring_2016_D8_8.23!="1"]
+      privatehet823 <- mhet[April_2017_D8_214!="1" & Spring_2016_D8_8.23=="1"]
+
+      hetD8214sub <- data.table(variant.ids=hetD8214$variant.ids)
+      setkey(het823, variant.ids)
+      setkey(allD8214, variant.ids)
+      setkey(hetD8214, variant.ids)
+      setkey(all823, variant.ids)
+
+      m <- merge(het823, allD8214)
+      m2 <- merge(hetD8214, all823)
+
+      dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+    #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+### Let's look at SNPs that are heterozygous in D8.23 in all the other Cs
+      Cstouse <- c(clonestouseids, "April_2017_D8_214")
+      seqSetFilter(genofile, variant.id=het823$variant.ids, sample.id=Cstouse)
+      #seqSetFilter(genofile, variant.id=privatehet823$variant.ids, sample.id=Cstouse)
+
+      # Pull out genotypes
+        het <- t(seqGetData(genofile, "$dosage"))
+        het <- as.data.table(het)
+
+        colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        setkey(het, variant.ids)
+        setkey(snpsvarPulex, variant.ids)
+
+        mhet <- merge(snpsvarPulex, het)
+
+        mhetlong <- melt(mhet, measure.vars=Cstouse, variable.name="clone", value.name="dosage")
+
+        dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+      #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+        dosagecounts <- dosagecounts[dosage!="NA"]
+
+        dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+        colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+        dosagecountswide[is.na(dos0),dos0:=0]
+        dosagecountswide[is.na(dos1),dos1:=0]
+        dosagecountswide[is.na(dos2),dos2:=0]
+
+        dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+        dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+        dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+        dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+
+
+        dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+      #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+        dosagecounts <- dosagecounts[dosage!="NA"]
+
+        dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+        colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+        dosagecountswide[is.na(dos0),dos0:=0]
+        dosagecountswide[is.na(dos1),dos1:=0]
+        dosagecountswide[is.na(dos2),dos2:=0]
+
+        dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+        dosagecountswide$af <- (dosagecountswide$dos1+(2*dosagecountswide$dos0))/(dosagecountswide$total*2)
+        dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+        dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+
+        Cstouse <- c(clonestouseids, "Spring_2016_D8_8.23")
+        #seqSetFilter(genofile, variant.id=hetD8214$variant.ids, sample.id=Cstouse)
+        seqSetFilter(genofile, variant.id=privatehet214$variant.ids, sample.id=Cstouse)
+
+        # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          mhetlong <- melt(mhet, measure.vars=Cstouse, variable.name="clone", value.name="dosage")
+
+          dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+        #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+          dosagecounts <- dosagecounts[dosage!="NA"]
+
+          dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+          colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+          dosagecountswide[is.na(dos0),dos0:=0]
+          dosagecountswide[is.na(dos1),dos1:=0]
+          dosagecountswide[is.na(dos2),dos2:=0]
+
+          dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+          dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+          dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+          dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+
+  ### Looking at private D8214 het sites in other clones, polarizing against D8.23
+  seqSetFilter(genofile, variant.id=privatehet214$variant.ids, sample.id=Cstouse)
+
+  # Pull out genotypes
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    mhetlong <- melt(mhet, measure.vars=Cstouse, variable.name="clone", value.name="dosage")
+
+    private214polar <- mhetlong[clone=="Spring_2016_D8_8.23"]
+    private214polarsub <- data.table(variant.ids=private214polar$variant.ids, chr=private214polar$chr,
+      pos=private214polar$pos, D823dosage=private214polar$dosage)
+
+    scrd5look <- sc[medrd>4 & Nonindependent==0 & year < 2018]
+
+    seqSetFilter(genofile, variant.id=private214polar$variant.ids, sample.id=scrd5look$clone)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(private214polarsub, variant.ids)
+
+      mhet <- merge(private214polarsub, het)
+
+      mhetlong <- melt(mhet, measure.vars=scrd5look$clone, variable.name="clone", value.name="dosage")
+
+      mhetlong$dosageB <- ifelse(mhetlong$D823dosage==0 & mhetlong$dosage==2, 0, ifelse(
+        mhetlong$D823dosage==0 & mhetlong$dosage==0, 2, mhetlong$dosage))
+
+        dosagecounts <- mhetlong[, .N, by=list(clone, dosageB)]
+
+      #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+        dosagecounts <- dosagecounts[dosageB!="NA"]
+
+        dosagecountswide <- dcast(dosagecounts, clone ~ dosageB, value.var="N")
+        colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+        dosagecountswide[is.na(dos0),dos0:=0]
+        dosagecountswide[is.na(dos1),dos1:=0]
+        dosagecountswide[is.na(dos2),dos2:=0]
+
+        dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+        dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+        dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+        dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+
+        setkey(dosagecountswide, clone)
+        setkey(sc, clone)
+        m <- merge(dosagecountswide, sc)
+
+
+### Let's look for SNPs that are heterozygous in D8.23 and the Cs.
+      CstouseB <- c(clonestouseids, "Spring_2016_D8_8.23")
+      seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=CstouseB)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=CstouseB, variable.name="clone", value.name="dosage")
+
+      dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+    #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+      hetsites <- dosagecountswide[prophet==1]
+
+  # Now look at these in D8214
+    seqSetFilter(genofile, variant.id=hetsites$variant.ids, sample.id="April_2017_D8_214")
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+### Let's try a similar approach with the DCat clone B
+### Do some filtering on read depth and independence
+  scrd5C <- sc[medrd>4 & Nonindependent==0 & SC=="B"]
+  subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+  clonestouse <- subscrd5
+  clonestouseids <- clonestouse$clone
+
+### Filter and then examine variation in number of heterozyous sites among individuals
+  # Set filters
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+  # Pull out genotypes
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+    table(mhetlong$clone, mhetlong$dosage)
+    #0      1      2
+    #March15_2019_DCat_MomPE16  30703  52056 282712
+    #April29_2018_DCat_Male5    32447  56109 304510
+    #April29_2018_DCat_MomPE4   33933  58404 316431
+    #March15_2019_DCat_MomPE14  34650  60054 324900
+    #March15_2019_DCat_MomPE17  33181  57348 312462
+    #March15_2019_DCat_MomPE7   33466  57529 312860
+    #April29_2018_DCat_Male2    35119  62501 334481
+    #April29_2018_DCat_MomPE2   34921  61156 331144
+    #March15_2019_DCat_MomPE11  36661  64714 347331
+    #March15_2019_DCat_MomPE12  36920  64470 347798
+    #April29_2018_DCat_Male3    36529  64875 347730
+    #April29_2018_DCat_Male4    36339  65173 346166
+    #April29_2018_DCat_MomPE1   36114  64347 342897
+    #April29_2018_DCat_MomPE3   38082  68892 364405
+    #March15_2019_DCat_MomPE5   37986  68170 361535
+    #March15_2019_DCat_MomPE10  38193  69544 365499
+    #March15_2019_DCat_MomPE15  36662  66142 350286
+    #March15_2019_DCat_MomPE19  37799  68017 359138
+    #March15_2019_DCat_MomPE9   37032  66060 352869
+    #March15_2019_DCat_MomPE6   38865  71717 373326
+    #March15_2019_DCat_MomPE18  38282  71038 369619
+    #March15_2019_DCat_MomPE2   38318  70544 367634
+    #March15_2019_DCat_MomPE8   38943  72724 376668
+    #April29_2018_DCat_MomPE5   39422  74024 379587
+    #March15_2019_DCat_MomPE13  39334  74087 379809
+    #March15_2019_DCat_MomPE20  38487  74510 378818
+    #April_2017_DCat_3          39301  74094 378567
+    #March15_2019_DCat_MomPE4   39502  74306 380806
+    #March20_2018_Dcat_1        37143  68743 357452
+    #March15_2019_DCat_MomPE1   39055  73029 375429
+    #April_2017_DCat_2          39027  75128 380424
+    #April_2017_DCat_10         23276 114741 357732
+    #March15_2019_DCat_MomPE3   39659  75425 383654
+    #March20_2018_Dcat_2        38623  73333 374995
+    #April_2017_DCat_5          30327  88678 371985
+
+  #April_2017_DCat_10, the outlier clone has substantially more heterozygous sites. Let's pull out the sites heterozygous in this clone.
+    DCat10het <- mhetlong[clone=="April_2017_DCat_10" & dosage==1]
+    DCat5het <- mhetlong[clone=="April_2017_DCat_5" & dosage==1]
+
+  # Now let's look at these sites in the rest of the C clones
+    #clonestouseids <- clonestouse$clone[clonestouse$clone!="April_2017_DCat_10"]
+    #seqSetFilter(genofile, variant.id=DCat10het$variant.ids, sample.id=clonestouseids)
+    clonestouseids <- clonestouse$clone[clonestouse$clone!="April_2017_DCat_5"]
+    seqSetFilter(genofile, variant.id=DCat5het$variant.ids, sample.id=clonestouseids)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+    dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+  #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+    dosagecounts <- dosagecounts[dosage!="NA"]
+
+    dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+    colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+    dosagecountswide[is.na(dos0),dos0:=0]
+    dosagecountswide[is.na(dos1),dos1:=0]
+    dosagecountswide[is.na(dos2),dos2:=0]
+
+    dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+    dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+    dosagecountswide$af <- (dosagecountswide$dos1+dosagecountswide$dos0*2)/(dosagecountswide$total)
+
+    dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+  #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+    dosagecounts <- dosagecounts[dosage!="NA"]
+
+    dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+    colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+    dosagecountswide[is.na(dos0),dos0:=0]
+    dosagecountswide[is.na(dos1),dos1:=0]
+    dosagecountswide[is.na(dos2),dos2:=0]
+
+    dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+    dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+    dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+    dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+    dosagecountswidesub <- dosagecountswide[, c("variant.ids", "dos0", "dos1", "dos2", "propdos0", "prophet", "propdos2")]
+
+  ### Pull out all sites that are heterozygous in the main B
+  # Now let's look at these sites in the rest of the C clones
+    clonestouseids <- clonestouse$clone[clonestouse$clone!="April_2017_DCat_10" & clonestouse$clone!="April_2017_DCat_5"]
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+    dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+  #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+    dosagecounts <- dosagecounts[dosage!="NA"]
+
+    dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+    colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+    dosagecountswide[is.na(dos0),dos0:=0]
+    dosagecountswide[is.na(dos1),dos1:=0]
+    dosagecountswide[is.na(dos2),dos2:=0]
+
+    dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+    dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+    Bhet <- dosagecountswide[prophet==1]
+
+    clonestouseids <- c("April_2017_DCat_10", "April_2017_DCat_5")
+    seqSetFilter(genofile, variant.id=Bhet$variant.ids, sample.id=clonestouseids)
+
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+    dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+  #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+    dosagecounts <- dosagecounts[dosage!="NA"]
+
+    dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+    colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+    dosagecountswide[is.na(dos0),dos0:=0]
+    dosagecountswide[is.na(dos1),dos1:=0]
+    dosagecountswide[is.na(dos2),dos2:=0]
+
+    #97.8% (April_2017_DCat_10), 99.7% (April_2017_DCat_5) SNPs are heterozygous
+
+### Ok, so what about H?
+### Do some filtering on read depth and independence
+  scrd5C <- sc[medrd>4 & Nonindependent==0 & SC=="H"]
+  subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+  clonestouse <- subscrd5
+  clonestouseids <- clonestouse$clone
+
+### Filter and then examine variation in number of heterozyous sites among individuals
+  # Set filters
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+  # Pull out genotypes
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+    table(mhetlong$clone, mhetlong$dosage)
+    #0      1      2
+    #Spring_2016_D8_8.10  35939  80061 293269
+    #Spring_2016_D8_8.21  41037  72851 312643
+    #Spring_2016_D8_8.3   33364  94358 293018
+    #Spring_2016_D8_8.32  37464  91158 313268
+    #Spring_2016_D8_8.36  48958  70840 346141
+    #Spring_2016_D8_8.35  40630  87763 322218
+    #Spring_2016_D8_8.8   42133  86824 340776
+    #Spring_2016_D8_8.18  50749  79157 367310
+    #Spring_2016_D8_8.12  33217 103367 327643
+    #Spring_2016_D8_8.14  42417  87939 356757
+    #Spring_2016_D8_8.28  50704  79785 369158
+    #Spring_2016_D8_8.24  23060 136328 303354
+    #Spring_2016_D8_8.29  51621  79437 370619
+    #Spring_2016_D8_8.9   46173  84893 358544
+
+    # Not quite as clear cut, but Spring_2016_D8_8.24 has the most, and that was the strongest outlier, let's go with this initially
+    D8824het <- mhetlong[clone=="Spring_2016_D8_8.24" & dosage==1]
+
+    # Now let's look at these sites in the rest of the H clones
+      clonestouseids <- clonestouse$clone[clonestouse$clone!="Spring_2016_D8_8.24"]
+      Hstouse <- c(clonestouseids, "Spring_2016_D8_8.23", "April_2017_D8_214")
+      seqSetFilter(genofile, variant.id=D8824het$variant.ids, sample.id=Hstouse)
+
+
+      # Pull out genotypes
+        het <- t(seqGetData(genofile, "$dosage"))
+        het <- as.data.table(het)
+
+        colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        setkey(het, variant.ids)
+        setkey(snpsvarPulex, variant.ids)
+
+        mhet <- merge(snpsvarPulex, het)
+
+        mhetlong <- melt(mhet, measure.vars=Hstouse, variable.name="clone", value.name="dosage")
+
+      dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+    #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+      dosagecountswide$af <- (dosagecountswide$dos1+dosagecountswide$dos0*2)/(dosagecountswide$total)
+
+      dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+    #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+      dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+      dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+      dosagecountswidesub <- dosagecountswide[, c("variant.ids", "dos0", "dos1", "dos2", "propdos0", "prophet", "propdos2")]
+
+  ### Let's check that sites heterozygous in the rest of H are all heterozygous in parent of H.
+    scrd5C <- sc[medrd>4 & Nonindependent==0 & SC=="H"]
+    subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+    clonestouse <- subscrd5
+    clonestouseids <- clonestouse$clone
+    clonestouseids <- clonestouse$clone[clonestouse$clone!="Spring_2016_D8_8.24"]
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+      dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+    #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+      Hhet <- dosagecountswide[prophet==1]
+
+  # Now check in Spring_2016_D8_8.24
+      seqSetFilter(genofile, variant.id=Hhet$variant.ids, sample.id=c("Spring_2016_D8_8.24"))
+
+      # Pull out genotypes
+        het <- t(seqGetData(genofile, "$dosage"))
+        het <- as.data.table(het)
+
+        colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        setkey(het, variant.ids)
+        setkey(snpsvarPulex, variant.ids)
+
+        mhet <- merge(snpsvarPulex, het)
+
+        #99.5% of SNPs are heterozygous. Check!
+
+### Ok, so what about W?
+      ### Do some filtering on read depth and independence
+        scrd5C <- sc[medrd>4 & Nonindependent==0 & SC=="W"]
+        subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+        clonestouse <- subscrd5
+        clonestouseids <- clonestouse$clone
+
+      ### Filter and then examine variation in number of heterozyous sites among individuals
+        # Set filters
+          seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+        # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+          table(mhetlong$clone, mhetlong$dosage)
+          #0      1      2
+          #Spring_2016_D8_8.2   45309  61490 293495
+          #Spring_2016_D8_8.20  53273  82251 356784
+          #Spring_2016_D8_8.16  51886  79381 348261
+          #Spring_2016_D8_8.31  35428 122802 318015
+
+          # Spring_2016_D8_8.31 has the most, and that was the outlier
+          D8831het <- mhetlong[clone=="Spring_2016_D8_8.31" & dosage==1]
+          D8820het <- mhetlong[clone=="Spring_2016_D8_8.20" & dosage==1]
+          D8816het <- mhetlong[clone=="Spring_2016_D8_8.16" & dosage==1]
+          setkey(D8820het, variant.ids)
+          setkey(D8816het, variant.ids)
+          m <- merge(D8816het, D8820het)
+
+          msub <- data.table(variant.ids=m$variant.ids, hetinW=c("yes"))
+          setkey(msub, variant.ids)
+          setkey(D8831het, variant.ids)
+          m2 <- merge(D8831het, msub)
+
+          #98.5% of SNPs are heterozygous
+
+
+          # Now let's look at these sites in the rest of the H clones
+            clonestouseids <- clonestouse$clone[clonestouse$clone!="Spring_2016_D8_8.31"]
+            Hstouse <- c(clonestouseids, "Spring_2016_D8_8.23", "April_2017_D8_214")
+            seqSetFilter(genofile, variant.id=D8831het$variant.ids, sample.id=Hstouse)
+
+
+            # Pull out genotypes
+              het <- t(seqGetData(genofile, "$dosage"))
+              het <- as.data.table(het)
+
+              colnames(het) <- c(seqGetData(genofile, "sample.id"))
+              het$variant.ids <- seqGetData(genofile, "variant.id")
+
+              setkey(het, variant.ids)
+              setkey(snpsvarPulex, variant.ids)
+
+              mhet <- merge(snpsvarPulex, het)
+
+              mhetlong <- melt(mhet, measure.vars=Hstouse, variable.name="clone", value.name="dosage")
+
+            dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+          #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+            dosagecounts <- dosagecounts[dosage!="NA"]
+
+            dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+            colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+            dosagecountswide[is.na(dos0),dos0:=0]
+            dosagecountswide[is.na(dos1),dos1:=0]
+            dosagecountswide[is.na(dos2),dos2:=0]
+
+            dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+            dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+            dosagecountswide$af <- (dosagecountswide$dos1+dosagecountswide$dos0*2)/(dosagecountswide$total)
+
+            dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+          #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+            dosagecounts <- dosagecounts[dosage!="NA"]
+
+            dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+            colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+            dosagecountswide[is.na(dos0),dos0:=0]
+            dosagecountswide[is.na(dos1),dos1:=0]
+            dosagecountswide[is.na(dos2),dos2:=0]
+
+            dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+            dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+            dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+            dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+            dosagecountswidesub <- dosagecountswide[, c("variant.ids", "dos0", "dos1", "dos2", "propdos0", "prophet", "propdos2")]
+
+### If parent of B is a selfed offspring of parent of H, then all heterozygous sites in poB should be heterozygous in poH
+    clonestouseids <- c("Spring_2016_D8_8.23", "Spring_2016_D8_8.24")
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+
+  # Pull out genotypes
+    het <- t(seqGetData(genofile, "$dosage"))
+    het <- as.data.table(het)
+
+    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+    setkey(het, variant.ids)
+    setkey(snpsvarPulex, variant.ids)
+
+    mhet <- merge(snpsvarPulex, het)
+
+    hetin823 <- mhet[Spring_2016_D8_8.23==1]
+
+    mhetlong <- melt(mhet, measure.vars=Hstouse, variable.name="clone", value.name="dosage")
+
+dosagecounts <- mhetlong[, .N, by=list(variant.ids, dosage)]
+
+#Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+dosagecounts <- dosagecounts[dosage!="NA"]
+
+dosagecountswide <- dcast(dosagecounts, variant.ids ~ dosage, value.var="N")
+colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+dosagecountswide[is.na(dos0),dos0:=0]
+dosagecountswide[is.na(dos1),dos1:=0]
+dosagecountswide[is.na(dos2),dos2:=0]
+
+dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+dosagecountswide$af <- (dosagecountswide$dos1+dosagecountswide$dos0*2)/(dosagecountswide$total)
+
+dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+#Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+dosagecounts <- dosagecounts[dosage!="NA"]
+
+dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+colnames(dosagecountswide) <- c("variant.ids", "dos0", "dos1", "dos2")
+dosagecountswide[is.na(dos0),dos0:=0]
+dosagecountswide[is.na(dos1),dos1:=0]
+dosagecountswide[is.na(dos2),dos2:=0]
+
+dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+dosagecountswide$propdos0 <- dosagecountswide$dos0/dosagecountswide$total
+dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+dosagecountswide$propdos2 <- dosagecountswide$dos2/dosagecountswide$total
+dosagecountswidesub <- dosagecountswide[, c("variant.ids", "dos0", "dos1", "dos2", "propdos0", "prophet", "propdos2")]
+
+
+
+
+
+  ### Let's look at heterozygosity in various clones
+  ### Do some filtering on read depth and independence
+    load("./mclonecountswide_ACfixedSNPs_20200417.Rdata")
+    AxCF1hybrid <- mclonecountswide[ACF1hybrid==1 & medrd > 4]
+    AxCF1hybridids <- AxCF1hybrid$clone
+    scrd5 <- sc[medrd>4 & Nonindependent==0]
+    scrd5C <- scrd5[SC=="C" | SC=="A" | SC=="B" | SC=="H" | SC=="W" | SC=="R" | SC=="poW" | SC=="poH" | SC=="poB" | SC=="poC" | SC=="M"]
+    subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+    clonestouse <- subscrd5
+    clonestouseids <- clonestouse$clone
+    finalclonestouse <- c(AxCF1hybridids, clonestouseids)
+
+    sc$population <- ifelse(sc$population=="Dcat", "DCat", sc$population)
+    scrd5 <- sc[medrd>4 & Nonindependent==0 & Species=="pulex" & population=="DCat"]
+    subscrd5 <- scrd5[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+    clonestouse <- subscrd5
+    clonestouseids <- clonestouse$clone
+    finalclonestouse <- clonestouseids
+
+
+
+  ### Filter and then examine variation in number of heterozyous sites among individuals
+    # Set filters
+      seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=finalclonestouse)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=finalclonestouse, variable.name="clone", value.name="dosage")
+
+      dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+    #Remove NAs and find sites that are heterozygous
+      dosagecounts <- dosagecounts[dosage!="NA"]
+
+      dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+      colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+      dosagecountswide[is.na(dos0),dos0:=0]
+      dosagecountswide[is.na(dos1),dos1:=0]
+      dosagecountswide[is.na(dos2),dos2:=0]
+
+      dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+      dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+      setkey(dosagecountswide, clone)
+      setkey(sc, clone)
+      mdosagecountswide <- merge(dosagecountswide, sc)
+      mdosagecountswide$SCB <- ifelse(mdosagecountswide$SC=="OO", paste(mdosagecountswide$SC,
+        mdosagecountswide$clone, sep="_"), mdosagecountswide$SC)
+
+      mdosagecountswideother <- mdosagecountswide[SC=="OO"]
+      mdosagecountswideSC <- mdosagecountswide[SC!="OO"]
+      mdosagecountswideSC.ag <- mdosagecountswideSC[,list(meanprophet=mean(prophet)),
+        list(SCB, year)]
+      mdosagecountswideothersub <- data.table(SCB=mdosagecountswideother$clone, year=mdosagecountswideother$year, meanprophet=mdosagecountswideother$prophet)
+      mdosagecountswide.ag <- rbind(mdosagecountswideSC.ag, mdosagecountswideothersub)
+      colnames(mdosagecountswide.ag) <- c("clone", "year", "meanprophet")
+
+      ggplot(data=mdosagecountswide, aes(x=as.factor(year), y=prophet)) + geom_point()
+      ggplot(data=mdosagecountswide, aes(x=as.factor(year), y=prophet, group=as.factor(year))) + geom_boxplot() + ylim(0.1, 0.25)
+      ggplot(data=mdosagecountswide.ag, aes(x=as.factor(year), y=meanprophet, group=as.factor(year))) + geom_boxplot() + ylim(0.1, 0.25)
+
+      mdosagecountswideSC.agDCat <- mdosagecountswide.ag
+      mdosagecountswideSC.agDBunk <- mdosagecountswide.ag
+      mdosagecountswideSC.agD8 <- mdosagecountswide.ag
+      mdosagecountswideSC.agDCat$pop <- c("DCat")
+      mdosagecountswideSC.agDBunk$pop <- c("DBunk")
+      mdosagecountswideSC.agD8$pop <- c("D8")
+      mdosagecountswideSCtot <- rbind(mdosagecountswideSC.agDCat, mdosagecountswideSC.agDBunk, mdosagecountswideSC.agD8)
+
+      save(mdosagecountswideSCtot, file="mdosagecountswideSCtot_20200517.Rdata")
+
+      mclonecountswidesub <- data.table(SC=mclonecountswide$SC, ACF1hybrid=mclonecountswide$ACF1hybrid)
+      mclonecountswidesubunique <- unique(mclonecountswidesub)
+      mclonecountswidesub2 <- data.table(clone=mclonecountswide$clone, ACF1hybrid=mclonecountswide$ACF1hybrid)
+
+      mdosagecountswideSCtotOO <- mdosagecountswideSCtot[nchar(mdosagecountswideSCtot$clone) > 5]
+      mdosagecountswideSCtotnotOO <- mdosagecountswideSCtot[nchar(mdosagecountswideSCtot$clone) < 5]
+      colnames(mdosagecountswideSCtotnotOO) <- c("SC", "year", "meanprophet", "pop")
+
+      setkey(mdosagecountswideSCtotnotOO, SC)
+      setkey(mclonecountswidesubunique, SC)
+      mmdosagecountswideSCtotnotOO <- merge(mdosagecountswideSCtotnotOO, mclonecountswidesubunique, all.x=TRUE)
+      colnames(mmdosagecountswideSCtotnotOO) <- c("clone", "year", "meanprophet", "pop", "ACF1hybrid")
+
+      setkey(mdosagecountswideSCtotOO, clone)
+      setkey(mclonecountswidesub2, clone)
+      mmdosagecountswideSCtotOO <- merge(mdosagecountswideSCtotOO, mclonecountswidesub2, all.x=TRUE)
+
+      tothet <- rbind(mmdosagecountswideSCtotnotOO, mmdosagecountswideSCtotOO)
+
+      tothet$type <- ifelse(tothet$clone=="A", "A", ifelse(tothet$clone=="C", "C", ifelse(
+        tothet$ACF1hybrid=="1", "ACF1hybrid", ifelse(tothet$clone=="B" | tothet$clone=="H" |
+        tothet$clone=="W" | tothet$clone=="C", "selfed_lineage", "other")
+      )))
+
+      tothet$type <- ifelse(tothet$clone=="poW" |
+      tothet$clone=="poB" | tothet$clone=="poH" | tothet$clone=="poC", "parent_of_selfed", tothet$type)
+      tothet[is.na(type),type:="other"]
+
+
+      ggplot(data=tothet, aes(x=as.factor(year), y=meanprophet, group=as.factor(year))) + geom_boxplot() + facet_wrap(~pop)
+
+      hetscatter <- ggplot(data=tothet, aes(x=year, y=meanprophet, color=type)) + geom_point() + facet_wrap(~pop)
+
+      hetscatter2 <- hetscatter + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+      hetscatter2 + theme_bw()
+
+      mdosagecountswide$type <- ifelse(mdosagecountswide$clone=="Spring_2016_D8_8.23", "ParentofC", ifelse(
+        mdosagecountswide$clone=="April_2017_DCat_10", "ParentofB", ifelse(
+        mdosagecountswide$clone=="Spring_2016_D8_8.24", "ParentofH", ifelse(
+        mdosagecountswide$clone=="Spring_2016_D8_8.31", "ParentofW", ifelse(
+        mdosagecountswide$ACF1hybrid==1, "AxCF1", mdosagecountswide$SC)))))
+
+      mdosagecountswide$type <- factor(mdosagecountswide$type, levels=c("ParentofB", "B", "ParentofW", "W", "ParentofH", "H", "R", "M", "ParentofC",
+        "C", "A", "AxCF1"))
+
+      ggplot(data=mdosagecountswide, aes(x=as.factor(type), y=prophet)) + geom_point()
+      ggplot(data=mdosagecountswide[clone!="April_2017_DCat_5" & clone!="April_2017_D8_214"], aes(x=as.factor(type), y=prophet)) + geom_point()
+
+
+
+
+
+    ### Let's see if R looks like F1s of W and H. First find fixed SNPs between W and H.
+    scrd5 <- sc[medrd>4 & Nonindependent==0]
+    scrd5C <- scrd5[SC=="H" | SC=="W"]
+    subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+    clonestouse <- subscrd5
+    clonestouseids <- clonestouse$clone
+
+    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+    # Pull out genotypes
+      het <- t(seqGetData(genofile, "$dosage"))
+      het <- as.data.table(het)
+
+      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+      setkey(het, variant.ids)
+      setkey(snpsvarPulex, variant.ids)
+
+      mhet <- merge(snpsvarPulex, het)
+
+      mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+      setkey(mhetlong, clone)
+      setkey(sc, clone)
+      mmhetlong <- merge(mhetlong, sc)
+
+      SCcounts <- mmhetlong[, .N, by=list(SC, variant.ids, dosage)]
+
+    #Remove NAs
+      SCcounts <- SCcounts[dosage!="NA"]
+      SCcountsH <- SCcounts[SC=="H"]
+      SCcountsW <- SCcounts[SC=="W"]
+
+      SCcountsHwide <- dcast(SCcountsH, variant.ids ~ dosage, value.var="N")
+      colnames(SCcountsHwide) <- c("variant.ids", "Hdos0", "Hdos1", "Hdos2")
+      SCcountsHwide[is.na(Hdos0),Hdos0:=0]
+      SCcountsHwide[is.na(Hdos1),Hdos1:=0]
+      SCcountsHwide[is.na(Hdos2),Hdos2:=0]
+
+      SCcountsWwide <- dcast(SCcountsW, variant.ids ~ dosage, value.var="N")
+      colnames(SCcountsWwide) <- c("variant.ids", "Wdos0", "Wdos1", "Wdos2")
+      SCcountsWwide[is.na(Wdos0),Wdos0:=0]
+      SCcountsWwide[is.na(Wdos1),Wdos1:=0]
+      SCcountsWwide[is.na(Wdos2),Wdos2:=0]
+
+      setkey(SCcountsHwide, variant.ids)
+      setkey(SCcountsWwide, variant.ids)
+      SCcountsAC <- merge(SCcountsHwide, SCcountsWwide)
+
+      SCcountsAC$Htot <- SCcountsAC$Hdos0+SCcountsAC$Hdos1+SCcountsAC$Hdos2
+      SCcountsAC$Wtot <- SCcountsAC$Wdos0+SCcountsAC$Wdos1+SCcountsAC$Wdos2
+
+      SCcountsACfilt <- SCcountsAC[Htot>9 & Wtot>1]
+
+      SCcountsACfiltHWfix <- SCcountsACfilt[Hdos0==Htot & Wdos2==Wtot]
+      SCcountsACfiltWHfix <- SCcountsACfilt[Hdos2==Htot & Wdos0==Wtot]
+
+      totHWfix <- rbind(SCcountsACfiltHWfix, SCcountsACfiltWHfix)
+
+      scrd5 <- sc[medrd>4 & Nonindependent==0]
+      scrd5C <- scrd5[SC=="R"]
+      subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+      clonestouse <- subscrd5
+      clonestouseids <- clonestouse$clone
+      seqSetFilter(genofile, variant.id=totHWfix$variant.ids, sample.id="April_2017_D8_137")
+
+      # Pull out genotypes
+        het <- t(seqGetData(genofile, "$dosage"))
+        het <- as.data.table(het)
+
+        colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        setkey(het, variant.ids)
+        setkey(snpsvarPulex, variant.ids)
+
+        mhet <- merge(snpsvarPulex, het)
+
+        mhetlong <- melt(mhet, measure.vars="April_2017_D8_137", variable.name="clone", value.name="dosage")
+
+        dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+      #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+        dosagecounts <- dosagecounts[dosage!="NA"]
+
+        dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+        colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+        dosagecountswide[is.na(dos0),dos0:=0]
+        dosagecountswide[is.na(dos1),dos1:=0]
+        dosagecountswide[is.na(dos2),dos2:=0]
+
+        dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+        dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+
+
+      clonestouseids <- c("Spring_2016_D8_8.24", "Spring_2016_D8_8.31")
+      seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id="clonestouseids")
+
+      # Pull out genotypes
+        het <- t(seqGetData(genofile, "$dosage"))
+        het <- as.data.table(het)
+
+        colnames(het) <- c(seqGetData(genofile, "sample.id"))
+        het$variant.ids <- seqGetData(genofile, "variant.id")
+
+        setkey(het, variant.ids)
+        setkey(snpsvarPulex, variant.ids)
+
+        mhet <- merge(snpsvarPulex, het)
+
+        poHpoW <- mhet[Spring_2016_D8_8.24==0 & Spring_2016_D8_8.31==2]
+        poWpoH <- mhet[Spring_2016_D8_8.24==2 & Spring_2016_D8_8.31==0]
+        totpoHpoW <- rbind(poHpoW, poWpoH)
+
+        scrd5 <- sc[medrd>4 & Nonindependent==0]
+        scrd5C <- scrd5[SC=="R"]
+        subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+        clonestouse <- subscrd5
+        clonestouseids <- clonestouse$clone
+        seqSetFilter(genofile, variant.id=totpoHpoW$variant.ids, sample.id="April_2017_D8_137")
+
+        # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          mhetlong <- melt(mhet, measure.vars="April_2017_D8_137", variable.name="clone", value.name="dosage")
+
+          dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+        #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+          dosagecounts <- dosagecounts[dosage!="NA"]
+
+          dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+          colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+          dosagecountswide[is.na(dos0),dos0:=0]
+          dosagecountswide[is.na(dos1),dos1:=0]
+          dosagecountswide[is.na(dos2),dos2:=0]
+
+          dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+          dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+
+  ### Let's see if April_2017_D8_134 looks like F1 of A and Spring_2016_D8_8.26. First find fixed SNPs.
+          scrd5 <- sc[medrd>4 & Nonindependent==0]
+          scrd5C <- scrd5[SC=="A" | clone=="Spring_2016_D8_8.26"]
+          subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+          clonestouse <- subscrd5
+          clonestouseids <- clonestouse$clone
+
+          seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+          # Pull out genotypes
+            het <- t(seqGetData(genofile, "$dosage"))
+            het <- as.data.table(het)
+
+            colnames(het) <- c(seqGetData(genofile, "sample.id"))
+            het$variant.ids <- seqGetData(genofile, "variant.id")
+
+            setkey(het, variant.ids)
+            setkey(snpsvarPulex, variant.ids)
+
+            mhet <- merge(snpsvarPulex, het)
+
+            mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+            setkey(mhetlong, clone)
+            setkey(sc, clone)
+            mmhetlong <- merge(mhetlong, sc)
+
+            SCcounts <- mmhetlong[, .N, by=list(SC, variant.ids, dosage)]
+
+          #Remove NAs
+            SCcounts <- SCcounts[dosage!="NA"]
+            SCcountsA <- SCcounts[SC=="A"]
+            SCcountsOO <- SCcounts[SC=="OO"]
+
+            SCcountsAwide <- dcast(SCcountsA, variant.ids ~ dosage, value.var="N")
+            colnames(SCcountsAwide) <- c("variant.ids", "Ados0", "Ados1", "Ados2")
+            SCcountsAwide[is.na(Ados0),Ados0:=0]
+            SCcountsAwide[is.na(Ados1),Ados1:=0]
+            SCcountsAwide[is.na(Ados2),Ados2:=0]
+
+            SCcountsOOwide <- dcast(SCcountsOO, variant.ids ~ dosage, value.var="N")
+            colnames(SCcountsOOwide) <- c("variant.ids", "OOdos0", "OOdos1", "OOdos2")
+            SCcountsOOwide[is.na(OOdos0),OOdos0:=0]
+            SCcountsOOwide[is.na(OOdos1),OOdos1:=0]
+            SCcountsOOwide[is.na(OOdos2),OOdos2:=0]
+
+            setkey(SCcountsAwide, variant.ids)
+            setkey(SCcountsOOwide, variant.ids)
+            SCcountsAC <- merge(SCcountsAwide, SCcountsOOwide)
+
+            SCcountsAC$Atot <- SCcountsAC$Ados0+SCcountsAC$Ados1+SCcountsAC$Ados2
+            SCcountsAC$OOtot <- SCcountsAC$OOdos0+SCcountsAC$OOdos1+SCcountsAC$OOdos2
+
+            SCcountsACfilt <- SCcountsAC[Atot>70]
+
+            SCcountsACfiltAOOfix <- SCcountsACfilt[Ados0==Atot & OOdos2==OOtot]
+            SCcountsACfiltOOAfix <- SCcountsACfilt[Ados2==Atot & OOdos0==OOtot]
+
+            totAOOfix <- rbind(SCcountsACfiltAOOfix, SCcountsACfiltOOAfix)
+
+            seqSetFilter(genofile, variant.id=totAOOfix$variant.ids, sample.id="April_2017_D8_134")
+
+            # Pull out genotypes
+              het <- t(seqGetData(genofile, "$dosage"))
+              het <- as.data.table(het)
+
+              colnames(het) <- c(seqGetData(genofile, "sample.id"))
+              het$variant.ids <- seqGetData(genofile, "variant.id")
+
+              setkey(het, variant.ids)
+              setkey(snpsvarPulex, variant.ids)
+
+              mhet <- merge(snpsvarPulex, het)
+
+              mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+              dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+            #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+              dosagecounts <- dosagecounts[dosage!="NA"]
+
+              dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+              colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+              dosagecountswide[is.na(dos0),dos0:=0]
+              dosagecountswide[is.na(dos1),dos1:=0]
+              dosagecountswide[is.na(dos2),dos2:=0]
+
+              dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+              dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+
+
+              seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("April_2017_DCat_10", "April_2017_DCat_4"))
+
+              # Pull out genotypes
+                het <- t(seqGetData(genofile, "$dosage"))
+                het <- as.data.table(het)
+
+                colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                setkey(het, variant.ids)
+                setkey(snpsvarPulex, variant.ids)
+
+                mhet <- merge(snpsvarPulex, het)
+
+                DCat10DCat4 <- mhet[April_2017_DCat_10==0 & April_2017_DCat_4==2]
+                DCat4DCat10 <- mhet[April_2017_DCat_10==2 & April_2017_DCat_4==0]
+                totDCat10DCat4 <- rbind(DCat10DCat4, DCat4DCat10)
+
+                  seqSetFilter(genofile, variant.id=totDCat10DCat4$variant.ids, sample.id="April_2017_DCat_5")
+
+                # Pull out genotypes
+                  het <- t(seqGetData(genofile, "$dosage"))
+                  het <- as.data.table(het)
+
+                  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                  het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                  setkey(het, variant.ids)
+                  setkey(snpsvarPulex, variant.ids)
+
+                  mhet <- merge(snpsvarPulex, het)
+
+                  mhetlong <- melt(mhet, measure.vars="April_2017_D8_137", variable.name="clone", value.name="dosage")
+
+                  dosagecounts <- mhetlong[, .N, by=list(clone, dosage)]
+
+                #Remove NAs and find sites that are heterozygous in all C individuals (except two outliers)
+                  dosagecounts <- dosagecounts[dosage!="NA"]
+
+                  dosagecountswide <- dcast(dosagecounts, clone ~ dosage, value.var="N")
+                  colnames(dosagecountswide) <- c("clone", "dos0", "dos1", "dos2")
+                  dosagecountswide[is.na(dos0),dos0:=0]
+                  dosagecountswide[is.na(dos1),dos1:=0]
+                  dosagecountswide[is.na(dos2),dos2:=0]
+
+                  dosagecountswide$total <- dosagecountswide$dos0+dosagecountswide$dos1+dosagecountswide$dos2
+                  dosagecountswide$prophet <- dosagecountswide$dos1/dosagecountswide$total
+
+
+        seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("Spring_2017_D8_336", "April_2017_D8_214"))
+
+      # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          D8336roC <- mhet[Spring_2017_D8_336==0 & April_2017_D8_214==2]
+          roCD8336 <- mhet[Spring_2017_D8_336==2 & April_2017_D8_214==0]
+          D8336roCtot <- rbind(D8336roC, roCD8336)
+
+          seqSetFilter(genofile, variant.id=D8336roCtot$variant.ids, sample.id="March20_2018_D8_40")
+
+      # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          table(mhet$March20_2018_D8_40)
+          #   0    1    2
+          # 103 2131   67
+          #prophet 92.6% total 2301
+
+          seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("Spring_2017_D8_336", "Spring_2016_D8_8.23"))
+
+        # Pull out genotypes
+            het <- t(seqGetData(genofile, "$dosage"))
+            het <- as.data.table(het)
+
+            colnames(het) <- c(seqGetData(genofile, "sample.id"))
+            het$variant.ids <- seqGetData(genofile, "variant.id")
+
+            setkey(het, variant.ids)
+            setkey(snpsvarPulex, variant.ids)
+
+            mhet <- merge(snpsvarPulex, het)
+
+            D8336D823 <- mhet[Spring_2017_D8_336==0 & Spring_2016_D8_8.23==2]
+            D823D8336 <- mhet[Spring_2017_D8_336==2 & Spring_2016_D8_8.23==0]
+            D8336D823tot <- rbind(D8336D823, D823D8336)
+
+            seqSetFilter(genofile, variant.id=D8336D823tot$variant.ids, sample.id="March20_2018_D8_40")
+
+        # Pull out genotypes
+            het <- t(seqGetData(genofile, "$dosage"))
+            het <- as.data.table(het)
+
+            colnames(het) <- c(seqGetData(genofile, "sample.id"))
+            het$variant.ids <- seqGetData(genofile, "variant.id")
+
+            setkey(het, variant.ids)
+            setkey(snpsvarPulex, variant.ids)
+
+            mhet <- merge(snpsvarPulex, het)
+
+            table(mhet$March20_2018_D8_40)
+            #  0   1   2
+            #  21 914  24
+            # 95.3% total 959
+
+
+            scrd5 <- sc[medrd>4 & Nonindependent==0]
+            scrd5C <- scrd5[SC=="C" | clone=="Spring_2017_D8_336"]
+            subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+            clonestouse <- subscrd5
+            clonestouseids <- clonestouse$clone
+
+            seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+          # Pull out genotypes
+              het <- t(seqGetData(genofile, "$dosage"))
+              het <- as.data.table(het)
+
+              colnames(het) <- c(seqGetData(genofile, "sample.id"))
+              het$variant.ids <- seqGetData(genofile, "variant.id")
+
+              setkey(het, variant.ids)
+              setkey(snpsvarPulex, variant.ids)
+
+              mhet <- merge(snpsvarPulex, het)
+
+              mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+              setkey(mhetlong, clone)
+              setkey(sc, clone)
+              mmhetlong <- merge(mhetlong, sc)
+
+              SCcounts <- mmhetlong[, .N, by=list(SC, variant.ids, dosage)]
+
+            #Remove NAs
+              SCcounts <- SCcounts[dosage!="NA"]
+              SCcountsC <- SCcounts[SC=="C"]
+              SCcountsOO <- SCcounts[SC=="OO"]
+
+              SCcountsCwide <- dcast(SCcountsC, variant.ids ~ dosage, value.var="N")
+              colnames(SCcountsCwide) <- c("variant.ids", "Cdos0", "Cdos1", "Cdos2")
+              SCcountsCwide[is.na(Cdos0),Cdos0:=0]
+              SCcountsCwide[is.na(Cdos1),Cdos1:=0]
+              SCcountsCwide[is.na(Cdos2),Cdos2:=0]
+
+              SCcountsOOwide <- dcast(SCcountsOO, variant.ids ~ dosage, value.var="N")
+              colnames(SCcountsOOwide) <- c("variant.ids", "OOdos0", "OOdos1", "OOdos2")
+              SCcountsOOwide[is.na(OOdos0),OOdos0:=0]
+              SCcountsOOwide[is.na(OOdos1),OOdos1:=0]
+              SCcountsOOwide[is.na(OOdos2),OOdos2:=0]
+
+              setkey(SCcountsCwide, variant.ids)
+              setkey(SCcountsOOwide, variant.ids)
+              SCcountsCOO <- merge(SCcountsCwide, SCcountsOOwide)
+
+              SCcountsCOO$Ctot <- SCcountsCOO$Cdos0+SCcountsCOO$Cdos1+SCcountsCOO$Cdos2
+              SCcountsCOO$OOtot <- SCcountsCOO$OOdos0+SCcountsCOO$OOdos1+SCcountsCOO$OOdos2
+
+              SCcountsCOOfilt <- SCcountsCOO[Ctot>23]
+
+              SCcountsACfiltAOOfix <- SCcountsCOOfilt[Cdos0==Ctot & OOdos2==OOtot]
+              SCcountsACfiltOOAfix <- SCcountsCOOfilt[Cdos2==Ctot & OOdos0==OOtot]
+
+              totCOOfix <- rbind(SCcountsACfiltAOOfix, SCcountsACfiltOOAfix)
+
+              seqSetFilter(genofile, variant.id=totCOOfix$variant.ids, sample.id="March20_2018_D8_40")
+
+              # Pull out genotypes
+                het <- t(seqGetData(genofile, "$dosage"))
+                het <- as.data.table(het)
+
+                colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                setkey(het, variant.ids)
+                setkey(snpsvarPulex, variant.ids)
+
+                mhet <- merge(snpsvarPulex, het)
+
+                table(mhet$March20_2018_D8_40)
+                #0    1    2
+                #72 3442   56
+                #prophet 96.4% - total 3570
+
+
+                seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("Spring_2017_D8_336", "April_2017_D8_214"))
+
+              # Pull out genotypes
+                  het <- t(seqGetData(genofile, "$dosage"))
+                  het <- as.data.table(het)
+
+                  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                  het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                  setkey(het, variant.ids)
+                  setkey(snpsvarPulex, variant.ids)
+
+                  mhet <- merge(snpsvarPulex, het)
+
+                  D8336roC <- mhet[Spring_2017_D8_336==0 & April_2017_D8_214==2]
+                  roCD8336 <- mhet[Spring_2017_D8_336==2 & April_2017_D8_214==0]
+                  D8336roCtot <- rbind(D8336roC, roCD8336)
+
+                  seqSetFilter(genofile, variant.id=D8336roCtot$variant.ids, sample.id="March20_2018_D8_40")
+
+              # Pull out genotypes
+                  het <- t(seqGetData(genofile, "$dosage"))
+                  het <- as.data.table(het)
+
+                  colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                  het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                  setkey(het, variant.ids)
+                  setkey(snpsvarPulex, variant.ids)
+
+                  mhet <- merge(snpsvarPulex, het)
+
+                  table(mhet$March20_2018_D8_40)
+                  #   0    1    2
+                  # 103 2131   67
+                  #prophet 92.6% total 2301
+
+
+
+
+
+                  seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("April_2017_D8_214", "March20_2018_D8_4"))
+
+                # Pull out genotypes
+                    het <- t(seqGetData(genofile, "$dosage"))
+                    het <- as.data.table(het)
+
+                    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                    setkey(het, variant.ids)
+                    setkey(snpsvarPulex, variant.ids)
+
+                    mhet <- merge(snpsvarPulex, het)
+
+                    D8336D823 <- mhet[April_2017_D8_214==0 & March20_2018_D8_4==2]
+                    D823D8336 <- mhet[April_2017_D8_214==2 & March20_2018_D8_4==0]
+                    D8336D823tot <- rbind(D8336D823, D823D8336)
+
+                    seqSetFilter(genofile, variant.id=D8336D823tot$variant.ids, sample.id="March20_2018_D8_37")
+
+                # Pull out genotypes
+                    het <- t(seqGetData(genofile, "$dosage"))
+                    het <- as.data.table(het)
+
+                    colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                    het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                    setkey(het, variant.ids)
+                    setkey(snpsvarPulex, variant.ids)
+
+                    mhet <- merge(snpsvarPulex, het)
+
+                    table(mhet$March20_2018_D8_37)
+                    #  0   1   2
+                    #  21 914  24
+                    # 95.3% total 959
+
+                    seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=c("March20_2018_D8_37"))
+
+                  # Pull out genotypes
+                      het <- t(seqGetData(genofile, "$dosage"))
+                      het <- as.data.table(het)
+
+                      colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                      het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                      setkey(het, variant.ids)
+                      setkey(snpsvarPulex, variant.ids)
+
+                      mhet <- merge(snpsvarPulex, het)
+
+                      D837het <- mhet[March20_2018_D8_37==1]
+
+                      seqSetFilter(genofile, variant.id=D837het$variant.ids, sample.id=c("April_2017_D8_214"))
+                      # Pull out genotypes
+                          het <- t(seqGetData(genofile, "$dosage"))
+                          het <- as.data.table(het)
+
+                          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                          setkey(het, variant.ids)
+                          setkey(snpsvarPulex, variant.ids)
+
+                          mhet <- merge(snpsvarPulex, het)
+
+
+                          scrd5 <- sc[medrd>4 & Nonindependent==0]
+                          scrd5C <- scrd5[SC=="L" | clone=="May_2017_DBunk_554"]
+                          subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+                          clonestouse <- subscrd5
+                          clonestouseids <- clonestouse$clone
+
+                          seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+                        # Pull out genotypes
+                            het <- t(seqGetData(genofile, "$dosage"))
+                            het <- as.data.table(het)
+
+                            colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                            het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                            setkey(het, variant.ids)
+                            setkey(snpsvarPulex, variant.ids)
+
+                            mhet <- merge(snpsvarPulex, het)
+
+                            mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+                            setkey(mhetlong, clone)
+                            setkey(sc, clone)
+                            mmhetlong <- merge(mhetlong, sc)
+
+                            SCcounts <- mmhetlong[, .N, by=list(SC, variant.ids, dosage)]
+
+                          #Remove NAs
+                            SCcounts <- SCcounts[dosage!="NA"]
+                            SCcountsL <- SCcounts[SC=="L"]
+                            SCcountsOO <- SCcounts[SC=="OO"]
+
+                            SCcountsLwide <- dcast(SCcountsL, variant.ids ~ dosage, value.var="N")
+                            colnames(SCcountsLwide) <- c("variant.ids", "Ldos0", "Ldos1", "Ldos2")
+                            SCcountsLwide[is.na(Ldos0),Ldos0:=0]
+                            SCcountsLwide[is.na(Ldos1),Ldos1:=0]
+                            SCcountsLwide[is.na(Ldos2),Ldos2:=0]
+
+                            SCcountsOOwide <- dcast(SCcountsOO, variant.ids ~ dosage, value.var="N")
+                            colnames(SCcountsOOwide) <- c("variant.ids", "OOdos0", "OOdos1", "OOdos2")
+                            SCcountsOOwide[is.na(OOdos0),OOdos0:=0]
+                            SCcountsOOwide[is.na(OOdos1),OOdos1:=0]
+                            SCcountsOOwide[is.na(OOdos2),OOdos2:=0]
+
+                            setkey(SCcountsLwide, variant.ids)
+                            setkey(SCcountsOOwide, variant.ids)
+                            SCcountsLOO <- merge(SCcountsLwide, SCcountsOOwide)
+
+                            SCcountsLOO$Ltot <- SCcountsLOO$Ldos0+SCcountsLOO$Ldos1+SCcountsLOO$Ldos2
+                            SCcountsLOO$OOtot <- SCcountsLOO$OOdos0+SCcountsLOO$OOdos1+SCcountsLOO$OOdos2
+
+                            SCcountsLOO <- SCcountsLOO[Ltot>5]
+
+                            SCcountsLOOAOOfix <- SCcountsLOO[Ldos0==Ltot & OOdos2==OOtot]
+                            SCcountsLOOOOAfix <- SCcountsLOO[Ldos2==Ltot & OOdos0==OOtot]
+
+                            totLOOfix <- rbind(SCcountsLOOAOOfix, SCcountsLOOOOAfix)
+
+                            seqSetFilter(genofile, variant.id=totLOOfix$variant.ids, sample.id="March20_2018_D8_46")
+
+                            # Pull out genotypes
+                              het <- t(seqGetData(genofile, "$dosage"))
+                              het <- as.data.table(het)
+
+                              colnames(het) <- c(seqGetData(genofile, "sample.id"))
+                              het$variant.ids <- seqGetData(genofile, "variant.id")
+
+                              setkey(het, variant.ids)
+                              setkey(snpsvarPulex, variant.ids)
+
+                              mhet <- merge(snpsvarPulex, het)
+
+                              table(mhet$March20_2018_D8_46)
+                              #0    1    2
+                              #72 3442   56
+                              #prophet 96.4% - total 3570
+
+
+
+          scrd5 <- sc[medrd>4 & Nonindependent==0]
+          scrd5C <- scrd5[SC=="L" | clone=="May_2017_DBunk_554"]
+          subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+          clonestouse <- subscrd5
+          clonestouseids <- clonestouse$clone
+
+          seqSetFilter(genofile, variant.id=msnps$variant.ids, sample.id=clonestouseids)
+
+        # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+          setkey(mhetlong, clone)
+          setkey(sc, clone)
+          mmhetlong <- merge(mhetlong, sc)
+
+          SCcounts <- mmhetlong[, .N, by=list(SC, variant.ids, dosage)]
+
+      #Remove NAs
+          SCcounts <- SCcounts[dosage!="NA"]
+          SCcountsL <- SCcounts[SC=="L"]
+          SCcountsOO <- SCcounts[SC=="OO"]
+
+          SCcountsLwide <- dcast(SCcountsL, variant.ids ~ dosage, value.var="N")
+          colnames(SCcountsLwide) <- c("variant.ids", "Ldos0", "Ldos1", "Ldos2")
+          SCcountsLwide[is.na(Ldos0),Ldos0:=0]
+          SCcountsLwide[is.na(Ldos1),Ldos1:=0]
+          SCcountsLwide[is.na(Ldos2),Ldos2:=0]
+
+          SCcountsOOwide <- dcast(SCcountsOO, variant.ids ~ dosage, value.var="N")
+          colnames(SCcountsOOwide) <- c("variant.ids", "OOdos0", "OOdos1", "OOdos2")
+          SCcountsOOwide[is.na(OOdos0),OOdos0:=0]
+          SCcountsOOwide[is.na(OOdos1),OOdos1:=0]
+          SCcountsOOwide[is.na(OOdos2),OOdos2:=0]
+
+          setkey(SCcountsLwide, variant.ids)
+          setkey(SCcountsOOwide, variant.ids)
+          SCcountsLOO <- merge(SCcountsLwide, SCcountsOOwide)
+
+          SCcountsLOO$Ltot <- SCcountsLOO$Ldos0+SCcountsLOO$Ldos1+SCcountsLOO$Ldos2
+          SCcountsLOO$OOtot <- SCcountsLOO$OOdos0+SCcountsLOO$OOdos1+SCcountsLOO$OOdos2
+
+          SCcountsLOO <- SCcountsLOO[Ltot>5]
+
+          SCcountsLOOAOOfix <- SCcountsLOO[Ldos0==Ltot & OOdos2==OOtot]
+          SCcountsLOOOOAfix <- SCcountsLOO[Ldos2==Ltot & OOdos0==OOtot]
+
+          totLOOfix <- rbind(SCcountsLOOAOOfix, SCcountsLOOOOAfix)
+
+          scrd5 <- sc[medrd>4 & Nonindependent==0]
+          scrd5C <- scrd5[clone=="March20_2018_DBunk_3"]
+          subscrd5 <- scrd5C[, c("clone", "SC", "population", "year", "Sex", "Species", "medrd"), with=FALSE]
+          clonestouse <- subscrd5
+          clonestouseids <- clonestouse$clone
+
+          seqSetFilter(genofile, variant.id=totLOOfix$variant.ids, sample.id=clonestouseids)
+
+        # Pull out genotypes
+          het <- t(seqGetData(genofile, "$dosage"))
+          het <- as.data.table(het)
+
+          colnames(het) <- c(seqGetData(genofile, "sample.id"))
+          het$variant.ids <- seqGetData(genofile, "variant.id")
+
+          setkey(het, variant.ids)
+          setkey(snpsvarPulex, variant.ids)
+
+          mhet <- merge(snpsvarPulex, het)
+
+          mhetlong <- melt(mhet, measure.vars=clonestouseids, variable.name="clone", value.name="dosage")
+
+          setkey(mhetlong, clone)
+          setkey(sc, clone)
+          mmhetlong <- merge(mhetlong, sc)
+
+          SCcounts <- mmhetlong[, .N, by=list(clone, dosage)]
+
+      #Remove NAs
+          SCcounts <- SCcounts[dosage!="NA"]
+
+          SCcountswide <- dcast(SCcounts, clone ~ dosage, value.var="N")
+          colnames(SCcountswide) <- c("clone", "dos0", "dos1", "dos2")
+          SCcountswide[is.na(dos0),dos0:=0]
+          SCcountswide[is.na(dos1),dos1:=0]
+          SCcountswide[is.na(dos2),dos2:=0]
+
+          SCcountswide$tot <- SCcountswide$dos0+SCcountswide$dos1+SCcountswide$dos2
+          SCcountswide$prophet <- SCcountswide$dos1/SCcountswide$tot
