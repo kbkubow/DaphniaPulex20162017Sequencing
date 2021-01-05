@@ -1,3 +1,6 @@
+#### this version assumes WW individuals are dead
+
+
 #### libraries
   library(data.table)
   library(foreach)
@@ -15,8 +18,10 @@
 
     W.prime <- c*mZZ*X    ### Male ZZ
     X.prime <- c*(1-mZZ)*X + 2*(1-c)*(W*X + X*Y/2 + Z*Y/3 + Z*W/2)    ### Female ZZ
+
     Y.prime <- c*(mZW)*Z    ### Male ZW
     Z.prime <- c*(1-mZW)*Z + 2*(1-c)*(X*Y/2 + 2*Z*Y/3 + Z*W/2)    ### Female ZW
+
 
     c(W.prime, X.prime, Y.prime, Z.prime)/(sum(c(W.prime, X.prime, Y.prime, Z.prime)))
   }

@@ -1,59 +1,41 @@
-### first phase A & C parents using quartet phasing
-`prepare_vcf_rQTL.R` makes the input VCF file
-`whatshap_rQTL.sh` runs Whatshap to make output
+### Run Whatshapp to phase A & C from quartets. Use consensus calls across highly replicated superclones
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/whatshap.prepare_vcf.R`
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/whatshap.run.sh`
 
-### prepare input data for RABBIT
-`formatData.R` takes input of A&C haplotypes plus GDS to make rabbit file
+### Run RABBIT to reconstruct phase of F1s
+  #git clone https://github.com/chaozhi/RABBIT.git
 
-### run RABBIT
-#git clone https://github.com/chaozhi/RABBIT.git
+  ~~Apparently does not need phased parents, orininally built for only phenotyped F1s. Now it does all F1s~~
 
+  ### Run RABBIT
+  1. `rabbit.runRabbit.sh` runs RABBIT
+      (requires `template.m`, runs `rabbit.formatData.R` & `rabbit.parseHaplotypes.py`, and files `chrs.csv`)
 
-eps="0.005"
-epsF="0.005"
-RABBITmodel="jointModel"
-RABBITestfun="origViterbiDecoding"
-RABBITpackageLocation="/scratch/aob2x/daphnia_hwe_sims/RABBIT/RABBIT_Packages/"
-outdir="/scratch/aob2x/daphnia_hwe_sims/rabbit_out"
-generations_for_RABBIT="1"
+  2. `rabbit.plotRabbit.R` makes some diagnostic analysis
 
-python - <<EOF > /scratch/aob2x/daphnia_hwe_sims/trioPhase/AxC_Rabbit.m
-print """SetDirectory["%s"]""" % "${RABBITpackageLocation}"
-print """Needs["MagicReconstruct\`"]"""
-print """SetDirectory["%s"]""" % "${outdir}"
-print """popScheme = Table["RM1-E", {%s}]""" % "${generations_for_RABBIT}"
-print 'epsF = %s' % "${epsF}"
-print 'eps = %s' % "${eps}"
-print 'model = "%s"' % "${RABBITmodel}"
-print 'estfun = "%s"' % "${RABBITestfun}"
-print 'inputfile = "%s"' % "/scratch/aob2x/daphnia_hwe_sims/trioPhase/AxC_Rabbit.in"
-print 'resultFile = "%s.txt"' % "/scratch/aob2x/daphnia_hwe_sims/trioPhase/AxC_Rabbit.out"
-print """magicReconstruct[inputfile, model, epsF, eps, popScheme, resultFile, HMMMethod -> estfun, PrintTimeElapsed -> True]"""
-print 'summaryFile = StringDrop[resultFile, -4] <> ".csv"'
-print 'saveAsSummaryMR[resultFile, summaryFile]'
-print 'Exit'
-EOF
+  ### convert RABBIT to
+  3. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.vitPath.R` makes `pio` object:
+    `/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.pio.csv`
 
-module load mathematica/11.1.1
-
-math -noprompt -script /scratch/aob2x/daphnia_hwe_sims/trioPhase/AxC_Rabbit.m
+### RUN lme4qtl gwas with perms
+  1. 
 
 
-SetDirectory["/scratch/aob2x/daphnia_hwe_sims/RABBIT/RABBIT_Packages/"]
-Needs["MagicReconstruct`"]
-SetDirectory["/scratch/aob2x/daphnia_hwe_sims/trioPhase/"]
-popScheme = Table["RM1-E", {1}]
-epsF = 0.005
-eps = 0.005
-model = "jointModel"
-estfun = "origViterbiDecoding"
-inputfile = "AxC_Rabbit.in"
-resultFile = "AxC_Rabbit.out.txt"
-magicReconstruct[inputfile, model, epsF, eps, popScheme, resultFile, HMMMethod -> estfun, PrintTimeElapsed -> True]
-summaryFile = StringDrop[resultFile, -4] <> ".csv"
-saveAsSummaryMR[resultFile, summaryFile]
+  `rabbit.convert_output.R` formats output data
+    outputs to `/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm_onlyPheno`
 
-Exit
+  3. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatParentHaplos.R` extracts out phased A & C
+
+### Run rQTL
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rQTL.convertData.R` Converts Rabbit output file to rQTL data; also makes separate phenotype data file
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rQTL.run.R` Runs rQTL
+
+### Phenotypic distribution plots & Fraser's v-test
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/vTest.plotPheno.R`
+
+### haplotypes of parents at QTL
+  1. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.formatParentHaplos.R`: value=2==ALT; value=1==REF
+  2. `DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/parentalHaplotype.plot.R`
 
 
 
@@ -61,6 +43,21 @@ Exit
 
 
 
-wd=/scratch/aob2x/
 
-git clone https://github.com/chaozhi/RABBIT.git
+`rqtl.R` Runs rQTL on phenotype data (needs to be worked on a bit)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Phase A & C parents using quartet phasing with Whatshap
+`whatshap.prepare_vcf.R` makes the input VCF file
+`whatshap.run.sh` runs Whatshap to make output
