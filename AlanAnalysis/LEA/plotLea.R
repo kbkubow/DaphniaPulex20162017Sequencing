@@ -3,7 +3,7 @@
 
 # scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/Q_samps.Rdata ~/Q_samps.Rdata
 # scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/dap.snmf.Rdata ~/dap.snmf.Rdata
-# scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/lea/snmf_out.v2.Rdata ~/snmf_out.v2.Rdata
+# scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/snmf_out.Rdata ~/snmf_out.Rdata
 # R
 
 ### libraries
@@ -17,7 +17,8 @@
 ### load datda
   #load("~/Q_samps.Rdata")
   #load("~/dap.snmf.Rdata")
-  load("~/snmf_out.v2.Rdata")
+  #load("~/snmf_out.v2.Rdata")
+  load("~/snmf_out.Rdata")
 
 ### which K?
 #  ggplot(data=ce.dt, aes(x=k, y=ce, group=run, color=as.factor(run))) + geom_line()
@@ -80,7 +81,7 @@
 
     output.plot <- q.plot / ( out.plot | ce.plot)
 
-    ggsave(output.plot, file="~/LEA_output.pdf")
+    ggsave(output.plot, file="~/LEA_output.new.pdf")
 
 
 

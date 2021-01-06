@@ -51,4 +51,4 @@
 
 
  ggplot(data=f[data=="hybrid.sp3"], aes(x=-log10(p), y=f4, color=as.factor(P3=="pulicaria"))) + geom_point()
- ggplot(data=f[data=="hybrid.sp3"], aes(x=Dstatistic, y=qlogis(f4), color=as.factor(P3=="pulicaria"))) + geom_point()
+ ggplot(data=f[data=="orig"], aes(x=Dstatistic, y=qlogis(f4), color=as.factor(P3=="pulicaria"))) + geom_point()
