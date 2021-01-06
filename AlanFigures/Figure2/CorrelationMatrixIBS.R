@@ -155,8 +155,11 @@
   											ibs.long.ag[,scid.b.min := as.numeric(factor(scid.b.min, levels=sort(unique(as.character(ibs.long$scid.b)))))]
   											ibs.long.ag[,scid.b.max := as.numeric(factor(scid.b.max, levels=sort(unique(as.character(ibs.long$scid.b)))))]
 
-  											library(viridis)
 
+                    library(ggplot2)
+                    library(viridis)
+
+                    load("ibs.long.Rdata")
 
   									### plot it
   											h.just <- .25
