@@ -116,61 +116,10 @@
   theme(legend.position = "none")
 
 
-    (male.plot + epp.plot + cor.plot) / poolseq
+### mega plot
+  (male.plot + epp.plot + cor.plot) / poolseq / f1.plot
 
 
-
-
-
-### overlap test
-  library("Ckmeans.1d.dp")
-  library(foreach)
-
-  o.ag.id <- foreach(chr.i=unique(o.ag.plot$chr), .combine="rbind")%do%{
-    #chr.i<-"Scaffold_2158_HRSCAF_2565"
-    tmp <- o.ag.plot[chr==chr.i][,list(pos=unique(pos)), list(chr)]
-    setkey(tmp, chr, pos)
-    tmp[,id:=c(1:dim(tmp)[1])]
-  }
-  setkey(o.ag.id, chr, pos)
-  setkey(o.ag.plot, chr, pos)
-  o.ag.plot <- merge(o.ag.plot, o.ag.id)
-
-  seg_fun <- function(pos=o.ag.plot[term=="fill"][chr=="Scaffold_2158_HRSCAF_2565"]$pos,
-                      pos.thr=) {
-    pos <- sort(pos)
-    pos.f <- as.numeric(factor(pos, levels=(pos)))
-    Cksegs.1d.dp(y=pos)
-
-  }
-
-
-  Cksegs.1d.dp(o.ag.plot[p.aov<=p.aov.thr][chr=="Scaffold_2158_HRSCAF_2565"]$id.y)
-
-  o.ag.plot.cluster <- o.ag.plot[,
-                                list(cluster=Cksegs.1d.dp(id.y[p.aov<=p.aov.thr])$cluster,
-                                    id.y=id.y[p.aov<=p.aov.thr],
-                                    pos=pos[p.aov<=p.aov.thr]),
-                                 list(term, chr)]
-
-  o.ag.plot.cluster.ag <- o.ag.plot.cluster[,list(start=min(pos), end=max(pos)), list(term, chr, cluster)]
-
-
-### test of overlaping ranges
-  A <- makeGRangesFromDataFrame(data.frame(chr=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$CHR,
-                                      start=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$BP1,
-                                      end=ld.blocks[py=="D8.2016.2017.2018.2019"][KB>0]$BP2),
-                           start.field="start", end.field="end")
-
-  B <- makeGRangesFromDataFrame(data.frame(chr=peaks$CHROM,
-                                     start=peaks$start,
-                                     end=peaks$end),
-                          start.field="start", end.field="end")
-
-  genome <- getGenomeAndMask(genome=snp.dt[(final.use), list(start=min(pos), end=max(pos)), list(chr)], mask=NA)
-
-  pt <- overlapPermTest(A=A, B=B, genome=genome$genome, ntimes=1000)
-  plot(pt)
 
 
 

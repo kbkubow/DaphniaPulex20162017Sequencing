@@ -92,6 +92,7 @@
   save(gprime, peaks, file="/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
   save(alleleFreqs, file="/project/berglandlab/alan/alleleFreqs.replicates.250K.05.Rdata")
 
+  load(file="/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
 
 #### using the ASE read counter data and running gprime separately for each rep PE1 vs PE2; Male1 vs Male2
 ### load data

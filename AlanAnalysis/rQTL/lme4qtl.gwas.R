@@ -4,7 +4,7 @@ args = commandArgs(trailingOnly=TRUE)
 perm <- as.numeric(args[1]) - 1
 set <- (args[2]) ### all,  AxC, or CxC
 
-#perm <- 0; set<-"AxC"
+#perm <- 0; set<-"CxC"
 
 ### libraries
   #library(qtl)

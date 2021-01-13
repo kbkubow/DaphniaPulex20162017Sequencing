@@ -3,8 +3,9 @@
 
 args = commandArgs(trailingOnly=TRUE)
 permUse <- as.numeric(args[1]) - 1
+crossType <- args[2]
 
-
+#permUse <-0; crossType<-"CxC"
 ### libraries
   library(ggplot2)
   library(data.table)
@@ -46,7 +47,7 @@ permUse <- as.numeric(args[1]) - 1
     load("/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
 
   ### load in F1 mapping data
-    load("/project/berglandlab/alan/lme4qtl_output.AxC.long.Rdata")
+    load(paste("/project/berglandlab/alan/lme4qtl_output.", crossType, ".long.Rdata", sep=""))
 
 
 ### some data prep for the F1 stuff
@@ -117,7 +118,7 @@ permUse <- as.numeric(args[1]) - 1
                                 start.field="start", end.field="end")
 
         #suppressWarnings()
-        pt <- overlapPermTest(A=A, B=B, genome=genome$genome, ntimes=5000)
+        pt <- overlapPermTest(A=A, B=B, genome=genome$genome, ntimes=1000)
         data.table(pheno=pheno, p=pt[[1]]$pval, z=pt[[1]]$zscore, perm=perm.i)
       }
 
@@ -126,4 +127,4 @@ permUse <- as.numeric(args[1]) - 1
     }
 
 
-    write.csv(overlap.out, file=paste("/scratch/aob2x/daphnia_hwe_sims/overlap_test/overlap_out_", permUse, ".csv", sep=""))
+  write.csv(overlap.out, file=paste("/scratch/aob2x/daphnia_hwe_sims/overlap_test/overlap_out_", permUse, ".", crossType, ".csv", sep=""))
