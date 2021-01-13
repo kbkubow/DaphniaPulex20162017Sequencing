@@ -126,4 +126,4 @@ permUse <- as.numeric(args[1]) - 1
     }
 
 
-  overlap.out
+    write.csv(overlap.out, file=paste("/scratch/aob2x/daphnia_hwe_sims/overlap_test/overlap_out_", permUse, ".csv", sep=""))
