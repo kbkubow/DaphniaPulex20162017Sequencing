@@ -7,10 +7,8 @@ crossType <- args[2]
 
 #permUse <-0; crossType<-"CxC"
 ### libraries
-  library(ggplot2)
+
   library(data.table)
-  library(cowplot)
-  library(patchwork)
   library("Ckmeans.1d.dp")
   library(foreach)
   library(regioneR)
