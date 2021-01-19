@@ -8,6 +8,7 @@
 
 ### param
   set <- "AxC"
+  set <- "CxC"
 
 ### load pio.unique.n
   load(file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/pio.uniq.set.", set, ".Rdata", sep=""))
@@ -37,13 +38,14 @@
     }
     o <- rbindlist(o)
 
-    o.ag <- o[, list(p.z=mean(p.z, na.rm=T), chisq=max(chisq), p.aov=min(p.aov, na.rm=T)), list(term, perm, id, chr, pos)]
-    o.ag.ag <- o.ag[,list(pr=mean(p.aov[perm==0] < p.aov[perm!=0])), list(term, id, chr, pos)]
-    o.ag.ag[pr==1, pr:=1/201]
+  #o.ag <- o[, list(p.z=mean(p.z, na.rm=T), chisq=max(chisq), p.aov=min(p.aov, na.rm=T)), list(term, perm, id, chr, pos)]
+  #o.ag.ag <- o.ag[,list(pr=mean(p.aov[perm==0] < p.aov[perm!=0])), list(term, id, chr, pos)]
+  #o.ag.ag[pr==1, pr:=1/201]
 
 
 
     save(o, file=paste("~/lme4qtl_output.", set, ".long.Rdata", sep=""))
+    save(o, file=paste("/project/berglandlab/alan/lme4qtl_output.", set, ".long.Rdata", sep=""))
 
 
 
