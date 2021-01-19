@@ -117,7 +117,7 @@ bcftools view \
   }
 
 
-  qtl.polar <- foreach(i=1:14, .combine="rbind")%do%polarize(i, window=20000)
+  qtl.polar <- foreach(i=1:14, .combine="rbind")%do%polarize(i, window=15000)
 
   setkey(qtl.polar, SC.uniq)
   setkey(sc.peryear, SC.uniq)
@@ -128,11 +128,29 @@ bcftools view \
 ### download and plot
   scp aob2x@rivanna.hpc.virginia.edu:~/qtl_polar.Rdata ~/.
 
-library(data.table)
-library(ggplot2)
-library(patchwork)
+  library(data.table)
+  library(ggplot2)
+  library(patchwork)
+
   load("~/qtl_polar.Rdata")
 
+### A,B,C plot
+  tmp <- data.table(SC.uniq=c("A", "B", "C"), pond.x=c("D8", "DCAT", "D8"), year=2017)
+  setkey(qtl.polar, SC.uniq, pond.x, year)
+  qtl.polar.sc <- qtl.polar[J(tmp)][pond.x==pond.y]
+  qtl.polar.sc[,male.freq:=2*n.male_male + n.male_pe]
+  qtl.polar.sc.l <- melt(qtl.polar.sc[,c("SC.uniq", "qtl", "n.male_male", "n.male_pe", "n.pe_pe")], value.var=c("qtl", "SC.uniq"), measure.var=c("n.male_male", "n.male_pe", "n.pe_pe"))
+  qtl.polar.sc.l.ag <- qtl.polar.sc.l[,list(geno=variable[which.max(value)]), list(SC.uniq, qtl)]
+
+  ggplot(data=qtl.polar.sc) +
+  geom_line(aes(y=male.freq, x=SC.uniq, group=qtl), position=position_dodge(width=0.3), color="grey", size=.5) +
+  geom_point(aes(y=male.freq, x=SC.uniq, color=SC.uniq, group=qtl), position=position_dodge(width=0.3))
+
+
+  qtl.polar.sc.l.ag.ag <- qtl.polar.sc.l.ag[,list(n=length(qtl)), list(geno, SC.uniq)]
+
+
+  ggplot(data=qtl.polar.sc.l.ag.ag, aes(y=n, x=geno, fill=geno)) + geom_bar(stat="identity", position=position_dodge(0.5)) + facet_grid(~SC.uniq)
 
 #### abundance genotype
   ab <- qtl.polar[,list(geno=c("male_male", "male_pe", "pe_pe")[which.max(c(n.male_male, n.male_pe, n.pe_pe))],

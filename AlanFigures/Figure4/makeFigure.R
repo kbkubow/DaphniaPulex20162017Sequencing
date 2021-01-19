@@ -21,6 +21,10 @@
 ### load in overlap tests
   load("~/overlap_perm.Rdata")
 
+### ABC analysis
+  load("~/qtl_polar.Rdata")
+
+
 ### male proportion plot
   male$gr <- ifelse(male$SC=="selfedA", "A", ifelse(male$SC=="B", "B", male$gr))
   male.ag <- male[!is.na(gr),list(propmale=sum(Males)/sum(NewTotal),
@@ -147,14 +151,29 @@
   facet_grid(cross~pheno)
 
 
+### A,B,C plot
+  tmp <- data.table(SC.uniq=c("A", "B", "C"), pond.x=c("D8", "DCAT", "D8"), year=2017)
+  setkey(qtl.polar, SC.uniq, pond.x, year)
+  qtl.polar.sc <- qtl.polar[J(tmp)][pond.x==pond.y]
+  qtl.polar.sc[,male.freq:=2*n.male_male + n.male_pe]
+  qtl.polar.sc.l <- melt(qtl.polar.sc[,c("SC.uniq", "qtl", "n.male_male", "n.male_pe", "n.pe_pe")], value.var=c("qtl", "SC.uniq"), measure.var=c("n.male_male", "n.male_pe", "n.pe_pe"))
+  qtl.polar.sc.l.ag <- qtl.polar.sc.l[,list(geno=variable[which.max(value)]), list(SC.uniq, qtl)]
+
+  qtl.polar.sc.l.ag.ag <- qtl.polar.sc.l.ag[,list(n=length(qtl)), list(geno, SC.uniq)]
+
+
+  ABC.plot <- ggplot(data=qtl.polar.sc.l.ag.ag, aes(y=n, x=geno, fill=geno)) + geom_bar(stat="identity", position=position_dodge(0.5)) + facet_grid(~SC.uniq)
+
+
 ### mega plot
 layout <- "
-ABCD
-EEEE
-FFFF
+ABC
+EEE
+FFF
+GGG
 "
 
-bigplot <- male.plot + epp.plot + cor.plot + overlap.plot + poolseq + f1.plot +
+bigplot <- male.plot + epp.plot + cor.plot + poolseq + f1.plot + ABC.plot +
 plot_annotation(tag_levels = 'A', theme=theme(plot.tag = element_text(size = 19))) +
 plot_layout(design = layout)
 
