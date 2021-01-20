@@ -26,6 +26,7 @@
 
 
 ### male proportion plot
+  male$gr <- ifelse(male$SC=="selfedA", "A", ifelse(male$SC=="B", "B", male$gr))
   male.ag <- male[!is.na(gr),list(propmale=sum(Males)/sum(NewTotal),
                                   N=sum(NewTotal)),
                     list(clone, gr)]
@@ -34,6 +35,8 @@
   male.ag[,lci:=propmale-1.96*se]
   male.ag[,uci:=propmale+1.96*se]
 
+  male.ag$gr <- factor(male.ag$gr, levels=c("A", "AxC", "C", "CxC", "B"))
+
   male.plot <- ggplot(data=male.ag, aes(x=gr, y=propmale, color=gr)) +
   geom_linerange(aes(ymin=lci, ymax=uci), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
   geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
@@ -41,19 +44,49 @@
   xlab("Clone or Cross Type") + ylab("Male proportion") +theme_bw()
 
 ### Fill Rate
+  epp$gr <- ifelse(epp$SC=="selfedA", "A", ifelse(epp$SC=="B", "B", epp$gr))
+  epp$counts <- c(1)
+
   epp.ag <- epp[!is.na(gr),list(fillrate=sum(fill*TotalEppB, na.rm=T)/sum(TotalEppB),
-                                N=sum(TotalEppB)),
+                                N=sum(TotalEppB), meanEMB=mean(TotalEmb),
+                                sdEMB=sd(TotalEmb), sampsize=sum(counts),
+                                meanEpp=mean(TotalEpp), sdEpp=sd(TotalEpp)),
                   list(clone, gr)]
 
   epp.ag[,se:=sqrt((fillrate*(1-fillrate))/N)]
   epp.ag[,lci:=fillrate-1.96*se]
   epp.ag[,uci:=fillrate+1.96*se]
 
+  epp.ag[,seemb:=sdEMB/(sqrt(sampsize))]
+  epp.ag[,lciemb:=meanEMB-1.96*seemb]
+  epp.ag[,uciemb:=meanEMB+1.96*seemb]
+
+  epp.ag[,seepp:=sdEpp/(sqrt(sampsize))]
+  epp.ag[,lciepp:=meanEpp-1.96*seepp]
+  epp.ag[,uciepp:=meanEpp+1.96*seepp]
+
+
+  epp.ag$gr <- factor(epp.ag$gr, levels=c("A", "AxC", "C", "CxC", "B"))
+
   epp.plot <- ggplot(data=epp.ag, aes(x=gr, y=fillrate, color=gr)) +
   geom_linerange(aes(ymin=lci, ymax=uci), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
   geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
   theme(legend.position="none") +
   xlab("Clone or Cross Type") + ylab("Ephippial fill rate") +
+  theme_bw()
+
+  emb.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEMB, color=gr)) +
+  geom_linerange(aes(ymin=lciemb, ymax=uciemb), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
+  geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
+  theme(legend.position="none") +
+  xlab("Clone or Cross Type") + ylab("Embryo production") +
+  theme_bw()
+
+  eppnum.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEpp, color=gr)) +
+  geom_linerange(aes(ymin=lciepp, ymax=uciepp), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
+  geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
+  theme(legend.position="none") +
+  xlab("Clone or Cross Type") + ylab("Ephippia production") +
   theme_bw()
 
 ### trait correlation plot
