@@ -5,7 +5,7 @@
   library(patchwork)
 
 ### setwd
-  setwd("/Users/alanbergland/Documents/GitHub")
+  setwd("/Users/kbkubow/Documents/GitHub")
 
 ### load F1 cross data (made by `DaphniaPulex20162017Sequencing/AlanFigures/Figure4/makeData.F1_pheno.R`)
   load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/F1_pheno.Rdata")
@@ -19,11 +19,10 @@
   load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/lme4qtl_output.AxC.long.SUMMARIZED.Rdata")
 
 ### load in overlap tests
-  load("~/overlap_perm.Rdata")
+  load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/overlap_perm.Rdata")
 
-### ABC analysis
-  load("~/qtl_polar.Rdata")
-
+### Load in PA42 chr key
+  PA42 <- fread("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/5kbchrassignHiCnew.csv")
 
 ### male proportion plot
   male$gr <- ifelse(male$SC=="selfedA", "A", ifelse(male$SC=="B", "B", male$gr))
@@ -102,47 +101,85 @@
     #setnames(peaks.groups, "CHROM", "chr")
     #setnames(gprime.groups, "CHROM", "chr")
 
+    PA42$hybridchr <- paste("Chr", PA42$PA42chr, "\n", paste("Scaff", "\n", tstrsplit(PA42$chr, "_")[[2]], sep=""), sep="")
+    PA42sub <- PA42[, c("chr", "PA42chr", "hybridchr")]
+    setkey(PA42sub, chr)
+    setkey(peaks, chr)
+    setkey(gprime, chr)
+    mpeaks <- merge(peaks, PA42sub)
+    mgprime <- merge(gprime, PA42sub)
+
     #peaks <- rbind(peaks, peaks.groups, fill=T)
     #gprime <- rbind(gprime, gprime.groups, fill=T)
 
     #peaks[,rep:=gsub("NA", "", paste(rep, group, sep=""))]
     #gprime[,rep:=gsub("NA", "", paste(rep, group, sep=""))]
 
-    gprime[,Gprime.y:=Gprime*ifelse(rep==1, 1, -1)]
-    peaks[,maxGprime.y:=maxGprime*ifelse(rep==1, 1, -1)]
+    mgprime[,Gprime.y:=Gprime*ifelse(rep==1, 1, -1)]
+    mpeaks[,maxGprime.y:=maxGprime*ifelse(rep==1, 1, -1)]
 
-    gprime[,pos:=POS]
-    setkey(gprime, chr, pos)
-    merge(gprime,
-          data.table(chr=peaks$chr,
-                     pos=peaks$posMaxGprime, key="chr,pos"))[,]
+    mgprime[,pos:=POS]
+    setkey(mgprime, hybridchr, pos)
+    merge(mgprime,
+          data.table(hybridchr=mpeaks$hybridchr,
+                     pos=mpeaks$posMaxGprime, key="hybridchr,pos"))[,]
+
+    mgprime$hybridchr <- factor(mgprime$hybridchr, levels=c("Chr1\nScaff\n1931", "Chr2\nScaff\n9198",
+      "Chr3\nScaff\n9199", "Chr4\nScaff\n9197", "Chr5\nScaff\n9200", "Chr6\nScaff\n2373",
+      "Chr7\nScaff\n7757", "Chr8\nScaff\n6786", "Chr9\nScaff\n1863", "Chr10\nScaff\n2217",
+      "Chr11\nScaff\n9201", "Chr12\nScaff\n2158"))
+
+    mpeaks$hybridchr <- factor(mpeaks$hybridchr, levels=c("Chr1\nScaff\n1931", "Chr2\nScaff\n9198",
+      "Chr3\nScaff\n9199", "Chr4\nScaff\n9197", "Chr5\nScaff\n9200", "Chr6\nScaff\n2373",
+      "Chr7\nScaff\n7757", "Chr8\nScaff\n6786", "Chr9\nScaff\n1863", "Chr10\nScaff\n2217",
+      "Chr11\nScaff\n9201", "Chr12\nScaff\n2158"))
 
 
-    setkey(gprime, chr)
+    setkey(mgprime, hybridchr)
+    setkey(mpeaks, rep, hybridchr)
     poolseq <- ggplot() +
-    #geom_vline(data=peaks, aes(xintercept=posMaxGprime), color="black") +
-    geom_line(data=gprime, aes(x=pos, y=Gprime.y, group=rep, color=as.factor(rep)), size=1.5) +
-    geom_segment(data=peaks, aes(x=posMaxGprime, xend=posMaxGprime,
-                                  y=maxGprime.y+0.15*ifelse(rep==1, 1, -1), yend=5*ifelse(rep==1, 1, -1))) +
-    geom_hline(data=gprime[,list(minG=min(Gprime[qvalue<=0.05])), list(rep)],
-               aes(yintercept=minG*ifelse(rep==1, 1, -1))) +
-    geom_text(data=peaks, aes(x=posMaxGprime, y=5.5*ifelse(rep==1, 1, -1), label=c(1:14))) +
-    facet_grid(~paste("Scaffold_", tstrsplit(chr, "_")[[2]], sep=""), scales="free_x", space = "free_x") +
+    #geom_vline(data=mpeaks, aes(xintercept=posMaxGprime), color="black") +
+    geom_line(data=mgprime, aes(x=pos, y=Gprime.y, group=rep, color=as.factor(rep)), size=1.5) +
+    geom_segment(data=mpeaks, aes(x=posMaxGprime, xend=posMaxGprime,
+                              y=maxGprime.y+0.15*ifelse(rep==1, 1, -1), yend=5*ifelse(rep==1, 1, -1))) +
+    geom_hline(data=mgprime[,list(minG=min(Gprime[qvalue<=0.05])), list(rep)],
+           aes(yintercept=minG*ifelse(rep==1, 1, -1))) +
+    geom_text(data=mpeaks, aes(x=posMaxGprime, y=5.5*ifelse(rep==1, 1, -1), label=c(1:14))) +
+    facet_grid(~hybridchr, scales="free_x", space = "free_x") +
     theme(legend.position = "none") +
     theme_bw() +
+    scale_x_continuous(breaks=seq(from=1, to=13, by=2)*10^6, labels=seq(from=1, to=13, by=2)) +
+    theme(strip.text.x = element_text(size = 8)) + ylab("Gprime") + xlab("Position (Mb)") +
+    labs(color="Replicate")
+
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-    scale_x_continuous(breaks=seq(from=1, to=9, by=2)*10^6, labels=seq(from=1, to=9, by=2))
 
 ### F1 mapping results
-  o.ag.perm <- o.ag.plot[,list(p.aov.thr=mean(p.aov.thr)), list(term, chr, q)]
+  setkey(o.ag.plot, chr)
+  setkey(PA42, chr)
+  mo.ag.plot <- merge(o.ag.plot, PA42)
+
+  o.ag.perm <- mo.ag.plot[,list(p.aov.thr=mean(p.aov.thr)), list(term, chr, hybridchr, q)]
+
+  o.ag.perm$hybridchr <- factor(o.ag.perm$hybridchr, levels=c("Chr1\nScaff\n1931", "Chr2\nScaff\n9198",
+    "Chr3\nScaff\n9199", "Chr4\nScaff\n9197", "Chr5\nScaff\n9200", "Chr6\nScaff\n2373",
+    "Chr7\nScaff\n7757", "Chr8\nScaff\n6786", "Chr9\nScaff\n1863", "Chr10\nScaff\n2217",
+    "Chr11\nScaff\n9201", "Chr12\nScaff\n2158"))
+
+  mo.ag.plot$hybridchr <- factor(mo.ag.plot$hybridchr, levels=c("Chr1\nScaff\n1931", "Chr2\nScaff\n9198",
+    "Chr3\nScaff\n9199", "Chr4\nScaff\n9197", "Chr5\nScaff\n9200", "Chr6\nScaff\n2373",
+    "Chr7\nScaff\n7757", "Chr8\nScaff\n6786", "Chr9\nScaff\n1863", "Chr10\nScaff\n2217",
+    "Chr11\nScaff\n9201", "Chr12\nScaff\n2158"))
 
   f1.plot <- ggplot() +
-  geom_vline(data=peaks, aes(xintercept=posMaxGprime, linetype=as.factor(rep))) +
-  geom_line(data=o.ag.plot, aes(x=pos, y=-log10(p.aov), color=chr), size=1.5) +
-  geom_point(data=o.ag.plot[p.aov<=p.aov.thr], aes(x=pos, y=-log10(p.aov)), size=.5) +
+  geom_vline(data=mpeaks, aes(xintercept=posMaxGprime, linetype=as.factor(rep))) +
+  geom_line(data=mo.ag.plot, aes(x=pos, y=-log10(p.aov), color=hybridchr), size=1.5) +
+  geom_point(data=mo.ag.plot[p.aov<=p.aov.thr], aes(x=pos, y=-log10(p.aov)), size=.5) +
   geom_hline(data=o.ag.perm, aes(yintercept=-log10(p.aov.thr), linetype=as.factor(q))) +
-  facet_grid(term~chr, scales="free_x") +
-  theme(legend.position = "none")
+  facet_grid(term~hybridchr, scales="free_x", space = "free_x") +
+  theme_bw() + theme(strip.text.x = element_text(size = 8)) +
+  scale_x_continuous(breaks=seq(from=1, to=13, by=2)*10^6, labels=seq(from=1, to=13, by=2)) +
+  theme(legend.position = "none") + xlab("Position (Mb)")
 
 ### overlap plot
   overlap.plot <- ggplot() +
@@ -151,29 +188,33 @@
   facet_grid(cross~pheno)
 
 
-### A,B,C plot
-  tmp <- data.table(SC.uniq=c("A", "B", "C"), pond.x=c("D8", "DCAT", "D8"), year=2017)
-  setkey(qtl.polar, SC.uniq, pond.x, year)
-  qtl.polar.sc <- qtl.polar[J(tmp)][pond.x==pond.y]
-  qtl.polar.sc[,male.freq:=2*n.male_male + n.male_pe]
-  qtl.polar.sc.l <- melt(qtl.polar.sc[,c("SC.uniq", "qtl", "n.male_male", "n.male_pe", "n.pe_pe")], value.var=c("qtl", "SC.uniq"), measure.var=c("n.male_male", "n.male_pe", "n.pe_pe"))
-  qtl.polar.sc.l.ag <- qtl.polar.sc.l[,list(geno=variable[which.max(value)]), list(SC.uniq, qtl)]
-
-  qtl.polar.sc.l.ag.ag <- qtl.polar.sc.l.ag[,list(n=length(qtl)), list(geno, SC.uniq)]
-
-
-  ABC.plot <- ggplot(data=qtl.polar.sc.l.ag.ag, aes(y=n, x=geno, fill=geno)) + geom_bar(stat="identity", position=position_dodge(0.5)) + facet_grid(~SC.uniq)
-
-
 ### mega plot
+
+phenoplot <- male.plot + epp.plot + emb.plot +
+  plot_layout(nrow=1, byrow=TRUE, guides='collect') + plot_annotation(tag_levels = 'A')
+
+mapping <- poolseq + f1.plot +
+  plot_layout(nrow-2, byrow=TRUE)
+
+totalCumIndmomwEppMesoOnly <- week7ACtotalind + week7ACmomPEnormWeek + week7ACMomwEppnormWeek + week7ACPropMalenormWeek +
+    week7ACEmbWeek + week7ACmomPEnormCumInd + week7ACMomwEppnormCumInd + week7ACPropMalenormCumInd +
+    plot_layout(nrow = 2, byrow = TRUE, guides = 'collect') + plot_annotation(tag_levels = 'A')
+
+totalCumIndmomwEppOther <-  Meso + OneLiter + Grace250 + Methyl +
+    plot_layout(nrow = 1, byrow = TRUE, guides = 'collect') +
+    plot_annotation(tag_levels = list(c("I", "J", "K", "L")))
+
+totaltotal <- totalCumIndmomwEppMesoOnly / totalCumIndmomwEppOther + plot_layout(heights = c(2, 1)) +
+  plot_annotation(tag_levels = 'A')
+
+
 layout <- "
 ABC
+DDD
 EEE
-FFF
-GGG
 "
 
-bigplot <- male.plot + epp.plot + cor.plot + poolseq + f1.plot + ABC.plot +
+bigplot <- male.plot + epp.plot + emb.plot + poolseq + f1.plot +
 plot_annotation(tag_levels = 'A', theme=theme(plot.tag = element_text(size = 19))) +
 plot_layout(design = layout)
 
