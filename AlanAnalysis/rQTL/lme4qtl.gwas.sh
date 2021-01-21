@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 #SBATCH -J overlap_test # A single job name for the array
-#SBATCH --ntasks-per-node=1 # one core
+#SBATCH --ntasks-per-node=10 # one core
 #SBATCH -N 1 # on one node
 #SBATCH --cpus-per-task=1 ### standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0:20:00 # Running time of 1 hours
@@ -13,10 +13,9 @@
 
 
 ### run as
-# sbatch --array=1-100 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/overlap_tests.sh
-# sacct -j 17976415 #AxC
-# sacct -j 17976410 #CxC
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/lme4qtl.17773556_8.err
+# sbatch --array=1-100 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
+# sacct -j 19779094 #AxC
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/overlap_test.19779094_1.err
 
 module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
 
