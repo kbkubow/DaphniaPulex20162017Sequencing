@@ -209,12 +209,12 @@ set <- (args[2]) ### all,  AxC, or CxC
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
       } else if(set=="all") {
-        male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + gr + (1|clone) + (1|Replicate),
+        male.full <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ d + (1|clone) + (1|Replicate),
                             family=binomial(),
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ gr + (1|clone) + (1|Replicate),
+        male.red <- relmatGlmer(cbind(Males, NewTotal-Males-Neos) ~ 1 + (1|clone) + (1|Replicate),
                             family=binomial(),
                             data=gp.male.tmp,
                             relmat=list(clone=kinship_matrix))
@@ -243,28 +243,55 @@ set <- (args[2]) ### all,  AxC, or CxC
       gp.fill.tmp[,d:=as.numeric(as.factor(phase.fold.geno))-2]
 
       if(set=="AxC" | set=="CxC") {
-        epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + (1|clone) + (1|Rep),
+        fill.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ 1 + (1|clone) + (1|Rep),
+        fill.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ 1 + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
       } else if(set=="all") {
-        epp.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + gr + (1|clone) + (1|Rep),
+        fill.full <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ d  + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
 
-        epp.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ gr + (1|clone) + (1|Rep),
+        fill.red <- relmatGlmer(cbind(fill*TotalEppB, (1-fill)*TotalEppB) ~ 1 + (1|clone) + (1|Rep),
                             family=binomial(),
                             data=gp.fill.tmp,
                             relmat=list(clone=kinship_matrix))
 
       }
-      aov.fill <- anova(epp.full, epp.red)
+      aov.fill <- anova(fill.full, fill.red)
+
+    ### ephpippial number
+      if(set=="AxC" | set=="CxC") {
+        epp.full <- relmatGlmer(I(TotalEppB/2) ~ d  + (1|clone) + (1|Rep),
+                            family=poisson(),
+                            data=gp.fill.tmp,
+                            relmat=list(clone=kinship_matrix))
+
+        epp.red <- relmatGlmer(I(TotalEppB/2) ~ 1 + (1|clone) + (1|Rep),
+                            family=poisson(),
+                            data=gp.fill.tmp,
+                            relmat=list(clone=kinship_matrix))
+      } else if(set=="all") {
+        epp.full <- relmatGlmer(I(TotalEppB/2) ~ d  + (1|clone) + (1|Rep),
+                            family=poisson(),
+                            data=gp.fill.tmp,
+                            relmat=list(clone=kinship_matrix))
+
+        epp.red <- relmatGlmer(I(TotalEppB/2) ~ 1 + (1|clone) + (1|Rep),
+                            family=poisson(),
+                            data=gp.fill.tmp,
+                            relmat=list(clone=kinship_matrix))
+
+      }
+      aov.epp <- anova(epp.full, epp.red)
+
+
 
     ### output
       averages <- merge(gp.male.tmp[,list(males.mu=sum(Males)/sum(NewTotal-Neos), males.n=sum(NewTotal-Neos)), list(phase.fold.geno, d)],
@@ -273,15 +300,17 @@ set <- (args[2]) ### all,  AxC, or CxC
       averages[,id:=i]
 
       out <- data.table(id=i,
-                  chisq=c(aov.fill[2,6], aov.male[2,6]),
-                  p.aov=c(aov.fill[2,8], aov.male[2,8]),
-                  p.z=c(summary(epp.full)$coef[2,4], summary(male.full)$coef[2,4]),
-                  b.z=c(summary(epp.full)$coef[2,1], summary(male.full)$coef[2,1]),
-                  term=c("fill", "male"),
-                  sing=any(lme4::isSingular(male.full),
-                           lme4::isSingular(male.red),
+                  chisq=c(aov.fill[2,6], aov.epp[2,6], aov.male[2,6]),
+                  p.aov=c(aov.fill[2,8], aov.epp[2,8], aov.male[2,8]),
+                  p.z=c(summary(fill.full)$coef[2,4], summary(epp.full)$coef[2,4], summary(male.full)$coef[2,4]),
+                  b.z=c(summary(fill.full)$coef[2,1], summary(epp.full)$coef[2,1], summary(male.full)$coef[2,1]),
+                  term=c("fill", "epp", "male"),
+                  sing=any(lme4::isSingular(fill.full),
+                           lme4::isSingular(fill.red),
                            lme4::isSingular(epp.full),
-                           lme4::isSingular(epp.red)),
+                           lme4::isSingular(epp.red),
+                           lme4::isSingular(male.full),
+                           lme4::isSingular(male.red)),
                   set=paste(unique(gp.fill.tmp$gr), collapse="."))
       out[,perm:=perm]
       merge(out, averages, by="id", allow.cartesian=T)
@@ -293,4 +322,4 @@ set <- (args[2]) ### all,  AxC, or CxC
 
 
 
-  save(lmer.gwas, file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/v2.perm", perm, ".set.", set, ".Rdata", sep=""))
+  save(lmer.gwas, file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/v3.perm", perm, ".set.", set, ".Rdata", sep=""))
