@@ -5,7 +5,8 @@
 ### libraries
   library(ape)
   library(data.table)
-
+  library(foreach)
+  
 ### get file name from input stream
 
   args = commandArgs(trailingOnly=TRUE)
