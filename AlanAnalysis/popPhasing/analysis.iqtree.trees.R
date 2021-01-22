@@ -6,7 +6,7 @@
   library(ape)
   library(data.table)
   library(foreach)
-  
+
 ### get file name from input stream
 
   args = commandArgs(trailingOnly=TRUE)
@@ -23,6 +23,7 @@
 
 ### make info object
   cdl <- foreach(i=c(1:length(bs)))%do%{
+    message(i)
     njo <- bs[[i]]
 
     d <- data.table(tip.label=njo$tip.label)
@@ -125,4 +126,4 @@
 
 
 
-  save(cdl, njo, bs file=out.fn)
+  save(cdl, njo, bs, file=out.fn)
