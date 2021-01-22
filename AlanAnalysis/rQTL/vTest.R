@@ -1,3 +1,105 @@
+library(data.table)
+
+load("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/F1_pheno.Rdata")
+male.ag <- male[!is.na(gr),list(propmale=sum(Males)/sum(NewTotal),
+                                N=sum(NewTotal),
+                                male.mean=mean(Males/NewTotal),
+                                male.sd=sd(Males/NewTotal),
+                                n=length(Males)),
+                  list(clone, gr)]
+
+### parental means and variances
+  parA <- glmer(cbind(Males, NewTotal-Males) ~ 1 + (1|Replicate), male[gr=="A"], family=binomial())
+  parC <- glmer(cbind(Males, NewTotal-Males) ~ 1 + (1|Replicate), male[gr=="C"], family=binomial())
+  AxC <- glmer(cbind(Males, NewTotal-Males) ~ 1 + (1|Replicate) + (1|clone), male[gr=="AxC"], family=binomial())
+  #CxC <- glmer(cbind(Males, NewTotal-Males) ~ 1 + (1|Replicate:clone) + (1|clone), male[gr=="CxC"], family=binomial())
+
+  sig.sq.par <- var(c(fixef(parA), fixef(parC)))
+  n.parA <- dim(ranef(parA)$Replicate)[1]
+  n.parC <- dim(ranef(parC)$Replicate)[1]
+  sd.parA <- VarCorr(parA)$Replicate[1,1]
+  sd.parC <- VarCorr(parC)$Replicate[1,1]
+
+  sd.AxC <- VarCorr(AxC)$clone[1,1]
+
+  H2 <- (VarCorr(AxC)$clone[1,1] - VarCorr(AxC)$Replicate[1,1]) / VarCorr(AxC)$clone[1,1]
+  c <- 2
+
+  v <- (sig.sq.par - sd.parA/n.parA - sd.parC/n.parC) / (sd.AxC * H2 * c)
+  v
+
+  n <- (sig.sq.par - sd.parA/n.parA - sd.parC/n.parC) / (8*sd.AxC)
+  n
+
+### fill rate
+parA <- glmer(cbind(fill*TotalEppB, TotalEppB*(1-fill)) ~ 1 + (1|Rep), epp[gr=="A"], family=binomial())
+parC <- glmer(cbind(fill*TotalEppB, TotalEppB*(1-fill)) ~ 1 + (1|Rep), epp[gr=="C"], family=binomial())
+AxC <- glmer(cbind(fill*TotalEppB, TotalEppB*(1-fill)) ~ 1 + (1|Rep) + (1|clone), epp[gr=="AxC"], family=binomial())
+CxC <- glmer(cbind(fill*TotalEppB, TotalEppB*(1-fill)) ~ 1 + (1|Rep) + (1|clone), epp[gr=="CxC"], family=binomial())
+
+sig.sq.par <- var(c(fixef(parA), fixef(parC)))
+n.parA <- dim(ranef(parA)$Rep)[1]
+n.parC <- dim(ranef(parC)$Rep)[1]
+sd.parA <- VarCorr(parA)$Rep[1,1]^2
+sd.parC <- VarCorr(parC)$Rep[1,1]^2
+
+sd.AxC <- VarCorr(AxC)$clone[1,1]^2
+
+H2 <- (VarCorr(AxC)$clone[1,1] - VarCorr(AxC)$Rep[1,1]) / VarCorr(AxC)$clone[1,1]
+c <- 2
+
+v <- (sig.sq.par - sd.parA/n.parA - sd.parC/n.parC) / (sd.AxC * H2 * c)
+v
+
+n <- (sig.sq.par - se.parA - se.parC) / (8*sd.AxC)
+
+
+  epp$gr <- ifelse(epp$SC=="selfedA", "A", ifelse(epp$SC=="B", "B", epp$gr))
+  epp$counts <- c(1)
+
+  epp.ag <- epp[!is.na(gr),list(fillrate=sum(fill*TotalEppB, na.rm=T)/sum(TotalEppB),
+                                N=sum(TotalEppB), meanEMB=mean(TotalEmb),
+                                sdEMB=sd(TotalEmb), sampsize=sum(counts),
+                                meanEpp=mean(TotalEpp), sdEpp=sd(TotalEpp)),
+                  list(clone, gr)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #library(qtl)
 library(data.table)
