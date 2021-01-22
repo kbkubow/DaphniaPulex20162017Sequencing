@@ -6,7 +6,9 @@
   library(ape)
   library(data.table)
   library(foreach)
-
+  library(doMC)
+  registerDoMC(5)
+  
 ### get file name from input stream
 
   args = commandArgs(trailingOnly=TRUE)
@@ -22,7 +24,7 @@
   bs <- read.tree(paste(fasta.fn, ".boottrees", sep=""))
 
 ### make info object
-  cdl <- foreach(i=c(1:length(bs)))%do%{
+  cdl <- foreach(i=c(1:length(bs)))%dopar%{
     message(i)
     njo <- bs[[i]]
 

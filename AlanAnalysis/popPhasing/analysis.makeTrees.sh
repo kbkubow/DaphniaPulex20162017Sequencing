@@ -85,7 +85,7 @@
 
   /home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \
   -s ${tmpdir}/${chr}_${start}_${stop}.fasta \
-  -bo 10 \
+  -bo 100 \
   -nt 5 \
   -o ${outgroup} \
   -pre ${tmpdir}/${chr}_${start}_${stop}.fasta \
