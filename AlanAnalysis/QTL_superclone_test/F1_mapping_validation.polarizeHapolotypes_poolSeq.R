@@ -7,11 +7,16 @@
   #library(patchwork)
   library(SeqArray)
   library(SeqVarTools)
+  library(foreach)
 
+  setwd("/scratch/aob2x/daphnia_hwe_sims")
 
-setwd("/scratch/aob2x/daphnia_hwe_sims")
 ### load F1 phenotype data here made here: `DaphniaPulex20162017Sequencing/AlanFigures/Figure4/makeData.F1_pheno.R`
   load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/F1_pheno.Rdata")
+  male.ag <- male[!is.na(gr),list(propmale=sum(Males)/sum(NewTotal),
+                                  N=sum(NewTotal)),
+                    list(clone, gr)]
+  male.ag[,se:=sqrt((propmale*(1-propmale))/N)]
 
 ### load superclone file to get SC.uniq
   sc <- fread("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
@@ -21,69 +26,116 @@ setwd("/scratch/aob2x/daphnia_hwe_sims")
   sc[SC=="OO", SC.uniq:=paste(SC, SCnum, sep="")]
   sc[,pond:=toupper(population)]
 
+### load genotype data (from DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/rabbit.convert_output.vitPath.R)
+  pio <- fread(file= "/scratch/aob2x/daphnia_hwe_sims/Rabbit_phase_10cm/all.vitPath.pio.csv")
+  pio[,phase.fold.geno:=phase.geno]
+  pio[phase.fold.geno%in%c(12, 21), phase.fold.geno:=12]
 
-  ### libraries
-    library(data.table)
-    library(foreach)
+### trim to samples used
+  setkey(pio, clone)
+  pio <- pio[J(unique(c(male$clone)))]
 
-  ### convert to GDS
-    #vcf.fn <- "/scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.vcf"
-    #gds.fn <- "/scratch/aob2x/daphnia_hwe_sims/popPhase/shapeitOut/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.gds"
-    #seqVCF2GDS(vcf.fn, gds.fn)
+### load poolseq data
+  load("/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
+  setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
+  setkey(gprime, chr, pos,rep)
 
-    gds.fn <- "/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/MapJune2020_ann.seq.gds"
+### function
+  polarize <- function(i, window) {
+    #window<- 10000; i<-10
+    message(i)
+    chr.i<-peaks[i]$CHROM; start<-peaks[i]$posMaxGprime-window; stop<-peaks[i]$posMaxGprime+window; rep.i=peaks[i]$rep
 
-  ### open genofile
-    genofile <- seqOpen(gds.fn)
-    snp.dt <- data.table(chr=seqGetData(genofile, "chromosome"),
-                         pos=seqGetData(genofile, "position"),
-                         id=seqGetData(genofile, "variant.id"),
-                         numAlleles=seqNumAllele(genofile),
-                         ref=seqGetData(genofile, "$ref"),
-                         alt=seqGetData(genofile, "$alt"))
-    setkey(snp.dt, chr, pos)
+    pool.tmp <- gprime[J(data.table(chr=chr.i, pos=start:stop, rep=rep.i, key="chr,pos,rep")), nomatch=0]
+    setkey(pool.tmp, chr, pos)
+    setkey(pio, chr, pos)
+    unique(pio[pool.tmp]$id)
 
-  ### clone metadata file
-    sc <- fread("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+    dat.phase <- merge(pool.tmp, pio)[,c("chr", "pos", "clone", "deltaSNP", "phase.fold.geno"), with=F]
+    dat.phase[,allele1:=substr( phase.fold.geno, 0,1)]
+    dat.phase[,allele2:=substr( phase.fold.geno, 2,3)]
+    dat.phase
 
-    sc <- sc[Nonindependent==0 ]
+    dat.phase <- melt(dat.phase[,-"phase.fold.geno",with=F],
+                    id.vars=c("clone", "chr", "pos", "deltaSNP"),
+                    value.vars=c("allele1", "allele2"),
+                    value.name="allele")
 
-    sc[,SC.uniq:=SC]
-    sc[SC=="OO", SC.uniq:=paste(SC, SCnum, sep="")]
-    sc[,pond:=toupper(population)]
+    dat.phase[sign(deltaSNP)== -1 &  allele==2, concord:="male"]
+    dat.phase[sign(deltaSNP)== -1 &  allele==1, concord:="pe"]
+    dat.phase[sign(deltaSNP)==  1 &  allele==2, concord:="pe"]
+    dat.phase[sign(deltaSNP)==  1 &  allele==1, concord:="male"]
 
-    ### sc per year
-      sc.peryear <- sc[,list(.N), list(year, SC.uniq, pond)]
+    m.ag <- dcast(dat.phase, chr+pos+clone~variable, value.var="concord")
+    m.ag.ag <- m.ag[,list(n.male_male=sum(allele1=="male" & allele2=="male")/length(allele1),
+                  n.male_pe=sum((allele1=="male" & allele2=="pe") | (allele2=="male" & allele1=="pe"))/length(allele1),
+                  n.pe_pe=sum(allele1=="pe" & allele2=="pe")/length(allele1)),
+              list(clone)]
 
-    ### hard filtering of SC
-      sc.ag <- sc[LabGenerated==F & Species=="pulex", list(clone=clone[which.max(medrd)][1]), list(SC.uniq, Species)]
-      #sc.ag[,pond:=toupper(pond)]
+    m.ag.ag[,qtl:=i]
+    m.ag.ag
 
-  ### load poolseq data
-    load("/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
-    setnames(gprime, c("CHROM", "POS"), c("chr", "pos"))
-    setkey(gprime, chr, pos,rep)
+  }
 
-  ### function
-    polarize <- function(i, window) {
-      #window<- 10000; i<-10
-      chr.i<-peaks[i]$CHROM; start<-peaks[i]$posMaxGprime-window; stop<-peaks[i]$posMaxGprime+window; rep.i=peaks[i]$rep
+### iterage and summarize
+  qtl.polar.f1 <- foreach(i=1:14, .combine="rbind")%do%polarize(i, window=15000)
+  qtl.polar.f1.ag <- qtl.polar.f1[,list(geno=c("male_male", "male_pe", "pe_pe")[which.max(c(n.male_male, n.male_pe, n.pe_pe))]), list(clone, qtl)]
 
-      pool.tmp <- gprime[J(data.table(chr=chr.i, pos=start:stop, rep=rep.i, key="chr,pos,rep")), nomatch=0]
-      setkey(pool.tmp, chr, pos)
-      setkey(snp.dt, chr, pos)
-      unique(snp.dt[pool.tmp]$id)
-      seqSetFilter(genofile, variant.id=unique(snp.dt[pool.tmp]$id))
+### merge
+  f1.pool.merge <- merge(male.ag, qtl.polar.f1.ag, by="clone")
 
-      tmp <- as.data.table(getGenotype(genofile))
-      tmp[,sample.id:=seqGetData(genofile, "sample.id")]
 
-      dat.phase <- melt(tmp, id.vars="sample.id", variable.name="variant.id", value.name="geno")
-      dat.phase[,allele1:=tstrsplit(geno, "\\|")[[1]]]
-      dat.phase[,allele2:=tstrsplit(geno, "\\|")[[2]]]
+### save
+  save(f1.pool.merge, file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/f1_pool_polar.Rdata")
 
-      # dat.phase[sample.id=="April_2017_D8_213"] ## A
-      # dat.phase[sample.id=="April_2017_D8_151"] ## C
+### load
+  library(data.table)
+  library(ggplot)
+
+  load()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    setkey(qtl.polar, SC.uniq)
+    setkey(sc.peryear, SC.uniq)
+    qtl.polar <- merge(qtl.polar, sc.peryear)
+
+              save(qtl.polar, file="~/qtl_polar.Rdata")
+
+
+
+
+
+
+
+
+
+
+
+
 
       dat.phase <- melt(dat.phase[,c("sample.id", "variant.id", "allele1", "allele2")],
                       id.vars=c("sample.id", "variant.id"),
