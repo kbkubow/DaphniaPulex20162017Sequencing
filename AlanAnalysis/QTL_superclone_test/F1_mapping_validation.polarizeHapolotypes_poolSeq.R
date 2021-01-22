@@ -51,20 +51,20 @@
     setkey(pio, chr, pos)
     unique(pio[pool.tmp]$id)
 
-    dat.phase <- merge(pool.tmp, pio)[,c("chr", "pos", "clone", "deltaSNP", "phase.fold.geno"), with=F]
+    dat.phase <- merge(pool.tmp, pio)[,c("chr", "pos", "clone", "deltaSNP", "diplo", "phase.fold.geno", "obs.dosage"), with=F]
     dat.phase[,allele1:=substr( phase.fold.geno, 0,1)]
     dat.phase[,allele2:=substr( phase.fold.geno, 2,3)]
     dat.phase
 
-    dat.phase <- melt(dat.phase[,-"phase.fold.geno",with=F],
+    dat.phase <- melt(dat.phase[,-c("diplo", "phase.fold.geno", "obs.dosage"),with=F],
                     id.vars=c("clone", "chr", "pos", "deltaSNP"),
                     value.vars=c("allele1", "allele2"),
                     value.name="allele")
 
-    dat.phase[sign(deltaSNP)== -1 &  allele==2, concord:="male"]
-    dat.phase[sign(deltaSNP)== -1 &  allele==1, concord:="pe"]
-    dat.phase[sign(deltaSNP)==  1 &  allele==2, concord:="pe"]
-    dat.phase[sign(deltaSNP)==  1 &  allele==1, concord:="male"]
+    dat.phase[sign(deltaSNP)== -1 &  allele==2, concord:="pe"]
+    dat.phase[sign(deltaSNP)== -1 &  allele==1, concord:="male"]
+    dat.phase[sign(deltaSNP)==  1 &  allele==1, concord:="pe"]
+    dat.phase[sign(deltaSNP)==  1 &  allele==2, concord:="male"]
 
     m.ag <- dcast(dat.phase, chr+pos+clone~variable, value.var="concord")
     m.ag.ag <- m.ag[,list(n.male_male=sum(allele1=="male" & allele2=="male")/length(allele1),
@@ -88,17 +88,22 @@
 ### save
   save(f1.pool.merge, file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/f1_pool_polar.Rdata")
 
+
+
 ### load
   library(data.table)
-  library(ggplot)
+  library(ggplot2)
 
-  load()
+  load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/f1_pool_polar.Rdata")
 
+  m.ag <- f1.pool.merge[,list(propmale=mean(propmale), sd=sd(propmale)), list(qtl, geno)]
 
+  summary(glm(propmale~geno, f1.pool.merge[qtl==10], weights=N, family="binomial"))
 
-
-
-
+  ggplot() +
+  geom_point(data=f1.pool.merge, aes(x=geno, y=propmale, color=gr), size=.75, alpha=.95) +
+  geom_point(data=m.ag, aes(x=geno, y=propmale), size=2, color="red") +
+  facet_wrap(~qtl)
 
 
 
