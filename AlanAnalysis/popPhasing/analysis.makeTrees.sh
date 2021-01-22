@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 ##SBATCH -J maketree # A single job name for the array
-#SBATCH --ntasks=1
+#SBATCH --ntasks=5
 #SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-00:60:00 # Running time of 4 days
 #SBATCH --mem 5G # Memory request of 20GB
@@ -21,7 +21,7 @@
 
 ### modules
   module load samtools parallel
-  module load gcc/7.1.0  openmpi/3.1.4 R/3.6.3
+  module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
 
 ### define parameters
   #chr=Scaffold_2217_HRSCAF_2652
@@ -78,22 +78,32 @@
 
 ### composition check (for how many Ns)
   ~/seqtk/seqtk \
-  comp ${tmpdir}/${chr}_${start}_${stop}.fasta > /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/${chr}_${start}_${stop}.info
+  comp ${tmpdir}/${chr}_${start}_${stop}.fasta > /scratch/aob2x/daphnia_hwe_sims/popPhase/trees250K/${chr}_${start}_${stop}.info
 
 ### make tree
-  #/home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \
-  #-nt 5 \
-  #-redo \
-  #-s ${tmpdir}/${chr}_${start}_${stop}.fasta
+  outgroup=$( grep ">"  ${tmpdir}/${chr}_${start}_${stop}.fasta | grep "obtusa.1.fa" | sed 's/>//g' | sed 's/;/_/g' | sed 's/:/_/g' )
 
+  /home/aob2x/iqtree-1.6.12-Linux/bin/iqtree \
+  -s ${tmpdir}/${chr}_${start}_${stop}.fasta \
+  -bo 10 \
+  -nt 5 \
+  -o ${outgroup} \
+  -pre ${tmpdir}/${chr}_${start}_${stop}.fasta \
+  -m K81 \
+  -fast
 
-### run this R script
-  Rscript --vanilla \
-  /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.ape.trees.R \
-  ${tmpdir}/${chr}_${start}_${stop}.fasta \
-  /scratch/aob2x/daphnia_hwe_sims/popPhase/trees250K/${chr}_${start}_${stop}.Rdata
+####
+  ### run this R script this does bionj-APE
+    #Rscript --vanilla \
+    #/scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.ape.trees.R \
+    #${tmpdir}/${chr}_${start}_${stop}.fasta \
+    #/scratch/aob2x/daphnia_hwe_sims/popPhase/trees250K/${chr}_${start}_${stop}.Rdata
 
   #cp ${tmpdir}/${chr}_${start}_${stop}.fasta /scratch/aob2x/daphnia_hwe_sims/popPhase/trees/
+    Rscript --vanilla \
+    /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/analysis.iqtree.trees.R \
+    ${tmpdir}/${chr}_${start}_${stop}.fasta \
+    /scratch/aob2x/daphnia_hwe_sims/popPhase/trees250K/${chr}_${start}_${stop}.iqtree.Rdata
 
   rm -fr ${tmpdir}
 
