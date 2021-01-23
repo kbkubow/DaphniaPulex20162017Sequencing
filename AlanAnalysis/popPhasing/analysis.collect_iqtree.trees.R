@@ -56,7 +56,19 @@
   cdl.qtl <- rbindlist(cdl.qtl)
 
 
+### manhattan type plot
+  cdl.o[,mid:=start/2 + stop/2]
+
+
+  cdl.o.manhattanPlot <- cdl.o[,list(mu=sum(cd_bin*n, na.rm=T)/sum(n), min=min(cd_bin), max=max(cd_bin)),
+                      list(chr, mid, sp.group, pond.group, boot)]
+
+  cdl.o.manhattanPlot.ag <- cdl.o.manhattanPlot[,list(cd_mean=mean(mu), lci=quantile(mu, .025), uci=quantile(mu, .975)),
+                                                  list(chr, mid, sp.group, pond.group)]
+
+
 ### save
 
 
   save(cdl.genome, cdl.qtl, cdl.o, cdl.tree, file="~/cdlo_250K.boot.Rdata")
+  save(cdl.o.manhattanPlot.ag, file="~/cdlo_250K.boot.manhattan.Rdata")
