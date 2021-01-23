@@ -6,7 +6,7 @@
   library(foreach)
   library(ape)
   library(doMC)
-  registerDoMC(20)
+  registerDoMC(15)
 
 ### input files: genome-wide distribution
 
