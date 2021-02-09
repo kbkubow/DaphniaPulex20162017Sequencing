@@ -41,6 +41,7 @@
   meso$propPEtotalind <- meso$totmomPE/meso$TotalInd
   meso$propPEmoms <- meso$totmomPE/meso$totalADfemale
   meso$propMomEpp <- meso$MomwEpp/meso$TotalInd
+  meso$propfill <- meso$EstimatedEmbryosTot/(meso$LooseEppTotal*2)
 
 ### Restrict to weeks 1-7 and SCs A and C (not looking at AxC)
 
@@ -121,6 +122,17 @@
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
     ylab("# Sexual Embryos")
 
+  from <- 250
+  to <- 700
+
+  week7ACEmbWeekB <- ggplot(data=meso7AC, aes(x=Week, y=log10(EstimatedEmbryosTot), color=SC,
+    group=CloneRep, linetype=Clone)) + geom_line() +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
+    ylab("log10(# Sexual Embryos)") +
+    scale_y_continuous(breaks=c(0, 1, 2, 3), labels=c("0", "10", "100", "1000"))
+
+
 
   week7ACMomwEppnormtotal <- ggplot(data=meso7AC, aes(x=TotalInd, y=propMomEpp, color=SC, group=CloneRep, linetype=Clone)) + geom_line() +
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -136,6 +148,23 @@
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
     ylab("Prop Sexual Females")
+
+
+  week7ACMomwPropFilltotal <- ggplot(data=meso7AC, aes(x=TotalInd, y=propfill, color=SC, group=CloneRep, linetype=Clone)) + geom_line() +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
+    ylab("Prop Sexual Females") + xlab("Total Individuals")
+
+  week7ACMomwPropFillCumInd <- ggplot(data=meso7AC, aes(x=CumInd, y=propfill, color=SC, group=CloneRep, linetype=Clone)) + geom_line() +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
+    ylab("Prop Sexual Females") + xlab("Cumulative Individuals")
+
+  week7ACMomwPropFillWeek <- ggplot(data=meso7AC, aes(x=Week, y=propfill, color=SC, group=CloneRep, linetype=Clone)) + geom_line() +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
+    ylab("Prop Sexual Females")
+
 
   week7ACEstEmb <- ggplot(data=meso7AC, aes(x=Week, y=EmbDividebyTot, color=SC, group=CloneRep, linetype=Clone)) + geom_line() +
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
@@ -269,14 +298,23 @@ totalCumIndmomwEpp <- week7ACtotalind + week7ACmomPEnormWeek + week7ACMomwEppnor
       week7ACEmbWeek + week7ACmomPEnormCumInd + week7ACMomwEppnormCumInd + week7ACPropMalenormCumInd +
       plot_layout(nrow = 2, byrow = TRUE, guides = 'collect') + plot_annotation(tag_levels = 'A')
 
-  totalCumIndmomwEppOther <- Methyl + Meso + OneLiter + Grace250 +
+  totalCumIndmomwEppOther <-  Meso + OneLiter + Grace250 + Methyl +
       plot_layout(nrow = 1, byrow = TRUE, guides = 'collect') +
       plot_annotation(tag_levels = list(c("I", "J", "K", "L")))
 
   totaltotal <- totalCumIndmomwEppMesoOnly / totalCumIndmomwEppOther + plot_layout(heights = c(2, 1)) +
     plot_annotation(tag_levels = 'A')
 
+  newtotal <- week7ACtotalind + week7ACmomPEnormWeek + week7ACMomwEppnormWeek + week7ACPropMalenormWeek +
+    week7ACEmbWeek + Methyl + plot_layout(nrow = 2, byrow = TRUE, guides = 'collect') +
+    plot_annotation(tag_levels = 'A')
 
+  newtotalB <- week7ACtotalind + week7ACmomPEnormWeek + week7ACMomwEppnormWeek + week7ACPropMalenormWeek +
+    week7ACEmbWeekB + Methyl + plot_layout(nrow = 2, byrow = TRUE, guides = 'collect') +
+    plot_annotation(tag_levels = 'A')
+
+
+  ggsave(totaltotal, file="Figure3.pdf")
 
 ### Other possible figures/panels
 
