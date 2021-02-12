@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/rna_seq_fastqc.sh
-### sacct -u aob2x -j 19212930
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/maketree.19212665
+### sacct -u aob2x -j 20373407
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/rna_seq_fastq.20373407_
 
 module load fastqc parallel
 
@@ -29,4 +29,4 @@ runfastqc () {
 }
 export -f runfastqc
 
-parallel -j 1 runfastq ::: d8_179_1 d8_179_2 d8_222_1 d8_222_2
+parallel -j 1 runfastqc ::: d8_179_1 d8_179_2 d8_222_1 d8_222_2
