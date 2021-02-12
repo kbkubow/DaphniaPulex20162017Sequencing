@@ -31,7 +31,7 @@ subjunc(index=indexLoc,
       input_format="gzFASTQ",
       output_format="BAM",
       output_file=paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/", filestem, "pe.bam", sep=""),
-      nthreads=5,
+      nthreads=20,
       useAnnotation=T,
       annot.ext=saf)
 
@@ -42,6 +42,6 @@ subjunc(index=indexLoc,
       input_format="gzFASTQ",
       output_format="BAM",
       output_file=paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/", filestem, "merge.bam", sep=""),
-      nthreads=5,
+      nthreads=20,
       useAnnotation=T,
       annot.ext=saf)
