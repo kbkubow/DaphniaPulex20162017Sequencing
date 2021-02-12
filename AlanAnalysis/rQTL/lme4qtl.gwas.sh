@@ -14,8 +14,8 @@
 
 ### run as
 # sbatch --array=1-100 ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/rQTL/lme4qtl.gwas.sh
-# sacct -j 19779227 #AxC
-# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/overlap_test.19779227_1.err
+# sacct -j 19779660 #AxC
+# cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/overlap_test.19779660_1.err
 
 module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
 

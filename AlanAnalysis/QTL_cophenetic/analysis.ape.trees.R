@@ -13,7 +13,6 @@
   out.fn=args[[2]]
 
   #fasta.fn <- "/scratch/aob2x/daphnia_hwe_sims/popPhase/trees/region.fasta"
-  #fasta.fn <- "/dev/shm/aob2x/1/1/Scaffold_2217_HRSCAF_2652_5173221_5223221.fasta"
 
 ### load fasta as DNAbin
   message("load ing fasta")
@@ -31,9 +30,6 @@
   message("making tree")
 
   njo <- bionj(gd)
-  #yBoots <- boot.phylo(njo, as.matrix(db), function(xx) bionj(dist.dna(xx)), B = 10,  mc.cores = 1)
-
-
   #njo <- root(njo, outgroup=njo$tip.label[grepl("March20_2018_DBunk_38.1.fa", njo$tip.label)][1])
 
 ### make info object

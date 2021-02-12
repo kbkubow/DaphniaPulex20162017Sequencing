@@ -7,8 +7,12 @@
   registerDoMC(20)
 
 ### param
-  set <- "AxC"
-  set <- "CxC"
+  #set <- "AxC"
+  #set <- "CxC"
+  set <- "all"
+
+  ## /project/berglandlab/alan/lme4qtl/
+
 
 ### load pio.unique.n
   load(file=paste("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/pio.uniq.set.", set, ".Rdata", sep=""))
@@ -22,7 +26,7 @@
 
 ### load data
     fn <- list.files("/scratch/aob2x/daphnia_hwe_sims/lmer4qtl/", set, full.name=T)
-    fn <- fn[grepl("v2", fn)]
+    fn <- fn[grepl("v3", fn)]
     o <- foreach(fn.i=fn)%do%{
       #fn.i <- fn[1]
       message(fn.i)
@@ -41,11 +45,13 @@
   #o.ag <- o[, list(p.z=mean(p.z, na.rm=T), chisq=max(chisq), p.aov=min(p.aov, na.rm=T)), list(term, perm, id, chr, pos)]
   #o.ag.ag <- o.ag[,list(pr=mean(p.aov[perm==0] < p.aov[perm!=0])), list(term, id, chr, pos)]
   #o.ag.ag[pr==1, pr:=1/201]
+  o.obs <- o[[1]]
 
 
+    save(o, file=paste("~/lme4qtl_output.v3.", set, ".long.Rdata", sep=""))
+    save(o.obs, file=paste("~/lme4qtl_output.v3.", set, ".obs.long.Rdata", sep=""))
 
-    save(o, file=paste("~/lme4qtl_output.", set, ".long.Rdata", sep=""))
-    save(o, file=paste("/project/berglandlab/alan/lme4qtl_output.", set, ".long.Rdata", sep=""))
+    save(o, file=paste("/project/berglandlab/alan/lme4qtl_output.v3.", set, ".long.Rdata", sep=""))
 
 
 

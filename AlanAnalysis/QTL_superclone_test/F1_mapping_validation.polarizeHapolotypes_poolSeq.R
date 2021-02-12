@@ -98,7 +98,7 @@
 
   m.ag <- f1.pool.merge[,list(propmale=mean(propmale), sd=sd(propmale)), list(qtl, geno)]
 
-  summary(glm(propmale~geno, f1.pool.merge[qtl==10], weights=N, family="binomial"))
+  summary(glm(propmale~geno, f1.pool.merge[qtl==4], weights=N, family="binomial"))
 
   ggplot() +
   geom_point(data=f1.pool.merge, aes(x=geno, y=propmale, color=gr), size=.75, alpha=.95) +
