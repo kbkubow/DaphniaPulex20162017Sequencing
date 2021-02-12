@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/rna_seq_fastqc.sh
-### sacct -u aob2x -j 20373407
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/rna_seq_fastq.20373407_
+### sacct -u aob2x -j 20373409
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/rna_seq_fastq.20373409_
 
 module load fastqc parallel
 

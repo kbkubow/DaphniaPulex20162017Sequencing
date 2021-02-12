@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/trim_merge.sh
-### sacct -u aob2x -j 20373409
+### sacct -u aob2x -j 20377283
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/rna_seq_fastq.20373409_
 
 module load gcc/9.2.0 bbmap/38.57
