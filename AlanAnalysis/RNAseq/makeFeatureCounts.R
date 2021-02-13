@@ -13,7 +13,7 @@ library(data.table)
   fc <- featureCounts(files=bamFiles,
                 annot.ext=saf,
                 isPairedEnd=TRUE,
-                nthreads=10,
+                nthreads=20,
                 checkFragLength = FALSE)
-                
+
   save(fc, file="/scratch/aob2x/daphnia_hwe_sims/rnaseq/featureCounts_trim.Rdata")
