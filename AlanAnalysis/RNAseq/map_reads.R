@@ -17,9 +17,9 @@ filestem <- args[1]
 
 indexLoc <- "/project/berglandlab/daphnia_ref/totalHiCwithallbestgapclosed.interleaved.rsubread.index"
 
-read1 <- paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/", filestem, ".trim.r1.fq.gz", sep="")
-read2 <- paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/", filestem, ".trim.r2.fq.gz", sep="")
-read_merged <- paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/", filestem, ".trim.merge.fq.gz", sep="")
+read1 <- paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/", filestem, "_1.trim.fq.gz", sep="")
+read2 <- paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/", filestem, "_2.trim.fq.gz", sep="")
+#read_merged <- paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/", filestem, ".trim.merge.fq.gz", sep="")
 
 saf <- flattenGTF("/project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf",
     method = "merge")
@@ -30,18 +30,18 @@ subjunc(index=indexLoc,
       readGroup = paste(filestem, ".pe", sep=""),
       input_format="gzFASTQ",
       output_format="BAM",
-      output_file=paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/", filestem, "pe.bam", sep=""),
+      output_file=paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/", filestem, ".trim.bam", sep=""),
       nthreads=20,
       useAnnotation=T,
       annot.ext=saf)
 
 
-subjunc(index=indexLoc,
-      readfile1=read_merged,
-      readGroup = paste(filestem, ".merge", sep=""),
-      input_format="gzFASTQ",
-      output_format="BAM",
-      output_file=paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/", filestem, "merge.bam", sep=""),
-      nthreads=20,
-      useAnnotation=T,
-      annot.ext=saf)
+#subjunc(index=indexLoc,
+#      readfile1=read_merged,
+#      readGroup = paste(filestem, ".merge", sep=""),
+#      input_format="gzFASTQ",
+#      output_format="BAM",
+#      output_file=paste("/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/", filestem, "merge.bam", sep=""),
+#      nthreads=20,
+#      useAnnotation=T,
+#      annot.ext=saf)
