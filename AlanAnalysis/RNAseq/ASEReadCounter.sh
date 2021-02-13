@@ -10,10 +10,10 @@
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.err # Standard error
 
 # submit as: sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/ASEReadCounter.sh
-# sacct -j 20416102
-# cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.17863582_1.out
+# sacct -j 20416190
+# cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.20416190_1.out
 
-module load gatk/4.0.0.0
+module load gatk/4.0.0.0 picard
 
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.noNA.vcf
 #gatk IndexFeatureFile -F /scratch/aob2x/daphnia_hwe_sims/trioPhase/testTrio.consensus.header.phase.allvariant.vcf
@@ -29,8 +29,16 @@ echo $samp
 
 ###
 
+ java -jar $EBROOTPICARD/picard.jar AddOrReplaceReadGroups \
+ -I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.bam \
+ -O /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.bam \
+ --RGLB ${samp} \
+ --RGPL Illumina \
+ --RGPU ${samp} \
+ --RGSM ${samp}
+
 gatk ASEReadCounter \
---I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.bam \
+--I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.bam \
 --variant /scratch/aob2x/daphnia_hwe_sims/AC_sites.vcf \
 --output /scratch/aob2x/daphnia_hwe_sims/rnaseq/ase/${samp}_rnaseq_asereadcounter.delim \
 --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
