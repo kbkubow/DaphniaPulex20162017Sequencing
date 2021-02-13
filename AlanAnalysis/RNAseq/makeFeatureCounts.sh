@@ -11,11 +11,11 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/makeFeatureCounts.sh
-### sacct -u aob2x -j 20387599
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20387599_1.err
+### sacct -u aob2x -j 20406992
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20406992.err
 
 module load gcc/7.1.0  openmpi/3.1.4 R/4.0.0
 
 #SLURM_ARRAY_TASK_ID=1
-
+wd=/scratch/aob2x/daphnia_hwe_sims/
 Rscript ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/makeFeatureCounts.R
