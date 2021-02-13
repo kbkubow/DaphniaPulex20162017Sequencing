@@ -9,3 +9,13 @@
   scp aob2x@rivanna.hpc.virginia.edu:~/daphnia_rnaseq.multiqc.tar.gz ~/.
 
 ### 2. Adapter removal & paired end merging
+  `DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/trim_merge.sh`
+
+### 3. Rsubread mapping
+  `DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads.sh`
+
+### 4. merge the PE and "merged" bam files
+  `DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/mergebams.sh`
+
+### 5. DEseq2 analysis
+  

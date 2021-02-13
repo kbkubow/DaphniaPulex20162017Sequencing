@@ -10,13 +10,13 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads.sh
-### sacct -u aob2x -j 20387599
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20387468_1.err
+### sbatch --array=1-2 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads.sh
+### sacct -u aob2x -j 20407463
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20387599_1.err
 
 module load gcc/7.1.0 openmpi/3.1.4 R/3.6.3
 
-#SLURM_ARRAY_TASK_ID=1
+#SLURM_ARRAY_TASK_ID=2
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )

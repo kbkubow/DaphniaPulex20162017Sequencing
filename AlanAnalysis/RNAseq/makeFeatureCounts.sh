@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/makeFeatureCounts.sh
-### sacct -u aob2x -j 20406992
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20406992.err
+### sacct -u aob2x -j 20407843
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20407843
 
 module load gcc/7.1.0  openmpi/3.1.4 R/4.0.0
 
