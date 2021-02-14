@@ -37,8 +37,8 @@
 
   resLFC <- lfcShrink(dds, coef="superclone_C_vs_A", type="apeglm")
 
-### "best gene"
-  plotCounts(dds, gene=which.min(res$padj), intgroup="superclone")
+### "best QTL gene"
+  plotCounts(dds, gene=which(res$GeneId=="Daphnia00796"), intgroup="superclone")
   dds <- estimateSizeFactors(dds)
 
 ### PCA analysis
@@ -79,13 +79,38 @@
   setnames(qtl.genes, "GeneID", "GeneId")
   setkey(qtl.genes, "GeneId")
 
-  res$GeneId <- row.names(res)
-  res <- as.data.table(res)
+  resLFC$GeneId <- row.names(resLFC)
+  resLFC <- as.data.table(resLFC)
 
-  res.qtl <- merge(res, qtl.genes[,c("GeneId", "qtl"),with=F], by="GeneId", all.x=T)
-  setkey(res, "GeneId")
+  res.qtl <- merge(resLFC, qtl.genes[,c("GeneId", "qtl"),with=F], by="GeneId", all.x=T)
+  setkey(res.qtl, "GeneId")
 
-  res[!is.na(qtl)][order(padj)]
+  res.qtl[!is.na(qtl)][order(padj)]
+  setnames(saf.dt, "GeneID", "GeneId")
+  res.qtl <- merge(res.qtl, saf.dt, by="GeneId")
+
+  res.qtl.ag <- res.qtl[,list(.N), Chr]
+
+  dim(res.qtl)
+  res.qtl <- res.qtl[Chr%in%res.qtl.ag[1:12]$Chr]
+  dim(res.qtl)
+
+### plot
+  res.qtl[,mid:=Start/2+End/2]
+
+  ggplot(data=res.qtl[padj<1e-10][order(qtl, na.last=F)], aes(x=mid, y=log2FoldChange, color=!is.na(qtl),
+        shape=padj<1e-20)) +
+  geom_point(size=1, alpha=.75) + facet_wrap(~Chr, nrow=1, scales="free_x")
+
+
+  ggplot(data=res.qtl[order(qtl, na.last=F)], aes(x=log2FoldChange, y=-log10(pvalue), color=!is.na(qtl))) + geom_point()
+
+
+    ggplot(data=res.qtl[order(qtl, na.last=F)], aes(x=mid, y=-log10(padj), color=!is.na(qtl),
+          shape=padj<1e-10)) +
+    geom_point(size=.75, alpha=.75) + facet_wrap(~Chr, nrow=1, scales="free_x")
+
+
 
   scp aob2x@rivanna.hpc.virginia.edu:~/res_deseq.Rdata ~/.
 
