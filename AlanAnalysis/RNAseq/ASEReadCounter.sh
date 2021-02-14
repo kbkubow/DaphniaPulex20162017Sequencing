@@ -10,7 +10,7 @@
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.err # Standard error
 
 # submit as: sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/ASEReadCounter.sh
-# sacct -j 20416841
+# sacct -j 20420639
 # cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.20416190_1.out
 
 module load gatk/4.0.0.0 picard samtools gcc/9.2.0 bedtools/2.29.2 vcftools
@@ -61,7 +61,7 @@ samtools sort \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.bam
 
 gatk ASEReadCounter \
---I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.bam \
+--I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.sort.bam \
 --variant /scratch/aob2x/daphnia_hwe_sims/rnaseq/MapJune2020_ann.hyrbid_strategy.3species.whatshap.shapeit.exon.pulexOnly.vcf \
 --output /scratch/aob2x/daphnia_hwe_sims/rnaseq/ase/${samp}_rnaseq_asereadcounter.delim \
 --reference /project/berglandlab/Karen/MappingDec2019/totalHiCwithallbestgapclosed.fa
