@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
-### sacct -u aob2x -j 20452053
+### sacct -u aob2x -j 20452083
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
 
 module load star/2.7.2b
@@ -21,6 +21,8 @@ wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
 echo $samp
+
+# less ${samp}_starLog.final.out
 
 # STAR \
 # --genomeFastaFiles /project/berglandlab/daphnia_ref/totalHiCwithallbestgapclosed.interleaved.fa \
@@ -50,4 +52,4 @@ STAR \
 --outFilterScoreMinOverLread 0 \
 --outFilterMatchNminOverLread 0 \
 --outFilterMatchNmin 0 \
---outFilterMismatchNmax 15
+--outFilterMismatchNmax 20
