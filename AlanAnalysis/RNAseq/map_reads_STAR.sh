@@ -3,16 +3,16 @@
 ##SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=20
 #SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 0-03:00:00 # Running time of 4 days
+#SBATCH -t 0-04:00:00 # Running time of 4 days
 #SBATCH --mem 40G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.err # Standard error
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1,2,3,6,7,8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
-### sacct -u aob2x -j 20445391
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20445391_1.err
+### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
+### sacct -u aob2x -j 20451741
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
 
 module load star/2.7.2b
 
@@ -42,6 +42,8 @@ STAR \
 --outSAMstrandField intronMotif \
 --outSAMtype BAM SortedByCoordinate \
 --outFileNamePrefix /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star \
---genomeLoad Remove \
+--genomeLoad LoadAndRemove \
 --limitBAMsortRAM 38000000000 \
---runThreadN 20
+--runThreadN 20 \
+--peOverlapNbasesMin 10 \
+--peOverlapMMp 2
