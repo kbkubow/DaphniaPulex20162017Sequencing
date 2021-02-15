@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
-### sacct -u aob2x -j 20451741
+### sacct -u aob2x -j 20451954
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
 
 module load star/2.7.2b
@@ -46,4 +46,8 @@ STAR \
 --limitBAMsortRAM 38000000000 \
 --runThreadN 20 \
 --peOverlapNbasesMin 10 \
---peOverlapMMp 2
+--peOverlapMMp 2 \
+--outFilterScoreMinOverLread 0 \
+--outFilterMatchNminOverLread 0 \
+--outFilterMatchNmin 0 \
+--outFilterMismatchNmax 4
