@@ -8,6 +8,7 @@
   library(Rsubread)
   library("RColorBrewer")
   library(pheatmap)
+  library(patchwork)
 
 ### load feature counts
   load("~/featureCounts_trim.Rdata")
@@ -25,12 +26,12 @@
                               design = ~ superclone)
 
 
-  keep <- rowSums(counts(dds)) >= 10
+  keep <- rowSums(counts(dds)) >= 50
   table(keep)
   dds <- dds[keep,]
 
   dds <- DESeq(dds)
-  vsd <- vst(dds, blind=FALSE)
+  #vsd <- vst(dds, blind=FALSE)
 
   res <- results(dds, format="DataFrame")
   res
@@ -38,17 +39,37 @@
   resLFC <- lfcShrink(dds, coef="superclone_C_vs_A", type="apeglm")
 
 ### "best QTL gene"
-  plotCounts(dds, gene=which(res$GeneId=="Daphnia00796"), intgroup="superclone")
-  dds <- estimateSizeFactors(dds)
+  plotCounts(dds, gene=which(rownames(dds)=="Daphnia00796"), intgroup="superclone")
+  gene_counts <- plotCounts(dds, gene=which(rownames(dds)=="Daphnia00787"), returnData=T, intgroup="superclone", transform=T, normalized=T)
+  geneCounts <- ggplot(gene_counts, aes(x=superclone, y=count)) + geom_point() + ylab("Normalized expression - logscale")
+
+
+  resLFC$GeneId <- rownames(resLFC)
+  res.dt <- as.data.table(resLFC)
+
+  res.dt[GeneId=="Daphnia00787"]
+  mean(res.dt$pvalue <= res.dt[GeneId=="Daphnia00787"]$pvalue, na.rm=T)
+  mean(abs(res.dt$log2FoldChange) >= abs(res.dt[GeneId=="Daphnia00787"]$log2FoldChange), na.rm=T)
+
+  volcano <- ggplot() +
+  geom_point(data=res.dt, aes(x=log2FoldChange, y=-log10(pvalue)), color="red") +
+  geom_point(data=res.dt[GeneId=="Daphnia00787"], aes(x=log2FoldChange, y=-log10(pvalue)), color="blue")
+
+  magicgene <- ggplot(data=res.dt, aes(abs(log2FoldChange))) +
+  geom_density() +
+  geom_vline(xintercept=abs(res.dt[GeneId=="Daphnia00787"]$log2FoldChange), color="red") +
+  geom_text(data=data.frame(x=4, y=1, label=mean(abs(res.dt$log2FoldChange) >= abs(res.dt[GeneId=="Daphnia00787"]$log2FoldChange), na.rm=T)),
+            aes(x=x, y=y,
+                label=round(label, 3)))
+
 
 ### PCA analysis
   pcaData <- plotPCA(vsd, intgroup=c("superclone", "clone"), returnData=TRUE)
   percentVar <- round(100 * attr(pcaData, "percentVar"))
-  ggplot(pcaData, aes(PC1, PC2, color=superclone, shape=clone)) +
+  pcaplot <- ggplot(pcaData, aes(PC1, PC2, color=superclone, shape=clone)) +
     geom_point(size=3) +
     xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-    ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-    coord_fixed()
+    ylab(paste0("PC2: ",percentVar[2],"% variance"))
 
 
 
@@ -58,10 +79,26 @@
   rownames(sampleDistMatrix) <- paste(vsd$condition, vsd$type, sep="-")
   colnames(sampleDistMatrix) <- NULL
   colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
-  pheatmap(sampleDistMatrix,
+  heatmap <- pheatmap(sampleDistMatrix,
            clustering_distance_rows=sampleDists,
            clustering_distance_cols=sampleDists,
            col=colors)
+
+
+### combined plot
+  layout <- "
+  AABB
+  CCDD
+  "
+
+  pcaplot + volcano + magicgene + geneCounts +
+  plot_layout(design = layout) +
+  plot_annotation(tag_levels = 'A') +
+  ggtitle("Daphnia00787")
+
+
+
+
 
 ### combine with QTL
   load("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/gprime_peaks.replicates.250K.05.Rdata")
