@@ -9,7 +9,7 @@
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.err # Standard error
 
-# submit as: sbatch --array=4,8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/ASEReadCounter.sh
+# submit as: sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/ASEReadCounter_STAR.sh
 # sacct -j 20432635
 # cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.20421005_1.err
 
