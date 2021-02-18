@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### run with: sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/popPhasing/copyFASTA.sh
-### sacct -u aob2x -j 19109825
+### sacct -u aob2x -j 20480009
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/popPhasing_mergeVCF.19048068_1.err
 
 cp -R /scratch/aob2x/daphnia_hwe_sims/popPhase/FASTA/ /project/berglandlab/alan/.
