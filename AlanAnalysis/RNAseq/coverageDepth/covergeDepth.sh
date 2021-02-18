@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/coverageDepth/covergeDepth.sh
-### sacct -u aob2x -j 20452270
+### sacct -u aob2x -j 20498639
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
 
 module load samtools
@@ -32,7 +32,12 @@ chr=$( grep   ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | gre
 start=$( grep ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f4 )
 stop=$( grep  ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f5 )
 
+start_win=$( expr $start - 10000 )
+stop_win=$( expr $start + 10000 )
+
+chrLen=$( samtools idxstats /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_starAligned.sortedByCoord.out.rg.bam | grep ${chr} | cut -f1 )
+chrReads=$( samtools idxstats /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_starAligned.sortedByCoord.out.rg.bam | grep ${chr} | cut -f2 )
 
 samtools mpileup \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_starAligned.sortedByCoord.out.rg.bam \
--r ${chr}:${start}-${stop} | cut -f1,2,4 | sed "s/^/$samp\t/g" > /scratch/aob2x/daphnia_hwe_sims/rnaseq/coverage/${samp}_${gene}.coveragePos.delim
+-r ${chr}:${start_win}-${stop_win} | cut -f1,2,4 | sed "s/^/$samp\t${chrLen}\t${chrReads}\t/g" > /scratch/aob2x/daphnia_hwe_sims/rnaseq/coverage/${samp}_${gene}.coveragePos.delim
