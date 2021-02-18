@@ -17,11 +17,12 @@
   load(file="/scratch/aob2x/daphnia_hwe_sims/ac_inform.Rdata")
   ac.inform[!(A.geno==12 & C.geno)]
 
-#### using the ASE read counter data and running gprime separately for each rep PE1 vs Male1; PE2 vs Male2
+### 1. using the ASE read counter data and running gprime separately for each rep PE1 vs Male1; PE2 vs Male2
 ### load data
-  gprime.peaks <- foreach(r=c(1,2))%do%{
-    male <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male", r, ".delim", sep=""))
-    pe <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE", r, ".delim", sep=""))
+  gprime.peaks <- foreach(r=list(c(1,1), c(2,2), c(1,2), c(2,1)))%do%{
+    message(paste(r, collapse="/"))
+    male <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male", r[1], ".delim", sep=""))
+    pe <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE", r[2], ".delim", sep=""))
 
     setnames(male,
              c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
@@ -73,12 +74,12 @@
     gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
     peaks <- getQTLTable(gprime, alpha=.05)
     peaks <- as.data.table(peaks)
-    peaks[,rep:=r]
+    peaks[,rep:=paste(r, collapse="/")]
 
     gprime <- as.data.table(gprime)
-    gprime[,rep:=r]
+    gprime[,rep:=paste(r, collapse="/")]
 
-    m[,rep:=r]
+    m[,rep:=paste(r, collapse="/")]
 
     list(gprime, peaks, m)
   }
@@ -87,14 +88,15 @@
   alleleFreqs <- rbindlist(lapply(gprime.peaks, function(x) x[[3]]))
 
   table(peaks$rep)
+  table(gprime$rep)
 
-  save(gprime, peaks, file="/scratch/aob2x/daphnia_hwe_sims/gprime_peaks.replicates.250K.05.Rdata")
-  save(gprime, peaks, file="/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
-  save(alleleFreqs, file="/project/berglandlab/alan/alleleFreqs.replicates.250K.05.Rdata")
+  save(gprime, peaks, file="/scratch/aob2x/daphnia_hwe_sims/gprime_peaks.replicates_combos.250K.05.Rdata")
+  save(gprime, peaks, file="/project/berglandlab/alan/gprime_peaks.replicates_combos.250K.05.Rdata")
+  save(alleleFreqs, file="/project/berglandlab/alan/alleleFreqs.replicates_combos.250K.05.Rdata")
 
   load(file="/project/berglandlab/alan/gprime_peaks.replicates.250K.05.Rdata")
 
-#### using the ASE read counter data and running gprime separately for each rep PE1 vs PE2; Male1 vs Male2
+### 2. using the ASE read counter data and running gprime separately for each rep PE1 vs PE2; Male1 vs Male2
 ### load data
   gprime.peaks.groups <- foreach(group=c("Male", "PE"))%do%{
     r1 <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8", group, ".pooledAF.aseReadCounter.allvariant.", group, "1.delim", sep=""))
@@ -169,6 +171,120 @@
   save(gprime.groups, peaks.groups, file="/project/berglandlab/alan/gprime_peaks.groups.250K.05.Rdata")
   save(alleleFreqs.groups, file="/project/berglandlab/alan/alleleFreqs.groups.250K.05.Rdata")
 
+
+### 3. using the ASE read counter data and adding neff for ombibus test
+  ### load data
+    inputData <- foreach(r=c(1,2))%do%{
+      #r<-1
+      message(r)
+      male <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8Male.pooledAF.aseReadCounter.allvariant.Male", r, ".delim", sep=""))
+      pe <- fread(paste("/scratch/aob2x/daphnia_hwe_sims/aseReadCounter/D8PE.pooledAF.aseReadCounter.allvariant.PE", r, ".delim", sep=""))
+
+      setnames(male,
+               c("contig", "position", "refAllele", "altAllele", "refCount",   "altCount"),
+               c("CHROM",  "POS",      "REF",       "ALT",       "AD_REF.LOW", "AD_ALT.LOW"))
+
+      male[,freq:=AD_ALT.LOW/(AD_ALT.LOW + AD_REF.LOW)]
+      male[,rd:=AD_ALT.LOW + AD_REF.LOW]
+      male[,effrd:=round((70*rd)/(70+rd))]
+
+      male[,AD_REF.LOW.orig:=AD_REF.LOW]
+      male[,AD_ALT.LOW.orig:=AD_ALT.LOW]
+
+      male[,AD_REF.LOW.neff:=round((1-freq)*effrd)]
+      male[,AD_ALT.LOW.neff:=round((freq)*effrd)]
+
+     setnames(pe,
+              c("contig", "position", "refAllele", "altAllele", "refCount",    "altCount"),
+              c("CHROM",  "POS",      "REF",       "ALT",       "AD_REF.HIGH", "AD_ALT.HIGH"))
+      pe[,freq:=AD_ALT.HIGH/(AD_ALT.HIGH + AD_REF.HIGH)]
+      pe[,rd:=AD_ALT.HIGH + AD_REF.HIGH]
+      pe[,effrd:=round((100*rd)/(100+rd))]
+
+      pe[,AD_REF.HIGH.orig:=AD_REF.HIGH]
+      pe[,AD_ALT.HIGH.orig:=AD_ALT.HIGH]
+
+      pe[,AD_REF.HIGH.neff:=round((1-freq)*effrd)]
+      pe[,AD_ALT.HIGH.neff:=round((freq)*effrd)]
+
+
+      setkey(male, CHROM, POS)
+      setkey(pe, CHROM, POS)
+
+      m <- merge(male[,c("CHROM", "POS", "REF", "ALT", "AD_REF.LOW.orig", "AD_ALT.LOW.orig", "AD_REF.LOW.neff", "AD_ALT.LOW.neff", "effrd"),with=F],
+                 pe[,c("CHROM", "POS", "REF", "ALT", "AD_REF.HIGH.orig", "AD_ALT.HIGH.orig", "AD_REF.HIGH.neff", "AD_ALT.HIGH.neff", "effrd"),with=F])
+
+      m[,deltaSNP.orig:=qlogis(AD_ALT.LOW.orig/(AD_ALT.LOW.orig+AD_REF.LOW.orig)) - qlogis(AD_ALT.HIGH.orig/(AD_ALT.HIGH.orig+AD_REF.HIGH.orig))]
+      m[,deltaSNP.neff:=qlogis(AD_ALT.LOW.neff/(AD_ALT.LOW.neff+AD_REF.LOW.neff)) - qlogis(AD_ALT.HIGH.neff/(AD_ALT.HIGH.neff+AD_REF.HIGH.neff))]
+
+      m.ag <- m[,.N,CHROM]
+      m <-  m[CHROM%in%m.ag[N>1000]$CHROM]
+
+      m[,REF_FRQ.orig:=(AD_REF.LOW.orig + AD_REF.HIGH.orig) / (AD_REF.LOW.orig + AD_REF.HIGH.orig + AD_ALT.LOW.orig + AD_ALT.HIGH.orig )]
+      m[,DP.LOW.orig:=  AD_REF.LOW.orig +  AD_ALT.LOW.orig]
+      m[,DP.HIGH.orig:=AD_REF.HIGH.orig + AD_ALT.HIGH.orig]
+
+      m[,REF_FRQ.neff:=(AD_REF.LOW.neff + AD_REF.HIGH.neff) / (AD_REF.LOW.neff + AD_REF.HIGH.neff + AD_ALT.LOW.neff + AD_ALT.HIGH.neff )]
+      m[, DP.LOW.neff:= AD_REF.LOW.neff +  AD_ALT.LOW.neff]
+      m[,DP.HIGH.neff:=AD_REF.HIGH.neff + AD_ALT.HIGH.neff]
+
+      m[,rep:=r]
+    }
+    inputData <- rbindlist(inputData)
+
+    save(inputData, file="/project/berglandlab/alan/PoolSeq_inputData.combined.Rdata")
+
+  ### locally
+   scp aob2x@rivanna.hpc.virginia.edu:/project/berglandlab/alan/PoolSeq_inputData.combined.Rdata ~/.
+
+   load("~/PoolSeq_inputData.combined.Rdata")
+
+   library(ggplot2)
+   library(data.table)
+   library(QTLseqr)
+
+
+   m <- inputData[,
+                   list(AD_REF.LOW=  sum(AD_REF.LOW.neff),
+                        AD_ALT.LOW=  sum(AD_ALT.LOW.neff),
+                        AD_REF.HIGH=sum(AD_REF.HIGH.neff),
+                        AD_ALT.HIGH=sum(AD_ALT.HIGH.neff),
+                        deltaSNP=     mean(deltaSNP.neff),
+                        REF_FRQ=       mean(REF_FRQ.neff),
+                        DP.LOW=          sum(DP.LOW.neff),
+                        DP.HIGH=        sum(DP.HIGH.neff)),
+                   list(CHROM, POS, REF=REF.x, ALT=ALT.x)]
+
+   m <- m[deltaSNP!=-Inf & deltaSNP!=Inf]
+
+   df_filt <- filterSNPs(SNPset = as.data.frame(m),
+                        refAlleleFreq = 0.15,
+                        minTotalDepth = 100,
+                        maxTotalDepth = 5000,
+                        depthDifference = 1500,
+                        minSampleDepth = 10,
+                        verbose = TRUE)
+
+   gprime <- runGprimeAnalysis(SNPset=df_filt, windowSize=250000) #250000
+   gprime <- as.data.table(gprime)
+   #gprime[Gprime>40]
+
+   peaks <- getQTLTable(gprime, alpha=.1)
+   peaks <- as.data.table(peaks)
+   peaks
+
+
+   qtlseq <- runQTLseqAnalysis(SNPset=df_filt, windowSize=250000, bulkSize=40)
+   #getQTLTable(SNPset=qtlseq, method="QTLseq")
+   #negLog10Pval
+   p <- plotQTLStats(SNPset = gprime, var="Gprime") +
+        geom_hline(aes(yintercept=min(gprime[qvalue<.1]$Gprime)), color="red") +
+        geom_hline(aes(yintercept=min(gprime[qvalue<.05]$Gprime)), color="blue") +
+        geom_hline(aes(yintercept=min(gprime[qvalue<.01]$Gprime)), color="green")
+  p
+
+
+  load("/Users/alanbergland/lme4qtl_output.v3.all.obs.long.Rdata")
 
 
 ### scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/gprime_peaks.replicates.Rdata ~/.

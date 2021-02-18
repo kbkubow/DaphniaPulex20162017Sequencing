@@ -167,7 +167,7 @@ bcftools view \
   geom_point() + geom_line() + facet_grid(~qtl) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-  good / bad
+  good
   table(abr[qtl==2]$geno, abr[qtl==2]$pond)
   table(big=ab[pond=="D8"][qtl==8]$size>=2, ab[pond=="D8"][qtl==8]$geno)
 
