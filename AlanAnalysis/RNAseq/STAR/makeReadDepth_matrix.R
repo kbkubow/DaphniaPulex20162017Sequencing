@@ -90,6 +90,8 @@
 
   genes.ag <- genes[,list(dp.norm.mu=mean(dp.norm, na.rm=T),
                           missing.rate=mean(is.na(dosage)), .N),
-                     list(GeneID, sample.id)]
+                     list(GeneID, clone=sample.id)]
+
+  genes.ag <- merge(genes.ag[!is.na(clone)], sampleTable, by="clone", allow.cartesian=T)
 
   save(genes.ag, file="~/genes_rd_missing.Rdata")

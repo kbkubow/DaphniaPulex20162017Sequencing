@@ -9,8 +9,8 @@
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.%A_%a.err # Standard error
 
-# submit as: sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/ASEReadCounter_STAR.sh
-# sacct -j 20432635
+# submit as: sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/ASE/ASEReadCounter_STAR.sh
+# sacct -j 20462313
 # cat /scratch/aob2x/daphnia_hwe_sims/harp_pools/slurmOut/ASE_readcounter.20421005_1.err
 
 module load gatk/4.0.0.0 picard samtools gcc/9.2.0 bedtools/2.29.2 vcftools
