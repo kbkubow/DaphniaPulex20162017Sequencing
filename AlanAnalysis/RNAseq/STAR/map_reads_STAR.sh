@@ -10,13 +10,13 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
+### sbatch --array=6 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
 ### sacct -u aob2x -j 20452270
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
 
 module load star/2.7.2b
 
-#SLURM_ARRAY_TASK_ID=8
+#SLURM_ARRAY_TASK_ID=6
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
@@ -45,11 +45,11 @@ STAR \
 --outReadsUnmapped Fastq \
 --outSAMstrandField intronMotif \
 --outSAMtype BAM SortedByCoordinate \
---outFileNamePrefix /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star \
+--outFileNamePrefix /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_test \
 --genomeLoad LoadAndRemove \
 --limitBAMsortRAM 38000000000 \
 --runThreadN 20 \
---outFilterScoreMinOverLread 0 \
---outFilterMatchNminOverLread 0 \
 --outFilterMatchNmin 0
 #--outFilterMismatchNmax 20
+#--outFilterScoreMinOverLread 0 \
+#--outFilterMatchNminOverLread 0 \
