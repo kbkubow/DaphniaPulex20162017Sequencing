@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
-### sacct -u aob2x -j 20592328
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20530468_6.err
+### sacct -u aob2x -j 20592350
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20592350_6.err
 
 module load star/2.7.2b
 
@@ -36,6 +36,7 @@ echo $samp
 
 STAR \
 --genomeDir /project/berglandlab/daphnia_ref/ \
+--sjdbGTFfile /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
 --readFilesIn \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/${samp}_1.trim.fq.gz \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/${samp}_2.trim.fq.gz \
@@ -58,8 +59,11 @@ STAR \
 --outFilterIntronStrands RemoveInconsistentStrands \
 --outWigType bedGraph \
 --outWigStrand Unstranded \
---limitsSjdbInsertNsj 50000 \
---outMultimapperOrder Random
+--limitSjdbInsertNsj 50000 \
+--outMultimapperOrder Random \
+--twopassMode Basic \
+--sjdbOverhang 100 \
+--chimSegmentMin 20
 
 
 #--outFilterScoreMinOverLread 0 \
