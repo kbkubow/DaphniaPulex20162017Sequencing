@@ -10,7 +10,7 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=6 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
+### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
 ### sacct -u aob2x -j 20592328
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20530468_6.err
 
@@ -59,7 +59,7 @@ STAR \
 --outWigType bedGraph \
 --outWigStrand Unstranded \
 --limitsSjdbInsertNsj 50000 \
---outMultimapperOrder Random 
+--outMultimapperOrder Random
 
 
 #--outFilterScoreMinOverLread 0 \
