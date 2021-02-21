@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/coverageDepth/covergeDepth.sh
-### sacct -u aob2x -j 20558166
+### sacct -u aob2x -j 20558744
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
@@ -35,8 +35,10 @@ stop=$( grep  ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | gre
 start_win=$( expr $start - 1000000 )
 stop_win=$( expr $stop + 1000000 )
 
+#wc -l /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed
 #cat /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed | \
-#grep -v "5196681" | grep -v "5201321" > /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
+#grep -v "5196681" | grep -v "5201321" | grep -v "5189960" | grep -v "5189615" > /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
+#wc -l /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
 
 samtools view -b \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_starAligned.sortedByCoord.out.rg.bam \
