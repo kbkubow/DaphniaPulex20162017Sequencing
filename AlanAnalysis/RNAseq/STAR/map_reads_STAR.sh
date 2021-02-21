@@ -10,9 +10,9 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
-### sacct -u aob2x -j 20592368
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20592368_6.err
+### sbatch --array=6 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
+### sacct -u aob2x -j 20592378
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20592378_6.err
 
 module load star/2.7.2b
 
@@ -47,7 +47,7 @@ STAR \
 --outSAMstrandField intronMotif \
 --outSAMtype BAM SortedByCoordinate \
 --outFileNamePrefix /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_test \
---genomeLoad LoadAndRemove \
+--genomeLoad NoSharedMemory \
 --limitBAMsortRAM 38000000000 \
 --runThreadN 20 \
 --outFilterMatchNmin 0 \
@@ -62,7 +62,8 @@ STAR \
 --limitSjdbInsertNsj 50000 \
 --outMultimapperOrder Random \
 --sjdbOverhang 100 \
---chimSegmentMin 20
+--chimSegmentMin 20 \
+--twopassMode Basic
 
 
 #--outFilterScoreMinOverLread 0 \
