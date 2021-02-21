@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=6 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
-### sacct -u aob2x -j 20592378
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20592378_6.err
+### sacct -u aob2x -j 20592384
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20592384_6.err
 
 module load star/2.7.2b
 
@@ -59,7 +59,6 @@ STAR \
 --outFilterIntronStrands RemoveInconsistentStrands \
 --outWigType bedGraph \
 --outWigStrand Unstranded \
---limitSjdbInsertNsj 50000 \
 --outMultimapperOrder Random \
 --sjdbOverhang 100 \
 --chimSegmentMin 20 \
