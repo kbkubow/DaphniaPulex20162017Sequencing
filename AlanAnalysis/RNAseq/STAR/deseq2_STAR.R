@@ -5,6 +5,8 @@
 
 ### libraries
   library(data.table)
+  library(factoextra)
+
   library(DESeq2)
   library(ggplot2)
   library(Rsubread)
@@ -58,7 +60,28 @@
   mean(abs(res.dt$log2FoldChange) >= abs(res.dt[GeneId=="Daphnia00787"]$log2FoldChange), na.rm=T)
 
 ### PCA analysis
-  pcaData <- plotPCA(vsd, intgroup=c("superclone", "clone"), returnData=TRUE)
+  rv <- rowVars(assay(vsd))
+  select <- order(rv, decreasing = TRUE)[seq_len(min(100000,
+      length(rv)))]
+  pca <- prcomp(t(assay(vsd)[select, ]))
+  d <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2],
+        name = colnames(vsd))
+  pcaData <- plotPCA(vsd, intgroup=c("superclone", "clone"), returnData=F, ntop=10000)
+
+  plot(pca$rotation[which(dimnames(pca$rotation)[1]=="Daphnia00787"),1] ~ pca$rotation[,2])
+
+### PCA
+  res.pca <- pca
+get_eig(res.pca)
+fviz_screeplot(res.pca, addlabels = TRUE, ylim = c(0, 50))
+
+  fviz_pca_var(res.pca, col.var = "black")
+  fviz_contrib(res.pca, choice = "var", axes = 1, top = 1000)
+  hm <- get_pca_var(res.pca)
+  contrib <- hm$contrib
+  contrib$gene <- dimnames(contrib)[1]
+  con.dt <- as.data.table(contrib)
+
 
 ### combine DE expression w/ read-depth and missing data rates
   genes.ag.ag <- genes.ag[,list(scA=mean(dp.norm.mu[superclone=="A"], na.rm=T) , scB=mean(dp.norm.mu[superclone=="C"], na.rm=T),

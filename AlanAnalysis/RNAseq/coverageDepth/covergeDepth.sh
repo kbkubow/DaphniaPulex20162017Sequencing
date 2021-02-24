@@ -11,12 +11,12 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/coverageDepth/covergeDepth.sh
-### sacct -u aob2x -j 20592245
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
+### sacct -u aob2x -j 20606024
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20606024_1.out
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 
-#SLURM_ARRAY_TASK_ID=1
+#SLURM_ARRAY_TASK_ID=8
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
@@ -26,34 +26,37 @@ if [ ! -f /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.so
   samtools index /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam
 fi
 
-gene=Daphnia00787
+gene=Daphnia00786
 
 chr=$( grep   ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f1 )
-start=$( grep ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f4 )
-stop=$( grep  ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f5 )
+start=$( grep ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f4 | tail -n1)
+start_win=$( expr $start - 25000 )
 
-start_win=$( expr $start - 100000 )
-stop_win=$( expr $stop + 100000 )
+gene=Daphnia00789
+stop=$( grep  ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f5 | head -n1 )
+stop_win=$( expr $stop + 25000 )
+
 
 #wc -l /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed
 #cat /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed | \
 #grep -v "5196681" | grep -v "5201321" | grep -v "5189960" | grep -v "5189615" > /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
 #wc -l /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
 
-samtools view -b \
-/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam \
-${chr}:${start_win}-${stop_win} |
-bedtools subtract -A -a - -b /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed > \
-~/${samp}.small.filter.test.bam
-
-samtools index ~/${samp}.small.filter.test.bam
-
+#samtools view -b \
+#/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam \
+#${chr}:${start_win}-${stop_win} |
+#bedtools subtract -A -a - -b /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed > \
+#~/${samp}.small.filter.test.bam
+#
+#samtools index ~/${samp}.small.filter.test.bam
+#
 
 samtools view -b \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam \
 ${chr}:${start_win}-${stop_win} > \
-~/${samp}.small.test.bam
-samtools index ~/${samp}.small.test.bam
+/project/berglandlab/alan/bam_slices/${samp}.small.test.bam
+
+samtools index /project/berglandlab/alan/bam_slices/${samp}.small.test.bam
 
 
 
@@ -63,7 +66,7 @@ samtools index ~/${samp}.small.test.bam
 #scp aob2x@rivanna.hpc.virginia.edu:~/*.small.filter.rg.bam* ~/.
 #scp aob2x@rivanna.hpc.virginia.edu:~/d8_515_2.small.filter.rg.bam* ~/.
 #scp aob2x@rivanna.hpc.virginia.edu:~/*.small.filter.test.bam* ~/.
-scp aob2x@rivanna.hpc.virginia.edu:~/d8_349_2.small.test.bam* ~/.
+scp aob2x@rivanna.hpc.virginia.edu:~/*.small.test.bam* ~/.
 
 
 #chrLen=$( samtools idxstats /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_starAligned.sortedByCoord.out.rg.bam | grep ${chr} | cut -f2 )
