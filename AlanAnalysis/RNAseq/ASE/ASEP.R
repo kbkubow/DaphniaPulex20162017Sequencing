@@ -9,7 +9,7 @@ setnames(ase.simple, c("genes", "samp", "id", "xCount", "totalCount"), c("gene",
 ase.simple[,snp:=as.numeric(as.factor(snp))]
 
 
-ase.gene.table <- ASE_detection(dat_all = ase.simple[gene=="Daphnia00787"], phased=TRUE, varList=NULL, adaptive=TRUE, n_resample=10^3, parallel=FALSE, save_out=FALSE)
+ase.gene.table <- ASE_detection(dat_all = ase.simple[gene%in%paste("Daphnia0078", c(6:9), sep="")], phased=TRUE, varList=NULL, adaptive=TRUE, n_resample=10^3, parallel=FALSE, save_out=FALSE)
 dat_M0_phased = as.data.table(phasing(ase.simple[gene=="Daphnia00787"], phased=FALSE, n_condition="one"))
 
 plot_ASE(ase.simple[gene%in%paste("Daphnia0078", c(5:9), sep="")], phased=T)
@@ -37,7 +37,7 @@ geom_boxplot(data=ase.simple[genes%in%paste("Daphnia0078", c(5:9), sep="")],
               aes(x=clone, y=xCount/totalCount, fill=samp, group=interaction(samp, ref_dosage))) +
 facet_grid(~genes, scales="free_x") + theme_bw()
 
-                            ggplot(data=ase.geno.phase[ref_dosage==1][genes%in%paste("Daphnia0078", c(7), sep="")], 
+                            ggplot(data=ase.geno.phase[ref_dosage==1][genes%in%paste("Daphnia0078", c(7), sep="")],
                                           aes(x=id, y=xCount/totalCount, fill=superclone, group=clone)) + geom_boxplot() +
                                           facet_grid(~genes, scales="free_x")
 

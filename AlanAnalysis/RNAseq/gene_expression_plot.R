@@ -6,13 +6,13 @@
   library(DESeq2)
   library(tidyverse)
   library(foreach)
+  library(factoextra)
 
 ### load output of DEseq2
   load(file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/DESeq_star.output")
 
 ### load ASE data
   load("~/ase_geno.star.Rdata")
-
   targetGenes <- paste("Daphnia0078", c(6:9), sep="")
 
 
@@ -20,6 +20,9 @@
 
   load("~/coverage_pos_rna.Rdata")
   setnames(dat, names(dat), c("samp", "chrLen", "readsMapped", "chr", "pos", "rd"))
+  lib.metrics <- dat[,list(readsMapped=(unique(readsMapped))), list(chr, samp)]
+  lib.metrics <-   lib.metrics[,list(readsMapped=sum(unique(readsMapped))), list(samp)]
+
   pcaData <- as.data.table(pcaData)
   pcaData[,samp:=gsub(".trim.bam", "", name)]
   dat <- merge(dat, pcaData, by="samp")
@@ -32,13 +35,15 @@
 
   norm.rd <- ggplot(data=dat[!is.na(gene)], aes(x=pos, y=rd.norm, group=interaction(samp, gene), color=superclone, linetype=gene)) +
   geom_line() +
-  geom_hline(yintercept=0)
+  geom_hline(yintercept=0) + facet_wrap(~gene, scales="free")
 
   real.rd <- ggplot(data=dat[!is.na(gene)], aes(x=pos, y=rd, group=interaction(samp, gene), color=superclone, linetype=gene)) +
   geom_line() +
-  geom_hline(yintercept=0)
+  geom_hline(yintercept=0)+ facet_wrap(~gene, scales="free")
+
 
   norm.rd + real.rd
+
 ### DE subplots
   volcano <- ggplot() +
   geom_point(data=res.dt, aes(x=log2FoldChange, y=-log10(pvalue)), color="red") +
@@ -76,14 +81,106 @@
 
   geneCounts <- ggplot(gene_counts, aes(x=superclone, y=count)) + geom_point() + ylab("Normalized expression - logscale") + facet_wrap(~gene, scales="free_y", nrow=1)
 
+### updated PCA plot
+### PCA
+  ### load CNV results
+    load("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/CNV_DE/expinCNV.Rdata")
+
+  ### load
+  rv <- rowVars(assay(vsd))
+  select <- order(rv, decreasing = TRUE)[seq_len(min(100000,
+      length(rv)))]
+  res.pca <- prcomp(t(assay(vsd)[select, ]))
+  get_eig(res.pca)
+  hm <- get_pca_var(res.pca)
+  contrib <- hm$contrib
+  con.dt <- as.data.table(contrib)
+  con.dt[,GeneId:=dimnames(hm$contrib)[[1]]]
+
+  res.qtl.ag <- res.qtl[!is.na(qtl), c("GeneId", "qtl"), with=F]
+  con.dt <- merge(con.dt, na.omit(qtl.genes), by="GeneId", all.x=T)
+  con.dt <- merge(con.dt, expinCNV, by="GeneId", all.x=T)
+
+
+  summary(lm(log2FoldChange~as.factor(meanCminusA), con.dt))
+  con.dt[,Dim1.quan:=NA]
+  con.dt[meanCminusA==0, Dim1.quan.diploid:=rank(Dim.1)/(length(Dim.1+1))]
+  con.dt[, Dim1.quan.all:=rank(Dim.1)/(length(Dim.1+1))]
+  con.dt[meanCminusA==0, Dim2.quan.diploid:=rank(Dim.2)/(length(Dim.2+1))]
+  con.dt[meanCminusA==0, lfc.quan:=rank(abs(log2FoldChange))/(length(log2FoldChange+1))]
+
+  con.dt[GeneId=="Daphnia00787"]
+  plot(lfc.quan~Dim1.quan, con.dt)
+
+  con.dt[,lab:=""]
+  con.dt[meanCminusA==0 & lfc.quan>.90 & !is.na(qtl), lab:=paste(chr, qtl, GeneId, sep=": ")]
+
+
+  ggplot(data=con.dt[order(!is.na(qtl))][meanCminusA==0], aes(x=Dim1.quan.diploid, y=abs(Dim.1), label=lab)) +
+  geom_point(data=con.dt[meanCminusA==0], aes(), color="grey50") +
+  geom_label_repel(
+   force_pull   = 0, # do not pull toward data points
+   nudge_y      = 0.05,
+   direction    = "both",
+   hjust        = 0,
+   segment.size = 0.2,
+   max.iter = 1e4, max.time = 1,
+   max.overlaps = Inf, size=2) +
+  geom_point(data=con.dt[meanCminusA==0][!is.na(qtl)], aes(x=Dim1.quan.diploid, y=abs(Dim.1)), color="red") +
+  theme_bw()
+
+
+
+    ggplot(data=con.dt[order(!is.na(qtl))][meanCminusA==0], aes(x=lfc.quan, y=abs(log2FoldChange), label=lab)) +
+    geom_point(data=con.dt[meanCminusA==0], aes(), color="grey50") +
+    geom_label_repel(
+     force_pull   = 0, # do not pull toward data points
+     nudge_y      = 0.05,
+     direction    = "both",
+     hjust        = 0,
+     segment.size = 0.2,
+     max.iter = 1e4, max.time = 1,
+     max.overlaps = Inf, size=2) +
+    geom_point(data=con.dt[meanCminusA==0][!is.na(qtl)], aes(x=lfc.quan, y=abs(log2FoldChange)), color="red") +
+    theme_bw()
+
+
+
+
+                      ggplot(dat3, aes(wt, mpg, label = car)) +
+                        geom_point(data = dat3[dat3$car == "",], color = "grey50") +
+                        geom_text_repel(box.padding = 0.5, max.overlaps = Inf) +
+                        geom_point(data = dat3[dat3$car != "",], color = "red")
+
+  facet_grid(~meanCminusA) +
+
+
+
+    ggplot() +
+    geom_point(data=con.dt[order(!is.na(qtl))][meanCminusA==0], aes(x=Dim2.quan, y=Dim.2, color=as.factor(qtl))) +
+    facet_grid(~meanCminusA)
+
+
+
+  plotCounts(dds, gene=which(rownames(dds)=="Daphnia000787"), returnData=F, intgroup="superclone", transform=T, normalized=T)
+  gene_counts[,ge
+
 
 
 ### ASE
 
   load("~/ase_geno_phase.star.Rdata")
 
-  ase.simple <- ase.geno.phase[ref_dosage==1][allele.x!=allele.y][superclone=="C"][class%in%c("synonymous_variant", "missense_variant", "3_prime_UTR_variant", "5_prime_UTR_variant")]
+  ### simplify
+    ase.simple <- ase.geno.phase[ref_dosage==1][allele.x!=allele.y][superclone=="C"][class%in%c("synonymous_variant", "missense_variant", "3_prime_UTR_variant", "5_prime_UTR_variant")]
 
+  ### normalize
+    ase.geno.phase <- merge(ase.geno.phase, lib.metrics, by="samp")
+    ase.geno.phase[,normDepth:=totalCount/readsMapped]
+
+    ase.geno.phase.ag <- ase.geno.phase[,list(log2FoldChange=log2(mean(normDepth[superclone=="C"])/mean(normDepth[superclone=="A"]))), list(chr, pos, genes)]
+    ggplot(data=ase.geno.phase.ag[genes%in%c("Daphnia00787")], aes(x=pos, y=log2FoldChange)) +
+     geom_line() + theme(legend.position="bottom")
 
 
   qtl_ase <-
@@ -96,7 +193,7 @@
 
 ### read depth
 
-  dep.plot <- ggplot(data=ase.geno.phase[genes%in%c("Daphnia00787")], aes(x=pos, y=totalCount, group=samp, color=superclone)) +
+  dep.plot <- ggplot(data=ase.geno.phase[genes%in%c("Daphnia00787")], aes(x=pos, y=normDepth, group=samp, color=superclone)) +
     geom_line() + theme(legend.position="bottom")
 
   ase.plot <- ggplot(data=ase.geno.phase[genes%in%c("Daphnia00787")][ref_dosage==1][superclone=="C"], aes(x=pos, y=xCount/totalCount, group=samp, color=class)) +

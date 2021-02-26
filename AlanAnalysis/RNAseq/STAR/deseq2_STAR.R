@@ -70,18 +70,6 @@
 
   plot(pca$rotation[which(dimnames(pca$rotation)[1]=="Daphnia00787"),1] ~ pca$rotation[,2])
 
-### PCA
-  res.pca <- pca
-get_eig(res.pca)
-fviz_screeplot(res.pca, addlabels = TRUE, ylim = c(0, 50))
-
-  fviz_pca_var(res.pca, col.var = "black")
-  fviz_contrib(res.pca, choice = "var", axes = 1, top = 1000)
-  hm <- get_pca_var(res.pca)
-  contrib <- hm$contrib
-  contrib$gene <- dimnames(contrib)[1]
-  con.dt <- as.data.table(contrib)
-
 
 ### combine DE expression w/ read-depth and missing data rates
   genes.ag.ag <- genes.ag[,list(scA=mean(dp.norm.mu[superclone=="A"], na.rm=T) , scB=mean(dp.norm.mu[superclone=="C"], na.rm=T),
@@ -93,7 +81,7 @@ fviz_screeplot(res.pca, addlabels = TRUE, ylim = c(0, 50))
 ### combine with QTL peaks
 ### combine with QTL
   load("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/gprime_peaks.replicates.250K.05.Rdata")
-  peaks.dt <- data.table(qtl=c(1:14), Chr=peaks$CHROM, Start=peaks$posPeakDeltaSNP-50000, End=peaks$posPeakDeltaSNP+50000)
+  peaks.dt <- data.table(qtl=c(1:14), Chr=peaks$CHROM, Start=peaks$posPeakDeltaSNP-25000, End=peaks$posPeakDeltaSNP+25000)
 
   saf.dt <- as.data.table(saf)
   setkey(saf.dt, GeneID)

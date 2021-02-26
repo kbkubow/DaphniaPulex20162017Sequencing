@@ -10,9 +10,9 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/coverageDepth/covergeDepth_DB_data.sh
-### sacct -u aob2x -j 20798058
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20798058_1.err
+### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/coverageDepth/covergeDepth_DB_data.sh
+### sacct -u aob2x -j 20799222
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20799222_1.err
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 
