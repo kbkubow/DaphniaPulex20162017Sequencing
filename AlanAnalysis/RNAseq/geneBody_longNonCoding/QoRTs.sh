@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-##SBATCH -J maketree # A single job name for the array
+#SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-01:00:00 # Running time of 4 days
