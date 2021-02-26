@@ -14,7 +14,7 @@
 ### sacct -u aob2x -j 20798058
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20798058_1.err
 
-#SLURM_ARRAY_TASK_ID=6
+###### SLURM_ARRAY_TASK_ID=6
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
