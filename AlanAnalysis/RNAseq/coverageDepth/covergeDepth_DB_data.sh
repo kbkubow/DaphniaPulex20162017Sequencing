@@ -2,7 +2,7 @@
 #
 ##SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH --cpus-per-task=10 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-02:10:00 # Running time of 4 days
 #SBATCH --mem 2G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.out # Standard output
@@ -20,7 +20,8 @@ module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 
-cp /project/berglandlab/Karen/RNAseqBams/D86A_merged_sorted.BAM /scratch/aob2x/D86A_merged_sorted.BAM
+#cp /project/berglandlab/Karen/RNAseqBams/D86A_merged_sorted.BAM /scratch/aob2x/D86A_merged_sorted.BAM
+samtools sort /scratch/aob2x/D86A_merged_sorted.BAM -o /scratch/aob2x/D86A_merged_sorted.sort.BAM -@10
 samtools index /scratch/aob2x/D86A_merged_sorted.BAM
 
 
@@ -52,7 +53,7 @@ stop_win=$( expr $stop + 25000 )
 samtools view -b \
 /scratch/aob2x/D86A_merged_sorted.BAM \
 ${chr}:${start_win}-${stop_win} > \
-/project/berglandlab/alan/bam_slices/D86A_merged_sorted.small.BAM
+/project/berglandlab/alan/bam_slices/D86A_merged_sorted.RNA.small.BAM
 
 samtools index /project/berglandlab/alan/bam_slices/D86A_merged_sorted.small.BAM
 
