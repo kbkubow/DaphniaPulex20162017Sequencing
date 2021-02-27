@@ -22,7 +22,7 @@ wd=/scratch/aob2x/daphnia_hwe_sims/
 
 #cp /project/berglandlab/Karen/RNAseqBams/D86A_merged_sorted.BAM /scratch/aob2x/D86A_merged_sorted.BAM
 samtools sort /scratch/aob2x/D86A_merged_sorted.BAM -o /scratch/aob2x/D86A_merged_sorted.sort.BAM -@10
-samtools index /scratch/aob2x/D86A_merged_sorted.BAM
+samtools index /scratch/aob2x/D86A_merged_sorted.sort.BAM
 
 
 gene=Daphnia00786
@@ -51,11 +51,11 @@ stop_win=$( expr $stop + 25000 )
 #
 
 samtools view -b \
-/scratch/aob2x/D86A_merged_sorted.BAM \
+/scratch/aob2x/D86A_merged_sorted.sort.BAM \
 ${chr}:${start_win}-${stop_win} > \
-/project/berglandlab/alan/bam_slices/D86A_merged_sorted.RNA.small.BAM
+/project/berglandlab/alan/bam_slices/D86A_merged_sorted.RNA.small.sort.BAM
 
-samtools index /project/berglandlab/alan/bam_slices/D86A_merged_sorted.small.BAM
+samtools index /project/berglandlab/alan/bam_slices/D86A_merged_sorted.small.sort.BAM
 
 
 
