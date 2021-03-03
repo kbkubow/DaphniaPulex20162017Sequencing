@@ -1,6 +1,9 @@
 # module load gcc/7.1.0  openmpi/3.1.4 R/4.0.0
 
-#Load JunctionSeq:
+source("https://bioconductor.org/biocLite.R")
+
+BiocInstaller::biocLite(c("JunctionSeq"))
+#LoadR JunctionSeq:
   library("JunctionSeq")
 
 #The sample decoder:
@@ -19,7 +22,7 @@
     use.novel.junctions=T,
     use.multigene.aggregates=T,
     flat.gff.file = "/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/withNovel.forJunctionSeq.gff.gz",
-    verbose=TRUE, debug.mode = TRUE, nCores=20)
+    verbose=TRUE, debug.mode = TRUE, nCores=20, method.GLM="simpleML", method.dispFit="mean")
 
 # save
   save(jscs, file="~/jscs.Rdata")
