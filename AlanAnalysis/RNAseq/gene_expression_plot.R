@@ -113,7 +113,7 @@
   plot(lfc.quan~Dim1.quan, con.dt)
 
   con.dt[,lab:=""]
-  con.dt[meanCminusA==0 & lfc.quan>.90 & !is.na(qtl), lab:=paste(chr, qtl, GeneId, sep=": ")]
+  con.dt[meanCminusA==0 & lfc.quan>.90 & !is.na(qtl), lab:=paste(qtl, GeneId, sep=": ")]
 
 
   ggplot(data=con.dt[order(!is.na(qtl))][meanCminusA==0], aes(x=Dim1.quan.diploid, y=abs(Dim.1), label=lab)) +

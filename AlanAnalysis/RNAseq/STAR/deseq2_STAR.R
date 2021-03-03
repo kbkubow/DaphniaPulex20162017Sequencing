@@ -81,7 +81,7 @@
 ### combine with QTL peaks
 ### combine with QTL
   load("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/gprime_peaks.replicates.250K.05.Rdata")
-  peaks.dt <- data.table(qtl=c(1:14), Chr=peaks$CHROM, Start=peaks$posPeakDeltaSNP-25000, End=peaks$posPeakDeltaSNP+25000)
+  peaks.dt <- data.table(qtl=c(1:14), Chr=peaks$CHROM, Start=peaks$posPeakDeltaSNP-15000, End=peaks$posPeakDeltaSNP+15000)
 
   saf.dt <- as.data.table(saf)
   setkey(saf.dt, GeneID)
