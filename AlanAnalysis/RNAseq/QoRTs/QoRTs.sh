@@ -10,9 +10,9 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/geneBody_longNonCoding/QoRTs.sh
-### sacct -u aob2x -j 20856547
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20855796_1.err
+### sbatch --array=8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/QoRTs/QoRTs.sh
+### sacct -u aob2x -j 20920920
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20920920_8.out
 
 ###### SLURM_ARRAY_TASK_ID=1
 wd=/scratch/aob2x/daphnia_hwe_sims/
