@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/coverageDepth/covergeDepth_DB_data.sh
-### sacct -u aob2x -j 20865594
+### sacct -u aob2x -j 20865621
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20799222_1.err
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
@@ -55,7 +55,7 @@ samtools view -b \
 ${chr}:${start_win}-${stop_win} > \
 /project/berglandlab/alan/bam_slices/D86A_merged_sorted.RNA.small.sort.BAM
 
-samtools index /project/berglandlab/alan/bam_slices/D86A_merged_sorted.small.sort.BAM
+samtools index /project/berglandlab/alan/bam_slices/D86A_merged_sorted.RNA.small.sort.BAM
 
 
 

@@ -5,11 +5,10 @@ makeFlatGff \
 /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.flatgff
 
 
-java -Xmx1G -jar
-softwareRelease/QoRTs.jar \
+java -Xmx1G -jar ~/QoRTs.jar \
 mergeNovelSplices \
 --minCount 6 \
-outputData/countTables/ \
-outputData/sizeFactors.GEO.txt \
-inputData/annoFiles/anno.gtf.gz \
-outputData/countTables/
+/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/ \
+/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/decoder.txt \
+/project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
+/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/

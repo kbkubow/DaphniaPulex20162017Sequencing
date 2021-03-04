@@ -18,10 +18,14 @@ decoder[,qc.data.dir:=paste("/Users/alanbergland/qorts_out", unique.ID, sep="/")
 
 
 res <- read.qc.results.data(infile.dir="/",
-  decoder=as.data.frame(decoder)[1,],
-  calc.DESeq2 = FALSE,
+  decoder=as.data.frame(decoder)[c(1,2),],
+  calc.DESeq2 = TRUE,
   calc.edgeR = FALSE,
   autodetectMissingSamples = TRUE, skip.files = c())
+
+get.size.factors(res, outfile = "~/sizeFactors.GEO.txt");
+
+
 plotter.basic <- build.plotter.basic(res)
 makePlot.genebody.coverage(plotter.basic)
 

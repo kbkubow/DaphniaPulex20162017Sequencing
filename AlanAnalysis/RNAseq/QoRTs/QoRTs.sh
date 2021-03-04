@@ -2,16 +2,16 @@
 #
 #SBATCH -J maketree # A single job name for the array
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH --cpus-per-task=5 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
 #SBATCH -t 0-08:00:00 # Running time of 4 days
-#SBATCH --mem 100G # Memory request of 20GB
+#SBATCH --mem 60G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.err # Standard error
 #SBATCH -p largemem
 #SBATCH --account berglandlab
 
 ### sbatch --array=8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/QoRTs/QoRTs.sh
-### sacct -u aob2x -j 20935398
+### sacct -u aob2x -j 20948367
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20935398_8.err
 
 ###### SLURM_ARRAY_TASK_ID=1
@@ -23,7 +23,7 @@ echo $samp
 
 #wget http://hartleys.github.io/QoRTs/QoRTs.jar
 
-java -jar -Xmx100G ~/QoRTs.jar \
+java -jar -Xmx60G ~/QoRTs.jar \
 QC \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam \
 /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \

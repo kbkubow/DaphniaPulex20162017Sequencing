@@ -10,21 +10,21 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
+### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
 ### sacct -u aob2x -j 20798058
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20798058_1.err
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 
 #SLURM_ARRAY_TASK_ID=2
-wd=/scratch/aob2x/daphnia_hwe_sims/
-
-samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
-echo $samp
-
-if [ ! -f /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam.bai ]; then
-  samtools index /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam
-fi
+#wd=/scratch/aob2x/daphnia_hwe_sims/
+#
+#samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
+#echo $samp
+#
+#if [ ! -f /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam.bai ]; then
+#  samtools index /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam
+#fi
 
 gene=Daphnia00786
 
@@ -36,24 +36,32 @@ gene=Daphnia00789
 stop=$( grep  ${gene} /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gff | grep -E "mRNA" | cut -f5 | head -n1 )
 stop_win=$( expr $stop + 25000 )
 
+### d8_515 minion reads
+  samtools view -b \
+  /project/berglandlab/Karen/Minion/D8515/mappingD8515readstoD84A.bam \
+  ${chr}:${start_win}-${stop_win} > \
+  /project/berglandlab/alan/bam_slices/d8_515.minionReads.small.test.bam
 
-#wc -l /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed
-#cat /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.bed | \
-#grep -v "5196681" | grep -v "5201321" | grep -v "5189960" | grep -v "5189615" > /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
-#wc -l /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed
+  samtools index /project/berglandlab/alan/bam_slices/d8_515.minionReads.small.test.bam
 
-#samtools view -b \
-#/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam \
-#${chr}:${start_win}-${stop_win} |
-#bedtools subtract -A -a - -b /project/berglandlab/daphnia_ref/RMoutHiCGMgoodscaff.keep.bed > \
-#~/${samp}.small.filter.test.bam
-#
-#samtools index ~/${samp}.small.filter.test.bam
-#
+### d8_515 Illumina
+  cp /project/berglandlab/Karen/MappingDec2019/bams/PulexBams/May_2017_D8_515_finalmap_mdup.ba* /scratch/aob2x/.
+  touch /scratch/aob2x/May_2017_D8_515_finalmap_mdup.bai
 
-samtools view -b \
-/scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_testAligned.sortedByCoord.out.bam \
-${chr}:${start_win}-${stop_win} > \
-/project/berglandlab/alan/bam_slices/${samp}.small.test.bam
+  samtools view -b \
+  /scratch/aob2x/May_2017_D8_515_finalmap_mdup.bam \
+  ${chr}:${start_win}-${stop_win} > \
+  /project/berglandlab/alan/bam_slices/d8_515.May_2017_D8_515.Illumina.small.test.bam
 
-samtools index /project/berglandlab/alan/bam_slices/${samp}.small.test.bam
+  samtools index /project/berglandlab/alan/bam_slices/d8_515.May_2017_D8_515.Illumina.small.test.bam
+
+#### d8_349
+  cp /project/berglandlab/Karen/MappingDec2019/bams/PulexBams/April_2017_D8_349_finalmap_mdup.ba* /scratch/aob2x/.
+  touch /scratch/aob2x/April_2017_D8_349_finalmap_mdup.bai
+
+  samtools view -b \
+  /scratch/aob2x/April_2017_D8_349_finalmap_mdup.bam \
+  ${chr}:${start_win}-${stop_win} > \
+  /project/berglandlab/alan/bam_slices/d8_349.April_2017_D8_349.Illumina.small.test.bam
+
+  samtools index /project/berglandlab/alan/bam_slices/d8_349.April_2017_D8_349.Illumina.small.test.bam
