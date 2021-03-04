@@ -22,10 +22,10 @@
 
 ### Read in SC file
   sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
-  #sc <- fread("CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc$population <- str_replace(sc$population, "Dcat", "DCat")
   sc <- sc[Species=="pulex" & Nonindependent==0]
   sc <- sc[Species=="pulex" & Nonindependent==0 & LabGenerated==0]
-  #sc <- sc[population=="D8" | population=="DCat" | population=="DBunk" | population=="Dcat"]
+  #sc <- sc[population=="D8" | population=="DCat" | population=="DBunk"]
   #sc <- sc[population=="D8"]
   #sc <- sc[population=="D8" | population=="DBunk"]
 
@@ -117,16 +117,36 @@
     "fullsiblings", ifelse(kinshipscmallPO2$PO==1, "ParentOffspring", ifelse(kinshipscmallPO2$SCA=="poC" &
     kinshipscmallPO2$SCB=="C" | kinshipscmallPO2$SCA=="C" & kinshipscmallPO2$SCB=="poC" | kinshipscmallPO2$SCA=="poH" &
     kinshipscmallPO2$SCB=="H" | kinshipscmallPO2$SCA=="H" & kinshipscmallPO2$SCB=="poH" | kinshipscmallPO2$SCA=="poW" &
-    kinshipscmallPO2$SCB=="W" | kinshipscmallPO2$SCA=="W" & kinshipscmallPO2$SCB=="poW", "selfedPO", ifelse(kinshipscmallPO2$SCA=="A" &
+    kinshipscmallPO2$SCB=="W" | kinshipscmallPO2$SCA=="W" & kinshipscmallPO2$SCB=="poW" | kinshipscmallPO2$SCA=="B" &
+    kinshipscmallPO2$SCB=="poB" | kinshipscmallPO2$SCA=="poB" & kinshipscmallPO2$SCB=="B", "selfedPO", ifelse(kinshipscmallPO2$SCA=="A" &
     kinshipscmallPO2$SCB=="C" | kinshipscmallPO2$SCA=="C" & kinshipscmallPO2$SCB=="A", "AvsC", "other")
     ))))
 
+  kinshipscmallPO2$type <- factor(kinshipscmallPO2$type, levels=c("AvsC", "fullsiblings",
+    "clone", "other", "ParentOffspring", "selfedPO"))
+
   kinshipscmallPO2$toplot <- ifelse(kinshipscmallPO2$type=="other", "other", "plot")
+
+  kinshipscmallPO2$pondcompareB <- ifelse(kinshipscmallPO2$pondcompare=="DBunk_D8", "D8_DBunk", ifelse(
+    kinshipscmallPO2$pondcompare=="DCat_D8", "D8_DCat", ifelse(kinshipscmallPO2$pondcompare=="DCat_DBunk",
+    "DBunk_DCat", kinshipscmallPO2$pondcompare)
+  ))
+
+  kinshipscmallPO2$pondcompareB <- factor(kinshipscmallPO2$pondcompareB, levels=c("D8_D8", "DBunk_DBunk", "DCat_DCat",
+    "D8_DBunk", "D8_DCat", "DBunk_DCat"))
 
   ggplot(data=kinshipscmallPO2[medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=type)) + geom_point() +
     geom_point(data = subset(kinshipscmallPO2[medrdA > 9 & medrdB > 9], toplot == "plot")) +
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+  ggplot(data=kinshipscmallPO2[medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=type)) + geom_point() +
+    geom_point(data = subset(kinshipscmallPO2[medrdA > 9 & medrdB > 9], toplot == "plot")) +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
+    geom_point(aes(x=0.1336919, y=-0.1272566, color="AvsC")) +
+    facet_wrap(~pondcompareB)
+
 
     ggplot(data=kinshipscmallPO2[Kinship > 0.2 & medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=as.factor(type))) + geom_point() +
       theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
