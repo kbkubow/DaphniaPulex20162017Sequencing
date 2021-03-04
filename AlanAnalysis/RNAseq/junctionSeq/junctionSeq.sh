@@ -11,11 +11,11 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/junctionSeq/junctionSeq.sh
-### sacct -u aob2x -j 20931137
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20931137
+### sacct -u aob2x -j 20931973
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20931973_
 
 ###### SLURM_ARRAY_TASK_ID=1
 
-module load gcc/7.1.0  openmpi/3.1.4 R/4.0.0
+module load gcc
 
-Rscript --vanilla /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/junctionSeq/junctionSeq.R
+/home/aob2x/R-3.3.3/bin/Rscript --vanilla /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/junctionSeq/junctionSeq.R
