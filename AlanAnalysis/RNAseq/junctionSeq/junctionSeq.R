@@ -1,13 +1,16 @@
-# module load gcc/7.1.0  openmpi/3.1.4 R/4.0.0
-install.packages("BiocManager")
+# module load gcc/7.1.0  openmpi/3.1.4
+#install.packages("BiocManager")
+#BiocManager::install(version = "3.4")
+#
+#BiocManager::install("DESeq2", version = "3.4")
 
 #BiocManager::install(version = "3.3")
 #source("https://bioconductor.org/biocLite.R")
 #biocLite("JunctionSeq")
 
 #install.packages("https://cran.r-project.org/src/contrib/Archive/latticeExtra/latticeExtra_0.6-28.tar.gz", repos=NULL)
-#install.packages("https://cran.r-project.org/src/contrib/Archive/Hmisc/Hmisc_4.0-0.tar.gz", repos=NULL)
-#install.packages("https://cran.r-project.org/src/contrib/Archive/survival/survival_2.40-1.tar.gz", repos=NULL)
+#install.packages("https://cran.r-project.org/src/contrib/Archive/Hmisc/Hmisc_4.0-3.tar.gz", repos=NULL)
+#install.packages("https://cran.r-project.org/src/contrib/Archive/survival/survival_2.41-3.tar.gz", repos=NULL)
 #install.packages("https://cran.r-project.org/src/contrib/Archive/locfit/locfit_1.5-9.tar.gz", repos=NULL)
 #install.packages("https://cran.r-project.org/src/contrib/Archive/plotrix/plotrix_3.6-2.tar.gz", repos=NULL)
 #
