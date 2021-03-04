@@ -7,7 +7,7 @@
 #SBATCH --mem 60G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.err # Standard error
-#SBATCH -p largemem
+#SBATCH -p standard
 #SBATCH --account berglandlab
 
 ### sbatch --array=8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/QoRTs/QoRTs.sh
