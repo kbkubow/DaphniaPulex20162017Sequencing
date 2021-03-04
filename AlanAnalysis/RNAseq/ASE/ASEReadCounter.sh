@@ -48,13 +48,13 @@ echo $samp
 
 ###
 
- #java -jar $EBROOTPICARD/picard.jar AddOrReplaceReadGroups \
- #-I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.bam \
- #-O /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.bam \
- #--RGLB ${samp} \
- #--RGPL Illumina \
- #--RGPU ${samp} \
- #--RGSM ${samp}
+ java -jar $EBROOTPICARD/picard.jar AddOrReplaceReadGroups \
+ -I /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.bam \
+ -O /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.bam \
+ --RGLB ${samp} \
+ --RGPL Illumina \
+ --RGPU ${samp} \
+ --RGSM ${samp}
 
  #samtools sort \
  #-o /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}.trim.rg.sort.bam \

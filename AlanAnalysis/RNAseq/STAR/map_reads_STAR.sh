@@ -10,13 +10,13 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/map_reads_STAR.sh
-### sacct -u aob2x -j 20452270
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20451741_1.err
+### sbatch --array=1-8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/STAR/map_reads_STAR.sh
+### sacct -u aob2x -j 20592418
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20592384_6.err
 
 module load star/2.7.2b
 
-#SLURM_ARRAY_TASK_ID=8
+#SLURM_ARRAY_TASK_ID=6
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( sed "${SLURM_ARRAY_TASK_ID}q;d" ${wd}/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/samples )
@@ -36,6 +36,7 @@ echo $samp
 
 STAR \
 --genomeDir /project/berglandlab/daphnia_ref/ \
+--sjdbGTFfile /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
 --readFilesIn \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/${samp}_1.trim.fq.gz \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/trimmed_reads/${samp}_2.trim.fq.gz \
@@ -45,11 +46,23 @@ STAR \
 --outReadsUnmapped Fastq \
 --outSAMstrandField intronMotif \
 --outSAMtype BAM SortedByCoordinate \
---outFileNamePrefix /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star \
---genomeLoad LoadAndRemove \
+--outFileNamePrefix /scratch/aob2x/daphnia_hwe_sims/rnaseq/bam/${samp}_star_test \
+--genomeLoad NoSharedMemory \
 --limitBAMsortRAM 38000000000 \
 --runThreadN 20 \
---outFilterScoreMinOverLread 0 \
---outFilterMatchNminOverLread 0 \
---outFilterMatchNmin 0
-#--outFilterMismatchNmax 20
+--outFilterMatchNmin 0 \
+--outSJfilterReads Unique \
+--outSJfilterCountUniqueMin 20 1 1 1 \
+--alignIntronMax 25000 \
+--outFilterMismatchNmax 20 \
+--outFilterType BySJout \
+--outFilterIntronStrands RemoveInconsistentStrands \
+--outWigType bedGraph \
+--outWigStrand Unstranded \
+--outMultimapperOrder Random \
+--sjdbOverhang 100 \
+--twopassMode Basic
+
+
+#--outFilterScoreMinOverLread 0 \
+#--outFilterMatchNminOverLread 0 \

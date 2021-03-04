@@ -5,6 +5,8 @@
 
 ### libraries
   library(data.table)
+  library(factoextra)
+
   library(DESeq2)
   library(ggplot2)
   library(Rsubread)
@@ -58,7 +60,16 @@
   mean(abs(res.dt$log2FoldChange) >= abs(res.dt[GeneId=="Daphnia00787"]$log2FoldChange), na.rm=T)
 
 ### PCA analysis
-  pcaData <- plotPCA(vsd, intgroup=c("superclone", "clone"), returnData=TRUE)
+  rv <- rowVars(assay(vsd))
+  select <- order(rv, decreasing = TRUE)[seq_len(min(100000,
+      length(rv)))]
+  pca <- prcomp(t(assay(vsd)[select, ]))
+  d <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2],
+        name = colnames(vsd))
+  pcaData <- plotPCA(vsd, intgroup=c("superclone", "clone"), returnData=F, ntop=10000)
+
+  plot(pca$rotation[which(dimnames(pca$rotation)[1]=="Daphnia00787"),1] ~ pca$rotation[,2])
+
 
 ### combine DE expression w/ read-depth and missing data rates
   genes.ag.ag <- genes.ag[,list(scA=mean(dp.norm.mu[superclone=="A"], na.rm=T) , scB=mean(dp.norm.mu[superclone=="C"], na.rm=T),
@@ -70,7 +81,7 @@
 ### combine with QTL peaks
 ### combine with QTL
   load("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/gprime_peaks.replicates.250K.05.Rdata")
-  peaks.dt <- data.table(qtl=c(1:14), Chr=peaks$CHROM, Start=peaks$posPeakDeltaSNP-50000, End=peaks$posPeakDeltaSNP+50000)
+  peaks.dt <- data.table(qtl=c(1:14), Chr=peaks$CHROM, Start=peaks$posPeakDeltaSNP-15000, End=peaks$posPeakDeltaSNP+15000)
 
   saf.dt <- as.data.table(saf)
   setkey(saf.dt, GeneID)
