@@ -15,10 +15,10 @@
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20964200_8.err
 
 
-java -Xmx20G -jar ~/QoRTs.jar \
-makeFlatGff \
-/project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
-/project/berglandlab/daphnia_ref/Daphnia.aed.0.6.flatgff
+#java -Xmx20G -jar ~/QoRTs.jar \
+#makeFlatGff \
+#/project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
+#/project/berglandlab/daphnia_ref/Daphnia.aed.0.6.flatgff
 
 
 java -Xmx20G -jar ~/QoRTs.jar \
