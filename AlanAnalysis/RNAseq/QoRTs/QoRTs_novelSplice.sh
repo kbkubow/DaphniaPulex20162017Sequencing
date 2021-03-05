@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/QoRTs/QoRTs_novelSplice.sh
-### sacct -u aob2x -j 20988531
+### sacct -u aob2x -j 20988538
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20964200_8.err
 
 
@@ -24,7 +24,7 @@
 java -Xmx20G -jar ~/QoRTs.jar \
 mergeNovelSplices \
 --minCount 10 \
---minSpan 20 \
+--minSpan 100 \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/ \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/decoder.txt \
 /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
