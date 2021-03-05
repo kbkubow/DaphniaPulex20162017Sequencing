@@ -11,9 +11,13 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/refGenome_RNAseq/getData.sh
-### sacct -u aob2x -j 20964200
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20964200_8.err
+### sacct -u aob2x -j 20988802
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20988802
 
-rsync \
-/nv/vol186/bergland-lab/doerthe/backup_pricey3_19March2020/RNAseq/predation_copper/data/data_A_B_raw/*.fq.gz
+
+rsync -am \
+--include='*.fq.gz' \
+--include='*/' \
+--exclude='*' \
+/nv/vol186/bergland-lab/doerthe/backup_pricey3_19March2020/RNAseq/predation_copper/data/data_A_B_raw/ \
 /project/berglandlab/alan/refGenome_RNAseq/
