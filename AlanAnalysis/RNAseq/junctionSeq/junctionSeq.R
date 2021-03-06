@@ -35,9 +35,9 @@
     condition = decoder$group.ID,
     use.novel.junctions=T,
     use.multigene.aggregates=T,
-    nCores=20,
     flat.gff.file = "/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/withNovel.forJunctionSeq.gff.gz",
-    verbose=TRUE, debug.mode = TRUE, nCores=20)
+    verbose=TRUE, debug.mode = TRUE,
+    nCores=20)
 
 # save
 
