@@ -40,7 +40,7 @@
     nCores=20)
 
 # save
-
-  writeCompleteResults(jscs, outfile.prefix="./junctionSeq_out",
+  save(jscs, file="~/jscs.Rdata")
+  writeCompleteResults(jscs, outfile.prefix="~/junctionSeq_out",
                       save.jscs = TRUE
 # plot
