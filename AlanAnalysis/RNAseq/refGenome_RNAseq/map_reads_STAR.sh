@@ -10,7 +10,7 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-198 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/refGenome_RNAseq/map_reads_STAR.sh
+### sbatch --array=1-198%20 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/refGenome_RNAseq/map_reads_STAR.sh
 ### sacct -u aob2x -j 20995481
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20994607_130.err
 
