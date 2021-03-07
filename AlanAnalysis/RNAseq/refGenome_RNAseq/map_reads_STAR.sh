@@ -64,7 +64,7 @@ STAR \
 
 #\
 #--twopassMode Basic
-
+#test
 
 #--outFilterScoreMinOverLread 0 \
 #--outFilterMatchNminOverLread 0 \
