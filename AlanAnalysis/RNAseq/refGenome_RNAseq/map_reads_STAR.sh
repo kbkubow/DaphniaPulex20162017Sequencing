@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 ##SBATCH -J maketree # A single job name for the array
-#SBATCH --ntasks=20
-#SBATCH --cpus-per-task=1 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
-#SBATCH -t 0-02:00:00 # Running time of 4 days
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=5 ### is for multithreading: standard has 28 or 40 $SLURM_CPUS_PER_TASK
+#SBATCH -t 0-06:00:00 # Running time of 4 days
 #SBATCH --mem 40G # Memory request of 20GB
 #SBATCH -o /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.out # Standard output
 #SBATCH -e /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.%A_%a.err # Standard error
@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=1-198%5 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/refGenome_RNAseq/map_reads_STAR.sh
-### sacct -u aob2x -j 21001223
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20994607_130.err
+### sacct -u aob2x -j 21013208
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.21013208_193.err
 
 module load star/2.7.2b
 
@@ -49,7 +49,7 @@ STAR \
 --outFileNamePrefix /scratch/aob2x/refGenome_RNAseq/bam/${samp}_star \
 --genomeLoad NoSharedMemory \
 --limitBAMsortRAM 38000000000 \
---runThreadN 20 \
+--runThreadN 1 \
 --outFilterMatchNmin 0 \
 --outSJfilterReads Unique \
 --outSJfilterCountUniqueMin 20 1 1 1 \
@@ -61,6 +61,17 @@ STAR \
 --outWigStrand Stranded \
 --outMultimapperOrder Random \
 --sjdbOverhang 100
+
+# mv /scratch/aob2x/refGenome_RNAseq/bam/${samp}_starAligned.sortedByCoord.out.bam \
+# /scratch/aob2x/refGenome_RNAseq/bamUse/
+#
+# mv /scratch/aob2x/refGenome_RNAseq/bam/${samp}_starReadsPerGene.out.tab \
+# /scratch/aob2x/refGenome_RNAseq/bamUse/
+#
+# mv /scratch/aob2x/refGenome_RNAseq/bam/${samp}_starLog.final.out \
+# /scratch/aob2x/refGenome_RNAseq/bamUse/
+#
+# rm -fr /scratch/aob2x/refGenome_RNAseq/bam/${samp}*
 
 #\
 #--twopassMode Basic
