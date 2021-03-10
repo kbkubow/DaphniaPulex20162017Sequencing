@@ -10,16 +10,18 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=1-198 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
-### sacct -u aob2x -j 20798058
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20798058_1.err
+### sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
+### sacct -u aob2x -j 21042929
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.21042929_9.err
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 
-#SLURM_ARRAY_TASK_ID=2
+#SLURM_ARRAY_TASK_ID=9
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
 samp=$( ls /project/berglandlab/alan/refGenome_RNAseq/fastq | sed -E 's/_[1-2]{1}\.fq\.gz//g' | sed "${SLURM_ARRAY_TASK_ID}q;d" )
+
+echo ${SLURM_ARRAY_TASK_ID}
 echo $samp
 
 if [ ! -f /scratch/aob2x/refGenome_RNAseq/bam/${samp}_starAligned.sortedByCoord.out.bam.bai ]; then
