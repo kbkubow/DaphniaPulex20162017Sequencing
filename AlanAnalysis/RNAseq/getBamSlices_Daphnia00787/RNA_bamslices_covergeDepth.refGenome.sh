@@ -10,8 +10,8 @@
 #SBATCH -p standard
 #SBATCH --account berglandlab
 
-### sbatch --array=9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
-### sacct -u aob2x -j 21042932
+### sbatch --array=8-9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
+### sacct -u aob2x -j 21042935
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.21042932_9.out
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
@@ -19,7 +19,7 @@ module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 #SLURM_ARRAY_TASK_ID=9
 wd=/scratch/aob2x/daphnia_hwe_sims/
 
-samp=$( ls /project/berglandlab/alan/refGenome_RNAseq/fastq | sed -E 's/_[1-2]{1}\.fq\.gz//g' | sed "${SLURM_ARRAY_TASK_ID}q;d" )
+#samp=$( ls /project/berglandlab/alan/refGenome_RNAseq/fastq | sed -E 's/_[1-2]{1}\.fq\.gz//g' | sed "${SLURM_ARRAY_TASK_ID}q;d" )
 
 #ls /project/berglandlab/alan/refGenome_RNAseq/fastq | sed -E 's/_[1-2]{1}\.fq\.gz//g' > /scratch/aob2x/refJobs
 samp=$( cat /scratch/aob2x/refJobs | sed -E 's/_[1-2]{1}\.fq\.gz//g' | sed "${SLURM_ARRAY_TASK_ID}q;d" )
