@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/QoRTs/QoRTs_novelSplice.sh
-### sacct -u aob2x -j 20988538
+### sacct -u aob2x -j 20988571
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20964200_8.err
 
 
@@ -29,3 +29,5 @@ mergeNovelSplices \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/decoder.txt \
 /project/berglandlab/daphnia_ref/Daphnia.aed.0.6.gtf \
 /scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/
+
+# zcat withNovel.forJunctionSeq.gff.gz | grep "Daphnia00787" | awk '{print $3"\t"$5-$4}'

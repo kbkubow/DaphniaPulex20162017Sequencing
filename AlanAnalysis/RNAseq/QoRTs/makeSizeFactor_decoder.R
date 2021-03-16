@@ -1,9 +1,10 @@
 #module load gcc/7.1.0  openmpi/3.1.4 R/4.0.0; R
 
 
-install.packages("http://hartleys.github.io/QoRTs/QoRTs_STABLE.tar.gz",
-                   repos=NULL,
-                   type="source");
+#install.packages("http://hartleys.github.io/QoRTs/QoRTs_STABLE.tar.gz",
+#                   repos=NULL,
+#                   type="source");
+
 library(QoRTs)
 library(data.table)
 library(foreach)
@@ -46,10 +47,10 @@ library(stringr)
 ### get size factors
 
   res <- read.qc.results.data(infile.dir="/",
-  decoder=as.data.frame(decoder),
-  calc.DESeq2 = TRUE,
-  calc.edgeR = FALSE,
-  autodetectMissingSamples = TRUE, skip.files = c())
+                              decoder=as.data.frame(decoder),
+                              calc.DESeq2 = TRUE,
+                              calc.edgeR = FALSE,
+                              autodetectMissingSamples = TRUE, skip.files = c())
 
 
   sf <- get.size.factors(res)

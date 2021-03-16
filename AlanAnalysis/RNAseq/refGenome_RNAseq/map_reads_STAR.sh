@@ -11,7 +11,7 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=2-198%1 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/refGenome_RNAseq/map_reads_STAR.sh
-### sacct -u aob2x -j 21017998
+### sacct -u aob2x -j 21018001
 ### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.21013208_193.err
 
 module load star/2.7.2b

@@ -150,9 +150,9 @@
 
 ### top DE-QTL genes
   dec[cnA==2 & cnB==2 & goodChr==T]
-
   dec[!is.na(qtl)][pa<.05]
-  dec[!is.na(qtl)][qval<.05]
+  chisq.test(!is.na(dec$qtl), dec$pa<.05)
+  table(dec[!is.na(qtl)][qval<.05]$qtl)
 
 
 ggplot(data=dec[cnA==2 & cnB==2 & goodChr==T][order(qtl, na.last=F)],

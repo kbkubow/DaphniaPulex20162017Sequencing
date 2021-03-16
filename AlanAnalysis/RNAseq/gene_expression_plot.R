@@ -1,4 +1,5 @@
 ### scp aob2x@rivanna.hpc.virginia.edu:~/ase_geno_phase.star.Rdata ~/.
+### scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/qorts.tar.gz ~/.
 
 ### libraries
   library(data.table)

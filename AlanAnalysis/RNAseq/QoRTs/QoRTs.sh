@@ -11,8 +11,8 @@
 #SBATCH --account berglandlab
 
 ### sbatch --array=8 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/QoRTs/QoRTs.sh
-### sacct -u aob2x -j 20948367
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20935398_8.err
+### sacct -u aob2x -j 20964200
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.20964200_8.err
 
 ###### SLURM_ARRAY_TASK_ID=1
 wd=/scratch/aob2x/daphnia_hwe_sims/

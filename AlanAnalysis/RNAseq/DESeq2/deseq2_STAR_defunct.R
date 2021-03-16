@@ -46,7 +46,7 @@
   resLFC <- lfcShrink(dds, coef="superclone_C_vs_A", type="apeglm")
 
 ### "best QTL gene"
-  plotCounts(dds, gene=which(rownames(dds)=="Daphnia00796"), intgroup="superclone")
+  plotCounts(dds, gene=which(rownames(dds)=="Daphnia11267"), intgroup="superclone")
 
   gene_counts <- plotCounts(dds, gene=which(rownames(dds)=="Daphnia00787"), returnData=T, intgroup="superclone", transform=T, normalized=T)
   geneCounts <- ggplot(gene_counts, aes(x=superclone, y=count)) + geom_point() + ylab("Normalized expression - logscale")

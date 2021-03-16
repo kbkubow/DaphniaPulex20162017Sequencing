@@ -12,7 +12,7 @@
 
 ### sbatch --array=8-9 /scratch/aob2x/daphnia_hwe_sims/DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/getBamSlices_Daphnia00787/RNA_bamslices_covergeDepth.sh
 ### sacct -u aob2x -j 21042935
-### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.21042932_9.out
+### cat /scratch/aob2x/daphnia_hwe_sims/slurmOut/map_reads.21042935_9.out
 
 module load samtools gcc/9.2.0  openmpi/3.1.6 python/3.7.7 bedtools/2.29.2
 

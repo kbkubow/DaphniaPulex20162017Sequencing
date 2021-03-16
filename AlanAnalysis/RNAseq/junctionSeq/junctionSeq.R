@@ -41,6 +41,9 @@
 
 # save
   save(jscs, file="~/jscs.Rdata")
+
+  # load(file="~/jscs.Rdata")
+  # ijob -c5 -A berglandlab -p standard --mem 40
   writeCompleteResults(jscs, outfile.prefix="~/junctionSeq_out",
-                      save.jscs = TRUE
+                      save.jscs = TRUE)
 # plot
