@@ -88,40 +88,31 @@
 ### save
   save(f1.pool.merge, file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/f1_pool_polar.Rdata")
 
-  f1.pool.mergesub <- f1.pool.merge[, c("clone", "qtl", "geno"), with=TRUE]
-  malesqtl <- merge(f1.pool.mergesub, male, by="clone", allow.cartesian=TRUE)
-
-  anovas <- foreach(q=1:14, .combine="rbind")%do%{
-    f1sub <- malesqtl[qtl==q]
-    f1subout_a <- glmer(propmale~(1|clone) + (1|Replicate), data=f1sub, family=binomial(), weights=NewTotal)
-    f1subout_b <- glmer(propmale~geno+(1|clone) + (1|Replicate), data=f1sub, family=binomial(), weights=NewTotal)
-    aovcompare <- anova(f1subout_a, f1subout_b)
-    p <- aovcompare[[8]][2]
-    tmp <- data.table(qtl=q, p=p)
-    tmp
-    }
 
 
 ### load
   library(data.table)
   library(ggplot2)
+  setwd("/Users/alanbergland/Documents/GitHub")
 
   load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/f1_pool_polar.Rdata")
-  load("f1_pool_polar.Rdata")
+  f1.val <- f1.pool.merge[,list(propmale=mean(propmale), N=mean(N),
+                                nMale=sum(geno=="male_pe") + 2*sum(geno=="male_male")),
+                           list(clone, gr)]
 
-  m.ag <- f1.pool.merge[,list(propmale=mean(propmale), sd=sd(propmale)), list(qtl, geno)]
-  m2.ag <- m.ag[,list(propmale=mean(propmale), sd=sd(propmale)), list(geno)]
+  summary(glm(propmale~nMale, f1.val, weights=N, family="binomial"))
 
-  summary(glm(propmale~geno, f1.pool.merge[qtl==10], weights=N, family="binomial"))
+  ggplot() +
+  geom_point(data=f1.val, aes(x=nMale, y=propmale))
+
 
   ggplot() +
   geom_point(data=f1.pool.merge, aes(x=geno, y=propmale, color=gr), size=.75, alpha=.95) +
   geom_point(data=m.ag, aes(x=geno, y=propmale), size=2, color="red") +
   facet_wrap(~qtl)
 
-  ggplot(data=m.ag[qtl!=10], aes(x=geno, y=propmale, group=qtl, linetype=as.factor(qtl))) + geom_line() +
-    geom_line(data=m.ag[qtl=="10"], aes(x=geno, y=propmale, group=qtl, color="QTL_12"), size=2) +
-    theme_bw()
+
+  m.ag <- f1.pool.merge[,list(propmale=mean(propmale), sd=sd(propmale)), list(qtl, geno)]
 
 
 

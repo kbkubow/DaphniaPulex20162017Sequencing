@@ -36,13 +36,14 @@
     use.novel.junctions=T,
     use.multigene.aggregates=T,
     flat.gff.file = "/scratch/aob2x/daphnia_hwe_sims/rnaseq/qorts_out/withNovel.forJunctionSeq.gff.gz",
-    verbose=TRUE, debug.mode = TRUE, nCores=20)
+    verbose=TRUE, debug.mode = TRUE,
+    nCores=20)
 
 # save
   save(jscs, file="~/jscs.Rdata")
 
+  # load(file="~/jscs.Rdata")
+  # ijob -c5 -A berglandlab -p standard --mem 40
+  writeCompleteResults(jscs, outfile.prefix="~/junctionSeq_out",
+                      save.jscs = TRUE)
 # plot
-  buildAllPlots(jscs=jscs,
-    outfile.prefix = "~/jcsc_plots/",
-    use.plotting.device = "png", FDR.threshold = 0.01, writeHTMLresults=T
-  )
