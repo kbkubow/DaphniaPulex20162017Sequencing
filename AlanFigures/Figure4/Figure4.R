@@ -3,7 +3,6 @@
   library(data.table)
   library(cowplot)
   library(patchwork)
-  library(lme4)
 
 ############
 ### Data ###
@@ -30,15 +29,24 @@
 ### Load in PA42 chr key
   PA42 <- fread("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/5kbchrassignHiCnew.csv")
 
-### Load in qtl_polar
+### Load in qtl_polar (wild daps only: `DaphniaPulex20162017Sequencing/AlanAnalysis/QTL_superclone_test/analysis.polarizeHapolotypes_poolSeq.R`)
   load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/qtl_polar.Rdata")
+
+### load in F1 validation (`DaphniaPulex20162017Sequencing/AlanAnalysis/QTL_superclone_test/F1_mapping_validation.polarizeHapolotypes_poolSeq.R`)
+  load("DaphniaPulex20162017Sequencing/AlanFigures/Figure4/f1_pool_polar.Rdata")
+  f1.val <- f1.pool.merge[,list(propmale=mean(propmale), N=mean(N),
+                                nMale=sum(geno=="male_pe") + 2*sum(geno=="male_male")),
+                           list(clone, gr)]
+
+  f1.val.glm <- glm(propmale~nMale, f1.val, weights=N, family="binomial")
+  with(summary(f1.val.glm), 1 - deviance/null.deviance)
 
 ### load basic expression data (`DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/DESeq2/deseq2_QoRTs.R`)
   load(file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/differentialExpression.Rdata")
 
-### Load GEVA output
+### Load GEVA output (`DaphniaPulex20162017Sequencing/AlanFigures/Figure4/GEVA_figure/GEVA_plot.R`)
   # scp aob2x@rivanna.hpc.virginia.edu:/scratch/aob2x/age.tar.gz ~/.
-  save(tmrca, file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/tmrca.output")
+  load(file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/tmrca.output")
 
 ############################
 ### male proportion plot ###
@@ -96,28 +104,28 @@
   epp.ag$gr <- factor(epp.ag$gr, levels=c("A", "AxC", "C", "CxC"))
 
 
-  emb.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEMB, color=gr)) +
-  geom_linerange(aes(ymin=lciemb, ymax=uciemb), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
-  geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
-  theme(legend.position="none") +
-  xlab("Clone or Cross Type") + ylab("Embryo production") +
-  theme_bw()
-
-  eppnum.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEpp, color=gr)) +
-  geom_linerange(aes(ymin=lciepp, ymax=uciepp), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
-  geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
-  theme(legend.position="none") +
-  xlab("Clone or Cross Type") + ylab("Ephippia production") +
-  theme_bw()
-
-  varmaleA <- var(epp.ag$fillrate[epp.ag$gr=="A"])
-  varmaleC <- var(epp.ag$fillrate[epp.ag$gr=="C"])
-  sampvarmaleA <- varmaleA/5
-  sampvarmaleC <- varmaleC/2
-  varmaleAxC <- var(epp.ag$fillrate[epp.ag$gr=="AxC"])
-  meanA <- mean(epp.ag$fillrate[epp.ag$gr=="A"])
-  meanC <- mean(epp.ag$fillrate[epp.ag$gr=="C"])
-  nummalelociAxC <- ((meanA-meanC)*(meanA-meanC)-sampvarmaleA-sampvarmaleC)/(8*varmaleAxC)
+  #emb.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEMB, color=gr)) +
+  #geom_linerange(aes(ymin=lciemb, ymax=uciemb), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
+  #geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
+  #theme(legend.position="none") +
+  #xlab("Clone or Cross Type") + ylab("Embryo production") +
+  #theme_bw()
+#
+  #eppnum.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEpp, color=gr)) +
+  #geom_linerange(aes(ymin=lciepp, ymax=uciepp), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
+  #geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
+  #theme(legend.position="none") +
+  #xlab("Clone or Cross Type") + ylab("Ephippia production") +
+  #theme_bw()
+#
+  #varmaleA <- var(epp.ag$fillrate[epp.ag$gr=="A"])
+  #varmaleC <- var(epp.ag$fillrate[epp.ag$gr=="C"])
+  #sampvarmaleA <- varmaleA/5
+  #sampvarmaleC <- varmaleC/2
+  #varmaleAxC <- var(epp.ag$fillrate[epp.ag$gr=="AxC"])
+  #meanA <- mean(epp.ag$fillrate[epp.ag$gr=="A"])
+  #meanC <- mean(epp.ag$fillrate[epp.ag$gr=="C"])
+  #nummalelociAxC <- ((meanA-meanC)*(meanA-meanC)-sampvarmaleA-sampvarmaleC)/(8*varmaleAxC)
 
 
 #########################
@@ -125,8 +133,7 @@
 #########################
     setnames(peaks, "CHROM", "chr")
     setnames(gprime, "CHROM", "chr")
-    #setnames(peaks.groups, "CHROM", "chr")
-    #setnames(gprime.groups, "CHROM", "chr")
+    peaks[,old_QTL_ID:=c(1:14)]
 
     PA42$hybridchr <- paste("Chr", PA42$PA42chr, "\n", paste("Scaff", "\n", tstrsplit(PA42$chr, "_")[[2]], sep=""), sep="")
     PA42sub <- PA42[, c("chr", "PA42chr", "hybridchr")]
@@ -135,12 +142,6 @@
     setkey(gprime, chr)
     mpeaks <- merge(peaks, PA42sub)
     mgprime <- merge(gprime, PA42sub)
-
-    #peaks <- rbind(peaks, peaks.groups, fill=T)
-    #gprime <- rbind(gprime, gprime.groups, fill=T)
-
-    #peaks[,rep:=gsub("NA", "", paste(rep, group, sep=""))]
-    #gprime[,rep:=gsub("NA", "", paste(rep, group, sep=""))]
 
     mgprime[,Gprime.y:=Gprime*ifelse(rep==1, 1, -1)]
     mpeaks[,maxGprime.y:=maxGprime*ifelse(rep==1, 1, -1)]
@@ -165,6 +166,8 @@
     setkey(mgprime, hybridchr)
     setkey(mpeaks, rep, hybridchr)
 
+    setkey(mpeaks, PA42chr, posMaxGprime)
+    mpeaks[,final_QTL_ID:=c(1:14)]
 
 ##########################
 ### F1 mapping results ###
@@ -196,40 +199,69 @@
   setkey(mqtl.polar, PA42qtl)
 
   qtl.polar$geno <- ifelse(qtl.polar$n.male_male > qtl.polar$n.male_pe &
-    qtl.polar$n.male_male > qtl.polar$n.pe_pe, "male_male",
+    qtl.polar$n.male_male > qtl.polar$n.pe_pe, "male+/male+",
     ifelse(qtl.polar$n.male_pe > qtl.polar$n.male_male &
-    qtl.polar$n.male_pe > qtl.polar$n.pe_pe, "male_pe",
+    qtl.polar$n.male_pe > qtl.polar$n.pe_pe, "male+/male-",
     ifelse(qtl.polar$n.pe_pe > qtl.polar$n.male_male &
-    qtl.polar$n.pe_pe > qtl.polar$n.male_pe,"pe_pe", "other")))
+    qtl.polar$n.pe_pe > qtl.polar$n.male_pe,"male-/male-", "other")))
 
   qtlsub <- qtl.polar[SC.uniq=="C" & year=="2017" & pond.y=="D8" | SC.uniq=="A" &
     year=="2017" & pond.y=="D8"| SC.uniq=="B" & year=="2018"]
 
   qtlcounts <- qtlsub[, .N, by=list(SC.uniq, geno)]
-  Cpepe <- data.table(SC.uniq="C", geno="pe_pe", N=0)
+  Cpepe <- data.table(SC.uniq="C", geno="male-/male-", N=0)
   qtlcountsB <- rbind(qtlcounts, Cpepe)
 
 
-### gene expression
+  mq <- merge(male.ag, qtl.polar, by="clone")
+
+
+#######################
+### gene expression ###
+#######################
+
   dec <- merge(dec, qtlcoding, by="qtl", all.x=T)
+  setnames(dec, "qtl", "old_QTL_ID")
+  dec <- merge(dec, mpeaks[,c("chr", "posPeakDeltaSNP", "PA42chr", "hybridchr", "final_QTL_ID", "old_QTL_ID"), with=F], all.x=T, by="old_QTL_ID")
+
+  save(dec, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/differentialExpression_withNames.Rdata")
+
   dec[,lab:=""]
-  dec[qLFC.noCN.goodChr>.90 & !is.na(qtl), lab:=paste("QTL-", PA42qtl, ": ", GeneID, sep="")]
+  dec[qLFC.noCN.goodChr>.9 & !is.na(old_QTL_ID), lab:=paste("QTL-", final_QTL_ID, ": ", GeneID, sep="")]
+  dec[qLFC.noCN.goodChr>.9 & !is.na(old_QTL_ID), lab2:=final_QTL_ID]
 
-### figure components
+  table(dec[lab!=""]$PA42qtl)
 
-  male.plot <- ggplot(data=male.ag[!is.na(gr)], aes(x=gr, y=propmale, color=gr)) +
+
+########################
+### tmrca expression ###
+########################
+  tmrca[,chr:=CHROM.x]
+  setkey(mpeaks, chr, posPeakDeltaSNP)
+  setkey(tmrca, chr, posPeakDeltaSNP)
+
+  tmrca <- merge(tmrca, mpeaks[,c("chr", "posPeakDeltaSNP", "PA42chr", "hybridchr", "final_QTL_ID"), with=F], all.x=T)
+  tmrca[,lab:=""]
+  tmrca[!is.na(hybridchr), lab:=final_QTL_ID]
+
+
+#########################
+### figure components ###
+#########################
+
+  male.plot <- ggplot(data=male.ag[!is.na(gr)], aes(x=gr, y=propmale)) +
   geom_linerange(aes(ymin=lci, ymax=uci), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
   geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
   theme(legend.position="none") +
-  xlab("Clone or Cross Type") + ylab("Male proportion") +theme_bw()
+  xlab("Clone or Cross Type") + ylab("Male proportion") +theme_bw() + theme(legend.position="none")
 
 
-  epp.plot <- ggplot(data=epp.ag[!is.na(gr)], aes(x=gr, y=fillrate, color=gr)) +
+  epp.plot <- ggplot(data=epp.ag[!is.na(gr)], aes(x=gr, y=fillrate)) +
   geom_linerange(aes(ymin=lci, ymax=uci), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
   geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
   theme(legend.position="none") +
   xlab("Clone or Cross Type") + ylab("Ephippial fill rate") +
-  theme_bw()
+  theme_bw() + theme(legend.position="none")
 
   poolseq <- ggplot() +
   #geom_vline(data=mpeaks, aes(xintercept=posMaxGprime), color="black") +
@@ -238,13 +270,16 @@
                             y=maxGprime.y+0.15*ifelse(rep==1, 1, -1), yend=5*ifelse(rep==1, 1, -1))) +
   geom_hline(data=mgprime[,list(minG=min(Gprime[qvalue<=0.05])), list(rep)],
          aes(yintercept=minG*ifelse(rep==1, 1, -1))) +
-  geom_text(data=mpeaks, aes(x=posMaxGprime, y=5.5*ifelse(rep==1, 1, -1), label=c(1:14)), size=3) +
+  geom_text(data=mpeaks, aes(x=posMaxGprime, y=6*ifelse(rep==1, 1, -1), label=final_QTL_ID), size=3) +
   facet_grid(~hybridchr, scales="free_x", space = "free_x") +
   theme(legend.position = "none") +
   theme_bw() +
   scale_x_continuous(breaks=seq(from=1, to=13, by=2)*10^6, labels=seq(from=1, to=13, by=2)) +
-  theme(strip.text.x = element_text(size = 8)) + ylab("Gprime") + xlab("Position (Mb)") +
-  labs(color="Replicate")
+  scale_y_continuous(breaks=c(-4, 0, 4), labels=c(4,0,4), limits=c(-6.5, 6.5)) +
+  theme(strip.text.x = element_text(size = 8), legend.position="none") +
+  ylab("Gprime") + xlab("Position (Mb)") +
+  labs(color="Replicate") +
+  ylab("G'")
 
 
   f1.plot <-
@@ -256,19 +291,19 @@
   facet_grid(term~hybridchr, scales="free_x", space = "free_x") +
   theme_bw() + theme(strip.text.x = element_text(size = 8)) +
   scale_x_continuous(breaks=seq(from=1, to=13, by=2)*10^6, labels=seq(from=1, to=13, by=2)) +
-  theme(legend.position = "none") + xlab("Position (Mb)")
+  theme(legend.position = "none") + xlab("Position (Mb)") + ylab("-log10(p)")
 
 
   qtlpolar.strip <-
-  ggplot(data=qtlsub[SC.uniq!="B"], aes(x=SC.uniq, y=PA42qtl, fill=geno)) +
-  geom_tile() +
+  ggplot(data=qtlsub[SC.uniq!="B"], aes(x=factor(SC.uniq, levels=c("C", "A")), y=PA42qtl, fill=geno)) +
+  geom_tile(color="black",size=.5, width=0.95, height=0.95) +
   coord_flip() +
   xlab("Clonal lineage") +
   ylab("QTL") +
   labs(fill="Genotype") +
   theme_bw() +
-  scale_y_continuous(breaks=c(1:14))
-
+  scale_y_continuous(breaks=c(1:14), expand=c(0,.15)) +
+  theme(legend.position="bottom")
 
   qtlpolar.hist <-
   ggplot(data=qtlcounts[SC.uniq!="B"], aes(x=geno, y=N, fill=geno)) +
@@ -278,12 +313,95 @@
   theme(legend.position = "none") +
   xlab("Genotype")
 
+  f1polar.plot <-
+  ggplot() +
+  geom_point(data=f1.val, aes(x=nMale, y=propmale, color=factor(gr, levels=c("A", "AxC", "C", "CxC")))) +
+  theme_bw() +
+  xlab("Num. male alleles") +
+  ylab("Proportion.male") +
+  geom_text(aes(x=14, y=.15, label=paste("z =", round(summary(f1.val.glm)$coef[2,3], 1))), size=2) +
+  geom_text(aes(x=14, y=.13, label=paste("p =", 5*10^-26)), size=3.5) +
+  theme(legend.position="none")
+
 
   geneexpression.plot <-
-  ggplot(data=dec[cnA==2 & cnB==2 & goodChr==T][order(qtl, na.last=F)],
-            aes(y=-log10(pvalue), x=log2FoldChange, color=as.factor(!is.na(qtl)), label=lab)) +
+  ggplot(data=dec[cnA==2 & cnB==2 & goodChr==T][order(final_QTL_ID, na.last=F)],
+            aes(y=-log10(pvalue), x=log2FoldChange, color=as.factor(!is.na(final_QTL_ID)), label=lab2)) +
   geom_point(alpha=.49) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  theme_bw() +
+  geom_label_repel(
+    data=dec[cnA==2 & cnB==2 & goodChr==T][order(final_QTL_ID, na.last=F)][PA42qtl==8],
+    force   = 10, # do not pull toward data points
+    nudge_y      = 75,
+    nudge_x       =5,
+    direction    = "y",
+    angle        = 0,
+    hjust        = 0,
+    segment.size = 0.2,
+    max.iter = 1e4, max.time = 1,
+    size=3.5, color="black"
+  ) +
+  geom_label_repel(
+    data=dec[cnA==2 & cnB==2 & goodChr==T][order(final_QTL_ID, na.last=F)][PA42qtl==10],
+    force   = 10, # do not pull toward data points
+    nudge_y      = 100,
+    nudge_x       =0,
+    direction    = "y",
+    angle        = 0,
+    hjust        = 0,
+    segment.size = 0.2,
+    max.iter = 1e4, max.time = 1,
+    size=3.5, color="black"
+  ) +
+  geom_label_repel(
+    data=dec[cnA==2 & cnB==2 & goodChr==T][order(final_QTL_ID, na.last=F)][PA42qtl==12],
+    force   = 10, # do not pull toward data points
+    nudge_y      = 75,
+    nudge_x       =-5,
+    direction    = "y",
+    angle        = 0,
+    hjust        = 0,
+    segment.size = 0.2,
+    max.iter = 1e4, max.time = 1,
+    size=3.5, color="black"
+  )  +
+  geom_label_repel(
+    data=dec[cnA==2 & cnB==2 & goodChr==T][order(final_QTL_ID, na.last=F)][PA42qtl%in%c(3,9)],
+    force   = 10, # do not pull toward data points
+    nudge_y      = 75,
+    nudge_x       =-10,
+    direction    = "y",
+    angle        = 0,
+    hjust        = 0,
+    segment.size = 0.2,
+    max.iter = 1e4, max.time = 1,
+    size=3.5, color="black"
+  ) +
+  theme(legend.position="none")
+
+
+  tmrca.plot <-
+  ggplot() +
+  theme_bw() +
+  geom_density(data=tmrca, aes(log10(PMean)), fill="grey", color="grey") +
+  geom_point(data=tmrca[!is.na(QTL)], aes(x=log10(PMean), y=0, label=lab), color="black", fill="red", shape=23, size=6) +
+  ylab("density") + xlab("log10(TMRCA)") +
+  geom_label_repel(
+    data=tmrca[!is.na(QTL)],
+    aes(x=log10(PMean), y=0, label=lab),
+    force_pull   = 0, # do not pull toward data points
+    force =100,
+    nudge_y      = .4,
+    nudge_x       =0,
+    direction    = "both",
+    angle        = 0,
+    hjust        = 0,
+    segment.size = 0.2,
+    max.iter = 1e4, max.time = 1,
+    box.padding=.35, size=3.5
+  )
+
 
 ### mega plot
   layout <- "
@@ -295,17 +413,29 @@
   FFFGGG
   "
 
+
+  layout <- "
+  AABBCC
+  DDDDDD
+  EEEEEE
+  FFFFFF
+  GGGHHH
+  GGGHHH
+  "
+
+
+
   megaplot <-
-  male.plot + epp.plot +
+  male.plot + epp.plot + f1polar.plot +
   f1.plot +
   poolseq +
-  qtlpolar.strip +
-  geneexpression.plot + plot_spacer() +
-  plot_layout(design = layout, heights=c(1,1,1,.2,1)) +
+  qtlpolar.strip  +
+  tmrca.plot + geneexpression.plot +
+  plot_layout(design = layout, heights=c(1,1,1,.35,1)) +
   plot_annotation(tag_levels = 'A')
 
-  ggsave(megaplot, file="~/qtl_mega.pdf")
-  ggsave(megaplot, file="~/qtl_mega.png", width=10, height=10)
+  #ggsave(megaplot, file="~/qtl_mega.pdf")
+  ggsave(megaplot, file="~/qtl_mega.png", width=8, height=10)
 
 
 

@@ -47,50 +47,56 @@
            aes(x=year, y=global)) +
       geom_boxplot() +
       facet_wrap(~factor(pond, levels=c("DCat", "D8", "DBunk"))) +
-      labs(x="Year", y="Theta pi") +
-      ylim(0.0019, 0.00375) +
+      xlab("Year") +
       theme_bw() +
       theme(axis.text.x = element_text(angle = 45, hjust=1, size=12),
             axis.text.y = element_text(size=12),
-            axis.title = element_text(size=14))
+            axis.title = element_text(size=14)) +
+      scale_y_continuous(breaks=c(.002, .0025, .003, .0035), labels=c(2, 2.5, 3, 3.5), limits=c(0.0019, 0.00375)) +
+      ylab(expression(paste(theta[pi], " (x", 10^-3, ")", sep="")))
+
 
   # AxC crosses
     theta_AC <-
     ggplot() +
-    geom_point(data=out[!clone %in% (cross$clone)][SC %in% c("A", "C")][data %in% c("theta_inc_ROH")],
-               aes(x=SC, y=global, color=SC), size=3) +
-    geom_point(data=out[clone %in% cross[cross=="F1"]$clone][!SC=="AL"][data %in% c("theta_inc_ROH")],
-               aes(x="F1-AxC", y=global), color="purple", size=4) +
-    geom_point(data=out[clone %in% cross[cross=="F2"]$clone][data %in% c("theta_inc_ROH")],
-               aes(x="F2-AxC", y=global), color="orange", size=4) +
-    labs(x="", y="Theta pi") +
-    ylim(0.0019, 0.00375) +
+    geom_point(data=out[!clone %in% (cross$clone)][SC %in% c("A", "C")][data %in% c("theta_inc_ROH")][pond=="D8"],
+               aes(x=SC, y=global), size=2) +
+    geom_point(data=out[clone %in% cross[cross=="F1"]$clone][!SC=="AL"][data %in% c("theta_inc_ROH")][pond=="D8"],
+               aes(x="F1-AxC", y=global), size=2) +
+    geom_point(data=out[clone %in% cross[cross=="F2"]$clone][data %in% c("theta_inc_ROH")][pond=="D8"],
+               aes(x="F2-AxC", y=global), size=2) +
     theme_bw() +
+    facet_wrap(~pond) +
     theme(axis.text.x = element_text(angle = 45, hjust=1, size=12),
           axis.text.y = element_text(size=12),
           axis.title = element_text(size=14),
-          legend.position = "none")
+          legend.position = "none") +
+    scale_y_continuous(breaks=c(.002, .0025, .003, .0035), labels=c(2, 2.5, 3, 3.5), limits=c(0.0019, 0.00375)) +
+    ylab(expression(paste(theta[pi], " (x", 10^-3, ")", sep=""))) +
+    xlab("")
 
 # Selfed vs offspring (Supp Fig)
   theta_selfed <-
     ggplot() +
     geom_point(data=out[clone %in% selfing.par][data %in% c("theta_inc_ROH")],
                aes(x=as.factor(c("1", "1", "1", "1")),
-                   y=global, color=c("B", "C", "H", "W")), size=4) +
+                   y=global), size=2) +
     geom_point(data=out[SC %in% c("B", "H", "C", "W")][data %in% c("theta_inc_ROH")],
-               aes(x=as.factor(SC), y=global, color=SC), size=4) +
+               aes(x=as.factor(SC), y=global), size=2) +
     labs(x="", y="") +
     scale_x_discrete(labels=c("B"="Offspring", "C"="Offspring",
                               "H"="Offspring", "W"="Offspring",
                               "1"="Parent")) +
     facet_grid(~SC.share, scales = "free_x") +
-    ylim(0.0019, 0.00375) +
     guides(color=FALSE) +
     theme_bw() +
     theme(legend.position = "none",
           axis.text.x = element_text(size=12, angle = 45, hjust=1, ),
           axis.text.y = element_text(size=12),
-          axis.title = element_text(size=14))
+          axis.title = element_text(size=14)) +
+    scale_y_continuous(breaks=c(.002, .0025, .003, .0035), labels=c(2, 2.5, 3, 3.5), limits=c(0.0019, 0.00375)) +
+    ylab(expression(paste(theta[pi], " (x", 10^-3, ")", sep="")))
+
 
 
 ### ROHs
@@ -115,11 +121,11 @@
 
   roh_plot <-
   ggplot(data=rl.ag.ag[population%in%c("D8", "DBunk", "DCat")],
-        aes(x=sroh, y=nroh, label=lab, color=as.factor(population))) +
+        aes(x=sroh, y=nroh, label=lab)) +
   geom_abline(aes(slope=coef(t1)[2], intercept=coef(t1)[1]))  +
   geom_point() +
   geom_label_repel(box.padding=1.5) +
-  facet_wrap(~population) +
+  facet_wrap(~factor(population, levels=c("DCat", "D8", "DBunk"))) +
   theme_bw() +
   ylab("Number ROH") +
   xlab(expression(paste("Summed length ROH (x", 10^6, ")", sep=""))) +
@@ -155,6 +161,30 @@ FFFFF
 FFFFF
 FFFFF"
 
+
+layout <- "
+AABBEE
+AACDEE
+FFFFFF
+FFFFFF
+FFFFFF"
+
+
+layout <- "
+AAFFFF
+AAFFFF
+BBBBEE
+CCDDEE
+"
+
+
+
+
+mega <-
 corrmatrix + theta_ponds + theta_AC + theta_selfed + roh_plot + pedigree_plot +
+theme(strip.text=element_text(size=12), plot.tag = element_text(size=16)) +
 plot_layout(design = layout) +
 plot_annotation(tag_levels = 'A')
+
+
+ggsave(mega, file="~/mega_diversity_v2.pdf")

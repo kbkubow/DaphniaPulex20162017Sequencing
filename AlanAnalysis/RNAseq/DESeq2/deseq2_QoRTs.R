@@ -108,7 +108,7 @@
   resLFC.dt[GeneID=="Daphnia00787"]
 
 ### combine DE expression w/ CNV data from cn.mops
-  de <- merge(resLFC.dt, cn.gene.qtl.rep, by="GeneID", all.x=T)
+  de <- merge(resLFC.dt, cn.gene.qtl, by="GeneID", all.x=T)
   de[GeneID=="Daphnia00787"]
 
 ### flag genes that are not on the 12 major chromosomes
@@ -120,13 +120,14 @@
   de[cnA==2 & cnB==2,qLFC.noCN:=rank(abs(log2FoldChange))/(length(log2FoldChange)+1)]
   de[cnA==2 & cnB==2 & goodChr==T,qLFC.noCN.goodChr:=rank(abs(log2FoldChange))/(length(log2FoldChange)+1)]
   de[cnA==2 & cnB==2 & goodChr==T,qp.noCN.goodChr:=rank(abs(pvalue))/(length(pvalue)+1)]
-  de[cnA==2 & cnB==2 & goodChr==T & is.na(rep), qp.noCN.goodChr.norep:=rank(abs(pvalue))/(length(pvalue)+1)]
 
   de[GeneID=="Daphnia00787"]
 
 ### add in PC loading values
   pcaData <- plotPCA(vsd, intgroup=c("superclone", "clone"), returnData=T, ntop=10000)
   t.test(PC1~superclone, pcaData)
+  save(pcaData, res, dds, file="DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/differential_expression_supplement.Rdata")
+
 
   ggplot(data=pcaData, aes(x=PC1, y=PC2, color=superclone, shape=clone)) + geom_point()
 
@@ -154,12 +155,17 @@
   chisq.test(!is.na(dec$qtl), dec$pa<.05)
   table(dec[!is.na(qtl)][qval<.05]$qtl)
 
+### save
+  save(dec, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/differentialExpression.Rdata")
+
+
+
+
+
 
 ggplot(data=dec[cnA==2 & cnB==2 & goodChr==T][order(qtl, na.last=F)],
-            aes(x=-log10(pa), y=log2FoldChange, color=as.factor(!is.na(qtl)))) +
+            aes(y=-log10(pvalue), x=log2FoldChange, color=as.factor(!is.na(qtl)))) +
 geom_point(alpha=.49)
-
-ggplot(data=dec[cnA==2 & cnB==2 & goodChr==T], aes(pvalue)) + geom_histogram(bins=100)
 
 
 
