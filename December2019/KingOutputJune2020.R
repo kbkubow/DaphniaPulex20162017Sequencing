@@ -4,12 +4,12 @@
   library(data.table)
   library(foreach)
   library(ggplot2)
-  library(ggbeeswarm)
+  #library(ggbeeswarm)
   library(tidyverse)
 
 ### Read in KING output file
-  kinship <- fread("king.kin")
-
+  #kinship <- fread("king.kin")
+  kinship <- fread("Dorsetking.kin")
   D8PO <- fread("./../D8DBunkParentOffspringRelationships.csv")
   D8POAxCF1 <- D8PO[ParentASC=="A" & ParentBSC=="C"]
   D8POAxCF1subA <- data.table(ID1=D8POAxCF1$FocalIndividual, ID1AxCF1=1)
@@ -22,10 +22,10 @@
 
 ### Read in SC file
   sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
-  #sc <- fread("CloneInfoFilePulexandObtusa_withmedrd_20200207")
+  sc$population <- str_replace(sc$population, "Dcat", "DCat")
   sc <- sc[Species=="pulex" & Nonindependent==0]
   sc <- sc[Species=="pulex" & Nonindependent==0 & LabGenerated==0]
-  #sc <- sc[population=="D8" | population=="DCat" | population=="DBunk" | population=="Dcat"]
+  #sc <- sc[population=="D8" | population=="DCat" | population=="DBunk"]
   #sc <- sc[population=="D8"]
   #sc <- sc[population=="D8" | population=="DBunk"]
 
@@ -117,29 +117,45 @@
     "fullsiblings", ifelse(kinshipscmallPO2$PO==1, "ParentOffspring", ifelse(kinshipscmallPO2$SCA=="poC" &
     kinshipscmallPO2$SCB=="C" | kinshipscmallPO2$SCA=="C" & kinshipscmallPO2$SCB=="poC" | kinshipscmallPO2$SCA=="poH" &
     kinshipscmallPO2$SCB=="H" | kinshipscmallPO2$SCA=="H" & kinshipscmallPO2$SCB=="poH" | kinshipscmallPO2$SCA=="poW" &
-    kinshipscmallPO2$SCB=="W" | kinshipscmallPO2$SCA=="W" & kinshipscmallPO2$SCB=="poW", "selfedPO", ifelse(kinshipscmallPO2$SCA=="A" &
+    kinshipscmallPO2$SCB=="W" | kinshipscmallPO2$SCA=="W" & kinshipscmallPO2$SCB=="poW" | kinshipscmallPO2$SCA=="B" &
+    kinshipscmallPO2$SCB=="poB" | kinshipscmallPO2$SCA=="poB" & kinshipscmallPO2$SCB=="B", "selfedPO", ifelse(kinshipscmallPO2$SCA=="A" &
     kinshipscmallPO2$SCB=="C" | kinshipscmallPO2$SCA=="C" & kinshipscmallPO2$SCB=="A", "AvsC", "other")
     ))))
 
+  kinshipscmallPO2$type <- factor(kinshipscmallPO2$type, levels=c("AvsC", "fullsiblings",
+    "clone", "other", "ParentOffspring", "selfedPO"))
+
   kinshipscmallPO2$toplot <- ifelse(kinshipscmallPO2$type=="other", "other", "plot")
+
+  kinshipscmallPO2$pondcompareB <- ifelse(kinshipscmallPO2$pondcompare=="DBunk_D8", "D8_DBunk", ifelse(
+    kinshipscmallPO2$pondcompare=="DCat_D8", "D8_DCat", ifelse(kinshipscmallPO2$pondcompare=="DCat_DBunk",
+    "DBunk_DCat", kinshipscmallPO2$pondcompare)
+  ))
+
+  kinshipscmallPO2$pondcompareB <- factor(kinshipscmallPO2$pondcompareB, levels=c("D8_D8", "DBunk_DBunk", "DCat_DCat",
+    "D8_DBunk", "D8_DCat", "DBunk_DCat"))
 
   ggplot(data=kinshipscmallPO2[medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=type)) + geom_point() +
     geom_point(data = subset(kinshipscmallPO2[medrdA > 9 & medrdB > 9], toplot == "plot")) +
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
+  ggplot(data=kinshipscmallPO2[medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=type)) + geom_point() +
+    geom_point(data = subset(kinshipscmallPO2[medrdA > 9 & medrdB > 9], toplot == "plot")) +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
+    geom_point(aes(x=0.1336919, y=-0.1272566, color="AvsC")) +
+    facet_wrap(~pondcompareB)
+
+
     ggplot(data=kinshipscmallPO2[Kinship > 0.2 & medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=as.factor(type))) + geom_point() +
       theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
-  kinshipscm2$type <- ifelse(kinshipscm2$clone==1, "clone", ifelse(kinshipscm2$clone==0 & kinshipscm2$ID2AxCF1==1 &
-    kinshipscm2$ID1AxCF1==1, "AxCF1fullsibs", ifelse(kinshipscm2$ID2AxCF1==1 & kinshipscm2$SCA=="A" |
-    kinshipscm2$ID2AxCF1==1 & kinshipscm2$SCA=="C" | kinshipscm2$ID1AxCF1==1 & kinshipscm2$SCB=="A" |
-    kinshipscm2$ID1AxCF1==1 & kinshipscm2$SCB=="C", "AxCF1vsACPO", ifelse(kinshipscm2$SCA=="poC" &
-    kinshipscm2$SCB=="C" | kinshipscm2$SCA=="C" & kinshipscm2$SCB=="poC" | kinshipscm2$SCA=="poH" &
-    kinshipscm2$SCB=="H" | kinshipscm2$SCA=="H" & kinshipscm2$SCB=="poH" | kinshipscm2$SCA=="poW" &
-    kinshipscm2$SCB=="W" | kinshipscm2$SCA=="W" & kinshipscm2$SCB=="poW", "selfedPO", "other"
-    ))))
+  #kinshipscm2$regionA <- ifelse(kinshipscm2$populationA=="DCat" | kinshipscm2$populationA=="D8" |
+  #  kinshipscm2$populationA=="DBunk", "Kilwood", ifelse(kinshipscm2$populationA=="D10", "D10", "W"))
+  #kinshipscm2$regionB <- ifelse(kinshipscm2$populationB=="DCat" | kinshipscm2$populationB=="D8" |
+  #  kinshipscm2$populationB=="DBunk", "Kilwood", ifelse(kinshipscm2$populationB=="D10", "D10", "W"))
 
 
   kinshipscm2$type <- ifelse(kinshipscm2$clone==1, "clone", ifelse(kinshipscm2$clone==0 & kinshipscm2$ID2AxCF1==1 &
@@ -148,12 +164,107 @@
     kinshipscm2$ID1AxCF1==1 & kinshipscm2$SCB=="C", "AxCF1vsACPO", ifelse(kinshipscm2$SCA=="poC" &
     kinshipscm2$SCB=="C" | kinshipscm2$SCA=="C" & kinshipscm2$SCB=="poC" | kinshipscm2$SCA=="poH" &
     kinshipscm2$SCB=="H" | kinshipscm2$SCA=="H" & kinshipscm2$SCB=="poH" | kinshipscm2$SCA=="poW" &
-    kinshipscm2$SCB=="W" | kinshipscm2$SCA=="W" & kinshipscm2$SCB=="poW", "selfedPO", "other"
-    ))))
+    kinshipscm2$SCB=="W" | kinshipscm2$SCA=="W" & kinshipscm2$SCB=="poW", "selfedPO", ifelse(
+    kinshipscm2$SCA=="A" & kinshipscm2$SCB=="C" | kinshipscm2$SCA=="C" & kinshipscm2$SCB=="A", "AvsC",
+    ifelse(kinshipscm2$regionA=="Kilwood" & kinshipscm2$regionB=="D10" | kinshipscm2$regionA=="D10" &
+    kinshipscm2$regionB=="Kilwood", "KilwoodvsD10", ifelse(kinshipscm2$regionA=="Kilwood" &
+    kinshipscm2$regionB=="W" | kinshipscm2$regionA=="W" & kinshipscm2$regionB=="Kilwood", "KilwoodvsW",
+    "other"
+    )))))))
+
+  kinshipscm2$type <- ifelse(kinshipscm2$clone==1, "clone", ifelse(kinshipscm2$clone==0 & kinshipscm2$ID2AxCF1==1 &
+    kinshipscm2$ID1AxCF1==1, "AxCF1fullsibs", ifelse(kinshipscm2$ID2AxCF1==1 & kinshipscm2$SCA=="A" |
+    kinshipscm2$ID2AxCF1==1 & kinshipscm2$SCA=="C" | kinshipscm2$ID1AxCF1==1 & kinshipscm2$SCB=="A" |
+    kinshipscm2$ID1AxCF1==1 & kinshipscm2$SCB=="C", "AxCF1vsACPO", ifelse(kinshipscm2$SCA=="poC" &
+    kinshipscm2$SCB=="C" | kinshipscm2$SCA=="C" & kinshipscm2$SCB=="poC" | kinshipscm2$SCA=="poH" &
+    kinshipscm2$SCB=="H" | kinshipscm2$SCA=="H" & kinshipscm2$SCB=="poH" | kinshipscm2$SCA=="poW" &
+    kinshipscm2$SCB=="W" | kinshipscm2$SCA=="W" & kinshipscm2$SCB=="poW", "selfedPO", ifelse(
+    kinshipscm2$SCA=="A" & kinshipscm2$SCB=="C" | kinshipscm2$SCA=="C" & kinshipscm2$SCB=="A", "AvsC", "other"
+    )))))
+
+
+
+  kinshipscm2$type <- factor(kinshipscm2$type, levels=c("clone", "selfedPO", "AxCF1vsACPO", "AxCF1fullsibs",
+    "other", "AvsC", "KilwoodvsD10", "KilwoodvsW"))
+
+  kinshipscm2$type <- factor(kinshipscm2$type, levels=c("clone", "selfedPO", "AxCF1vsACPO", "AxCF1fullsibs",
+    "other", "AvsC"))
+
+
+  kinshipscm2Kilwoodonly <- kinshipscm2[populationA!="D10" & populationB!="D10" & populationA!="W1" &
+    populationB!="W1" & populationA!="W6" & populationB!="W6"]
 
   ggplot(data=kinshipscm2[Kinship > 0 & medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship, color=type)) + geom_point() +
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+  ggplot(data=kinshipscm2[pondcompare=="D8_D8" & medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship,
+    color=factor(type, labels=c("Clonal", "Selfed parent-offspring",
+    "Outcrossed parent-offspring", "Full-siblings", "unknown", "A vs C")))) + geom_point() + labs(color="Type") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+  ggplot(data=kinshipscm2[medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship,
+    color=factor(type, labels=c("Clonal", "Selfed parent-offspring",
+    "Outcrossed parent-offspring", "Full-siblings", "unknown", "A vs C")))) + geom_point() + labs(color="Type") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+  ggplot(data=kinshipscm2[type=="other" & medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship)) + geom_point() +
+    geom_point(data=kinshipscm2[type!="other" & medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship,
+    color=factor(type, labels=c("Clonal", "Selfed parent-offspring",
+    "Outcrossed parent-offspring", "Full-siblings", "A vs C", "Kilwood vs D10", "Kilwood vs W")))) + labs(color="Type") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+  ggplot(data=kinshipscm2Kilwoodonly[type=="other" & medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship)) + geom_point() +
+    geom_point(data=kinshipscm2Kilwoodonly[type!="other" & medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship,
+    color=factor(type, labels=c("Clonal", "Selfed parent-offspring",
+    "Outcrossed parent-offspring", "Full-siblings", "A vs C")))) + labs(color="Type") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+  ggplot(data=kinshipscm2[type=="other" & medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship)) + geom_point() +
+    geom_point(data=kinshipscm2[type!="other" & medrdA > 14 & medrdB > 14], aes(x=IBS0, y=Kinship,
+    color=factor(type, labels=c("Clonal", "Selfed parent-offspring",
+    "Outcrossed parent-offspring", "Full-siblings", "A vs C")))) + labs(color="Type") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+  mean(kinshipscm2$Kinship[kinshipscm2$type=="AvsC"])
+  #0.1272566
+  kinshipscm2[Kinship<0.1272566 & type!="AvsC"]
+  #72910
+  kinshipscm2[Kinship>0.1272566 & type!="AvsC"]
+  #23644
+  72910/(72910+23644)
+  #0.7551215
+
+  mean(kinshipscm2$IBS0[kinshipscm2$type=="AvsC"])
+  #0.1336919
+  kinshipscm2[IBS0<0.1336919 & type!="AvsC"]
+  #91522
+  kinshipscm2[IBS0>0.1336919 & type!="AvsC"]
+  #5032
+  91522/(91522+5032)
+  #0.9478841
+
+  kinshipscm2[]
+
+
+
+  ggplot(data=kinshipscm2[medrdA > 9 & medrdB > 9], aes(x=IBS0, y=Kinship,
+    color=factor(type))) + geom_point() + labs(color="Type") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
+
+
+    test + scale_fill_discrete(
+    breaks = c("clone", "selfedPO", "AxCF1vsACPO", "AxCF1fullsibs", "AvsC", "other"),
+    labels = c("Clonal", "Selfed parent-offspring", "Outcrossed parent-offpsring", "Full-sibling", "A vs C", "Unassigned")
+    )
+
 
   kinshipsc$type <- ifelse(kinshipsc$clone==1, "clone", ifelse())
 

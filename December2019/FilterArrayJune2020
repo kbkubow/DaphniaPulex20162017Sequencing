@@ -625,6 +625,31 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 	matdat <- as.data.table(mat)
 	sampleidsdt$population <- matdat$V3
 	sampleidsdtD8DBunkDCat <- sampleidsdt[population=="D8" | population=="DBunk" | population=="DCat"]
+	sampleidsdtD8DBunkDCatD10W <- sampleidsdt[population=="D8" | population=="DBunk" | population=="DCat" | population=="D10" | population=="W1" | population=="W6"]
+
+	sc <- fread("Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+	scsub <- sc[population=="D8" | population=="DBunk" | population=="DCat" | population=="D10" | population=="W1" | population=="W6"]
+	scsubB <- scsub[Nonindependent==0 & Species!="obtusa"]
+	scsubBC <- data.table(sample.ids=scsubB$clone)
+	setkey(scsubBC, sample.ids)
+	setkey(sampleidsdt, sample.ids)
+	m <- merge(scsubBC, sampleidsdt)
+	seqSetFilter(genofile, sample.id=m$sample.ids)
+
+	snps.dt <- data.table(variant.ids=seqGetData(genofile, "variant.id"),
+			af=seqAlleleFreq(genofile, .progress=T))
+
+	#pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.975 & af>0.025]
+	pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.99 & af>0.01]
+	pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.98 & af>0.02]
+
+	pulexD8DCatDBunkD10WPolyids <- pulexD8DCatDBunkD10WPoly$variant.ids
+	seqSetFilter(genofile, variant.id=pulexD8DCatDBunkD10WPolyids)
+
+	save(pulexD8DCatDBunkD10WPolyids, file="pulexD8DCatDBunkD10WPolyids_maf0.01_20210311.Rdata")
+
+	seqGDS2VCF(genofile, "polyDorsetD10WMAF001.vcf.gz")
+
 
 	samplestouseB <- sampleidsdtD8DBunkDCat$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
 		sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &

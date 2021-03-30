@@ -280,8 +280,7 @@
       Grace250 <- ggplot(data=grace250spring, aes(x=Clone, y=propmale, color=SC, group=Clone)) +
         geom_boxplot() + ylim(0,0.45) + ylab("Prop Male") +
         theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
-        theme(legend.position = "none")
+        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"))
 
 
       grace250_aov <- aov(propmale ~ Clone, data = grace250spring)

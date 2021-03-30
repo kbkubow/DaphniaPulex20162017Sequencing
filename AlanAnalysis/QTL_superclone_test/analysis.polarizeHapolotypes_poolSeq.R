@@ -167,19 +167,19 @@ bcftools view \
   geom_point() + geom_line() + facet_grid(~qtl) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-  good
+  good / bad
   table(abr[qtl==2]$geno, abr[qtl==2]$pond)
   table(big=ab[pond=="D8"][qtl==8]$size>=2, ab[pond=="D8"][qtl==8]$geno)
 
 
 #### some pond level stuff
   qtl.polar[,list()]
-  qtl.polar[qtl==10][pond=="D8"]
-  qtl.polar[qtl==8][pond=="DBUNK"]
+  qtl.polar[qtl==10][pond.y=="D8"]
+  qtl.polar[qtl==8][pond.y=="DBUNK"]
 
   qtl.polar[qtl==8][]
   ### ponds
-  qtl.polar.ag <- qtl.polar[,list(male_male=sum(n.male_male>.75), male_pe=sum(n.male_pe>.75), pe_pe=sum(n.pe_pe>.75)), list(pond, qtl)]
+  qtl.polar.ag <- qtl.polar[,list(male_male=sum(n.male_male>.75), male_pe=sum(n.male_pe>.75), pe_pe=sum(n.pe_pe>.75)), list(pond.y, qtl)]
 
   qtl.polar.ag[,male_male_frac:=male_male/(male_male + male_pe + pe_pe)]
   qtl.polar.ag[,male_pe_frac:=  male_pe  /(male_male + male_pe + pe_pe)]
