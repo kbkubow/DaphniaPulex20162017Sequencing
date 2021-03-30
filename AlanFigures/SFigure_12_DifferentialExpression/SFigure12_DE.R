@@ -4,12 +4,13 @@
   library(DESeq2)
   library(tidyverse)
   library(gdata)
+  library(patchwork)
 
 ### load general DE objects
   setwd("/Users/alanbergland/Documents/GitHub/")
 
-  load(file="DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/differential_expression_supplement.Rdata")
-  load(file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/differentialExpression_withNames.Rdata")
+  load(file="DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/differential_expression_supplement.Rdata") ### made by `DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/DESeq2/deseq2_QoRTs.R` L129
+  load(file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/differentialExpression_withNames.Rdata") ### made by `DaphniaPulex20162017Sequencing/AlanFigures/Figure4/Figure4.R`
 
   #### some data stuff
     ### PCA data
@@ -17,46 +18,17 @@
       pcaData[,clone:=gsub("d8_", "", clone)]
       pcaData[,rep:=tstrsplit(name, "_")[[3]]%>%gsub(".trim.bam", "", .)]
 
-### load in annotation sheet
-  go <- read.xls("DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/Daphnia_annotation_PANTHER.xls")
-  go <- as.data.table(go)
 
+  ### dec
+    dec[,cn.good:=F]
+    dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2) & cnA%in%c(0,1,2) & cnB%in%c(0,1,2), cn.good:=T]
 
-### go analysis
-  go.dt <- go[,c("qseqid", "GO"), with=F]
-  go.dt <- go.dt[GO!=""]
-  go.dt[,gene:=tstrsplit(qseqid, "-")[[1]]]
-  go.dt.ag <- go.dt[,list(GO=paste(GO, sep=";")), list(gene)]
+    table(dec[cn.good==T]$cnA!=dec[cn.good==T]$cnB,
+          !is.na(dec[cn.good==T]$final_QTL_ID))
 
-  geneGOid <- foreach(i=1:dim(go.dt.ag)[1])%do%{
-    strsplit(go.dt.ag[i]$GO, ";")[[1]]
-  }
-  names(geneGOid) <- go.dt.ag$gene
-
-  allGenes <- dec[!is.na(qval)]$qval
-  names(allGenes) <- dec[!is.na(qval)]$GeneID
-
-  geneNames <- names(geneGOid)
-  head(geneNames)
-
-  myInterestingGenes <- dec[!is.na(qval)][qval<.05]$GeneID
-  geneList <- factor(as.integer(geneNames %in% myInterestingGenes))
-  names(geneList) <- geneNames
-  str(geneList)
-
-
-  GOdata <- new("topGOdata",
-                ontology="MF",
-                allGenes=geneList,
-                annot=annFUN.gene2GO,
-                gene2GO=geneGOid)
-  graph(GOdata)
-  resultFis <- runTest(GOdata, algorithm = "classic", statistic = "fisher")
-
-
-  allRes <- GenTable(GOdata, classic = resultFis,
-                  orderBy = "weight", ranksOf = "classic", topNodes = 20)
-
+    fisher.test(
+          table(dec[cn.good==T]$cnA!=dec[cn.good==T]$cnB,
+          !is.na(dec[cn.good==T]$final_QTL_ID)))
 
 ### plot components
   ### PCA
@@ -67,15 +39,51 @@
       ylab(paste0("PC2: ",percentVar[2],"% variance")) +
       theme_bw()
 
-  ###copy number DE plot
-    cn.plot <- ggplot(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)], aes(x=as.factor(I(cnB-cnA)), y=log2FoldChange)) +
-    geom_boxplot() + theme_bw() +
+  ### pvalue-distribution
+    pval.hist <-
+    ggplot(dec, aes(pvalue)) +
+    geom_histogram() +
+    theme_bw()
+
+### copy number DE plot
+    cn.plot.lfc <- ggplot() +
+    geom_boxplot(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)], aes(x=as.factor(I(cnB-cnA)), y=log2FoldChange)) +
+    geom_point(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)][!is.na(final_QTL_ID)], aes(x=as.factor(I(cnB-cnA)), y=log2FoldChange), color="red") +
+    theme_bw() +
     ylab("log2(Fold Change): C / A") +
     xlab("(Copy Number C) - (Copy Number A)")
 
+    cn.plot.p <- ggplot() +
+    geom_boxplot(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)], aes(x=as.factor(I(cnB-cnA)), y=-log10(pvalue))) +
+    geom_point(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)][!is.na(final_QTL_ID)], aes(x=as.factor(I(cnB-cnA)), y=-log10(pvalue)), color="red") +
+    theme_bw() +
+    ylab("-log10(p-value): C / A") +
+    xlab("(Copy Number C) - (Copy Number A)")
+
+
+layout <- "
+AB
+CD"
+
+de.mega <-
+pcaplot + pval.hist +
+cn.plot.lfc + cn.plot.p +
+plot_layout(design = layout) +
+plot_annotation(tag_levels = 'A')
+
+ggsave(de.mega, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/SFig12.png")
+ggsave(de.mega, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/SFig12.pdf")
 
 
 
+
+
+
+
+
+
+### mega plot
+  pcaplot +
 
 
 
@@ -112,10 +120,10 @@ plotCounts(dds, gene=which(rownames(dds)=="Daphnia08075"), returnData=F, intgrou
     aes(x=superclone, y=count)) +
     geom_point() +
     ylab("Normalized expression - logscale") +
-    facet_grid(PA42qtl~gene, scales="free") + theme_bw()
+    facet_wrap(PA42qtl~gene, scales="free") + theme_bw()
 
   ### QTL 10: 3 genes
-  qtl_8_de <-
+  qtl_10_de <-
     ggplot(gene_counts[final_QTL_ID==10],
     aes(x=superclone, y=count)) +
     geom_point() +

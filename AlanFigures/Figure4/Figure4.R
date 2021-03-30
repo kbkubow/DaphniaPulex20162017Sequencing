@@ -3,6 +3,8 @@
   library(data.table)
   library(cowplot)
   library(patchwork)
+  library(ggrepel)
+  library(ggthemes)
 
 ############
 ### Data ###
@@ -63,20 +65,6 @@
 
   male.ag$gr <- factor(male.ag$gr, levels=c("A", "AxC", "C", "CxC"))
 
-  ## castle wright?
-  varmaleA <- var(male.ag$propmale[male.ag$gr=="A"])
-  varmaleC <- var(male.ag$propmale[male.ag$gr=="C"])
-  sampvarmaleA <- varmaleA/5
-  sampvarmaleC <- varmaleC/2
-  varmaleAxC <- var(male.ag$propmale[male.ag$gr=="AxC"])
-  meanA <- mean(male.ag$propmale[male.ag$gr=="A"])
-  meanC <- mean(male.ag$propmale[male.ag$gr=="C"])
-  nummalelociAxC <- ((meanA-meanC)*(meanA-meanC)-sampvarmaleA-sampvarmaleC)/(8*varmaleAxC)
-
-  varmaleCxC <- var(male.ag$propmale[male.ag$gr=="CxC"])
-  nummalelociCxC<- ((male.ag$propmale[male.ag$clone=="April_2017_D8_222"]-
-      male.ag$propmale[male.ag$clone=="May_2017_D8_515"])*(male.ag$propmale[male.ag$clone=="April_2017_D8_222"]-
-          male.ag$propmale[male.ag$clone=="May_2017_D8_515"])-envvarmaleC)/(8*varmaleCxC)
 
 ### Fill Rate
   epp$gr <- ifelse(epp$SC=="selfedA", "A", ifelse(epp$SC=="B", "B", epp$gr))
@@ -103,29 +91,6 @@
 
   epp.ag$gr <- factor(epp.ag$gr, levels=c("A", "AxC", "C", "CxC"))
 
-
-  #emb.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEMB, color=gr)) +
-  #geom_linerange(aes(ymin=lciemb, ymax=uciemb), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
-  #geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
-  #theme(legend.position="none") +
-  #xlab("Clone or Cross Type") + ylab("Embryo production") +
-  #theme_bw()
-#
-  #eppnum.plot <- ggplot(data=epp.ag, aes(x=gr, y=meanEpp, color=gr)) +
-  #geom_linerange(aes(ymin=lciepp, ymax=uciepp), position = position_jitter(seed = 123, width =0.2), size=.25, alpha=.75, color="black") +
-  #geom_point(position = position_jitter(seed = 123, width =0.2), size=2) +
-  #theme(legend.position="none") +
-  #xlab("Clone or Cross Type") + ylab("Ephippia production") +
-  #theme_bw()
-#
-  #varmaleA <- var(epp.ag$fillrate[epp.ag$gr=="A"])
-  #varmaleC <- var(epp.ag$fillrate[epp.ag$gr=="C"])
-  #sampvarmaleA <- varmaleA/5
-  #sampvarmaleC <- varmaleC/2
-  #varmaleAxC <- var(epp.ag$fillrate[epp.ag$gr=="AxC"])
-  #meanA <- mean(epp.ag$fillrate[epp.ag$gr=="A"])
-  #meanC <- mean(epp.ag$fillrate[epp.ag$gr=="C"])
-  #nummalelociAxC <- ((meanA-meanC)*(meanA-meanC)-sampvarmaleA-sampvarmaleC)/(8*varmaleAxC)
 
 
 #########################
@@ -194,9 +159,10 @@
 #############################
   qtlcoding <- data.table(qtl=c(1:14), PA42qtl=c(3, 4, 2, 1, 9, 10, 11, 13, 14, 12, 8, 6, 7, 5))
 
-  mqtl.polar <- merge(qtl.polar, qtlcoding, by="qtl")
-  qtl.polar <- mqtl.polar
-  setkey(mqtl.polar, PA42qtl)
+  qtl.polar <- merge(qtl.polar, qtlcoding, by="qtl")
+  qtl.polar <- merge(qtl.polar, mpeaks, by.x="qtl", by.y="old_QTL_ID")
+  save(qtl.polar, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure4/qtl_polar_withNames.Rdata")
+
 
   qtl.polar$geno <- ifelse(qtl.polar$n.male_male > qtl.polar$n.male_pe &
     qtl.polar$n.male_male > qtl.polar$n.pe_pe, "male+/male+",
@@ -295,7 +261,7 @@
 
 
   qtlpolar.strip <-
-  ggplot(data=qtlsub[SC.uniq!="B"], aes(x=factor(SC.uniq, levels=c("C", "A")), y=PA42qtl, fill=geno)) +
+  ggplot(data=qtlsub[SC.uniq!="B"], aes(x=factor(SC.uniq, levels=c("C", "A")), y=final_QTL_ID, fill=geno)) +
   geom_tile(color="black",size=.5, width=0.95, height=0.95) +
   coord_flip() +
   xlab("Clonal lineage") +
@@ -303,7 +269,7 @@
   labs(fill="Genotype") +
   theme_bw() +
   scale_y_continuous(breaks=c(1:14), expand=c(0,.15)) +
-  theme(legend.position="bottom")
+  theme(legend.position="bottom") + scale_fill_colorblind()
 
   qtlpolar.hist <-
   ggplot(data=qtlcounts[SC.uniq!="B"], aes(x=geno, y=N, fill=geno)) +
@@ -403,16 +369,9 @@
   )
 
 
-### mega plot
-  layout <- "
-  AAABBB
-  CCCCCC
-  DDDDDD
-  EEEEEE
-  FFFGGG
-  FFFGGG
-  "
-
+#################
+### mega plot ###
+#################
 
   layout <- "
   AABBCC
@@ -431,11 +390,12 @@
   poolseq +
   qtlpolar.strip  +
   tmrca.plot + geneexpression.plot +
-  plot_layout(design = layout, heights=c(1,1,1,.35,1)) +
+  plot_layout(design = layout, heights=c(1, 1.5, 1.5, 0.35, 1)) +
   plot_annotation(tag_levels = 'A')
 
   #ggsave(megaplot, file="~/qtl_mega.pdf")
-  ggsave(megaplot, file="~/qtl_mega.png", width=8, height=10)
+  ggsave(megaplot, file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/qtl_mega.png", width=8, height=10)
+  ggsave(megaplot, file="DaphniaPulex20162017Sequencing/AlanFigures/Figure4/qtl_mega.pdf", width=8, height=10)
 
 
 
@@ -458,6 +418,11 @@
 
 
 
+
+
+
+
+####
 
 ### overlap plot
   overlap.plot <- ggplot() +
