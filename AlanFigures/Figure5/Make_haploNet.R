@@ -13,24 +13,25 @@ library(FactoMineR)
 #############################
 # Load the R object
 #############################
-load(".../dataForHapNet.Rdata")
+setwd("/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/Figure5")
+load("dataForHapNet.Rdata")
 
 #############################
 # Remove obtusa and pulicaria
 #############################
-DNA787 = DNA787[-grep("pulicaria",rownames(DNA787)),]
-DNA787 = DNA787[-grep("obtusa",rownames(DNA787)),]
+#DNA787 = DNA787[-grep("pulicaria",rownames(DNA787)),]
+#DNA787 = DNA787[-grep("obtusa",rownames(DNA787)),]
 
 #############################
 #re format as data frame
 #############################
-tab(DNA787df) %>% 
+tab(DNA787df) %>%
   as.data.frame() -> DNA787df
 
 #############################
 #add sample names to df
 #############################
-DNA787df %<>% 
+DNA787df %<>%
   mutate(clone =rownames(.),
          full_name = rownames(.))
 
@@ -82,7 +83,7 @@ ind.hap<-with(
 #############################
 pop.peakState<-with(
   utils::stack(setNames(attr(DNA787Haps, "index"), rownames(DNA787Haps))),
-  table(hap=ind, pop=as.factor(DNA787df_mdt$`5881.A/G`[ind_haps$values]))
+  table(hap=ind, pop=as.factor(DNA787df_mdt$"5881.A/G"[ind_haps$values]))
 )
 
 #############################
@@ -101,40 +102,48 @@ pop.pond<-with(
 #Plot by pond
 #############################
 
-pdf("DNA787Net.ponds.pdf") ## <---- save file begin
-plot(DNA787Net, 
-     size = attr(DNA787Net, "freq"), 
-     fast = FALSE,
-     show.mutation =0,
+pdf("~/DNA787Net.ponds.pdf") ## <---- save file begin
+plot(DNA787Net,
+     size = attr(DNA787Net, "freq"),
+     fast = F,
+     show.mutation = 0,
      cex = 0.1,
-     pie=pop.pond,
+     pie = pop.pond,
      labels= F,
      scale.ratio = 0.6,
-     threshold = 0,
-     col = rainbow(length(unique(DNA787df_mdt$population))))
-legend("bottomright", 
-       sort(unique(DNA787df_mdt$population)), 
+     threshold = 0)
+legend("bottomright",
+       sort(unique(DNA787df_mdt$population)),
        fill = rainbow(length(unique(DNA787df_mdt$population))),
        cex = 0.9)
 dev.off() ## <---- save file end
 
+
+,
+col = rainbow(length(unique(DNA787df_mdt$population)))
+
 #############################
 #Plot by pop.peakState, i.e. mutation state
 #############################
-pdf("DNA787Net.pop.peakState.pdf") ## <---- save file begin
-plot(DNA787Net, 
-     size = attr(DNA787Net, "freq"), 
-     fast = FALSE,
-     show.mutation =0,
-     cex = 0.4,
-     pie=pop.peakState,
-     labels= F,
-     scale.ratio = 0.6,
-     threshold = 0,
-     col = rainbow(length(unique(DNA787df_mdt$`5881.A/G`))))
-legend("bottomright", 
-       as.character(sort(unique(DNA787df_mdt$`5881.A/G`))), 
-       fill = rainbow(length(unique(DNA787df_mdt$`5881.A/G`))),
+pdf("~/DNA787Net.pop.peakState.pdf") ## <---- save file begin
+plot(DNA787Net,
+size = attr(DNA787Net, "freq"),
+fast = F,
+show.mutation =0,
+cex = 0.4,
+pie=pop.peakState,
+labels= F,
+scale.ratio = 0.6,
+threshold = 0)
+
+
+
+
+,
+col = rainbow(length(unique(DNA787df_mdt$"5881.A/G"))))
+legend("bottomright",
+       as.character(sort(unique(DNA787df_mdt$"5881.A/G"))),
+       fill = rainbow(length(unique(DNA787df_mdt$"5881.A/G"))),
        cex = 0.9)
 dev.off()  ## <---- save file end
 
@@ -143,8 +152,8 @@ dev.off()  ## <---- save file end
 #This one is a messy plot
 #############################
 pdf("DNA787Net.pop.peakState.muts.pdf") ## <---- save file begin
-plot(DNA787Net, 
-     size = attr(DNA787Net, "freq"), 
+plot(DNA787Net,
+     size = attr(DNA787Net, "freq"),
      fast = FALSE,
      show.mutation =3,
      cex = 0.4,
@@ -152,15 +161,19 @@ plot(DNA787Net,
      labels= F,
      scale.ratio = 0.6,
      threshold = 0,
-     col = rainbow(length(unique(DNA787df_mdt$`5881.A/G`))))
+     col = rainbow(length(unique(DNA787df_mdt$"5881.A/G"))))
 dev.off() ## <---- save file end
 
-#############################
-#############################
-#############################
-## Slack msg me in case of any questions
-## Happy sunday boss!
-## Jcbn
-#############################
-#############################
-#############################
+
+
+
+pdf("~/haplotype.pdf")
+plot(DNA787Net,
+size = attr(DNA787Net, "freq"),
+fast = F,
+show.mutation =0,
+cex = 1,
+labels= F,
+scale.ratio = 0.6,
+threshold = 0)
+dev.off()
