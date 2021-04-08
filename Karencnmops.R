@@ -82,6 +82,7 @@
     tmp
   }
 
+  save(totalresF, file="totalresF.Rdata")
 
   expinCNV <- foreach(i=1:dim(m2)[1], .combine="rbind")%do%{
     scaff <- m2$chr[[i]]
@@ -109,7 +110,7 @@
 
   ggplot(data=expinCNV, aes(x=meanCminusA, y=log2FoldChange)) + geom_point()
 
-
+  save(expinCNV, file="expinCNV.Rdata")
 
 
   genesCNVs <- foreach(i=1:dim(totalresF)[1], .combine="rbind")%do%{

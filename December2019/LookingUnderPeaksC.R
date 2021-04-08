@@ -25,11 +25,139 @@ R
       pos = seqGetData(genofile, "position"),
       dp = seqGetData(genofile, "annotation/info/DP"))
 
+### get annotation
+  tmp <- seqGetData(genofile, "annotation/info/ANN")
+  len1 <- tmp$length
+  len2 <- tmp$data
+  snp.dt1 <- data.table(len=rep(len1, times=len1),
+                ann=len2,
+                id=rep(snps$variant.id, times=len1))
+
+  # Extracting data between the 2nd and third | symbol
+      snp.dt1[,class:=tstrsplit(snp.dt1$ann,"\\|")[[2]]]
+      snp.dt1[,impact:=tstrsplit(snp.dt1$ann,"\\|")[[3]]]
+      snp.dt1[,gene:=tstrsplit(snp.dt1$ann,"\\|")[[4]]]
+  # Collapsing additional annotations to original SNP vector length
+      snp.dt1.an <- snp.dt1[,list(n=length(class), col= paste(class, collapse=","),
+        impact=paste(impact, collapse=","), gene=paste(gene, collapse=",")),
+                        list(variant.ids=id)]
+      snp.dt1.an[,col:=tstrsplit(snp.dt1.an$col,"\\,")[[1]]]
+      snp.dt1.an[,impact:=tstrsplit(snp.dt1.an$impact,"\\,")[[1]]]
+      snp.dt1.an[,gene:=tstrsplit(snp.dt1.an$gene,"\\,")[[1]]]
+
+### Add annotations to snp table
+  setkey(snps, variant.ids)
+  setkey(snp.dt1.an, variant.ids)
+  snpsann <- merge(snps, snp.dt1.an)
+
+# Load in peaks file
+    #peaks <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/peaks.csv")
+    load("gprime_peaks.replicates.250K.05.Rdata")
+
+    peaks$narrowstart <- peaks$posMaxGprime-10000
+    peaks$narrowstop <- peaks$posMaxGprime+10000
+
+
+# Figure out which snps fall in peaks
+
+  snpsinpeaks <- foreach(peak.i=1:dim(peaks)[1], .combine="rbind")%do%{
+    #peak.i <- 1
+    c <- peaks$CHROM[[peak.i]]
+    strt <- peaks$start[[peak.i]]
+    stp <- peaks$end[[peak.i]]
+
+    tmp <- snpsann[chr==c & pos >= strt & pos <= stp]
+    tmp$peaknum <- c(peak.i)
+    tmp
+  }
+
+  snpsinpeaksnarrow <- foreach(peak.i=1:dim(peaks)[1], .combine="rbind")%do%{
+    #peak.i <- 1
+    c <- peaks$CHROM[[peak.i]]
+    strt <- peaks$narrowstart[[peak.i]]
+    stp <- peaks$narrowstop[[peak.i]]
+
+    tmp <- snpsann[chr==c & pos >= strt & pos <= stp]
+    tmp$peaknum <- c(peak.i)
+    tmp
+  }
+
+  setkey(snpsann, variant.ids, chr, pos, dp, n, col, impact, gene)
+  setkey(snpsinpeaksnarrow, variant.ids, chr, pos, dp, n, col, impact, gene)
+  snpsannwpeak <- merge(snpsann, snpsinpeaksnarrow, all.x=TRUE)
+  snpsannwpeak[is.na(peaknum),peaknum:=0]
+
+### gff
+  gff <- fread("/scratch/kbb7sh/genomefiles/Daphnia.aed.0.6.gff")
+  #gff[,ID:=gsub("ID=", "", first(tstrsplit(tstrsplit(V9, ";|:")[[1]], "-")))]
+  gff[,ID:=gsub("ID=", "", tstrsplit(V9, ";|:")[[1]])]
+  gff[,ss:=paste(V1, V3, V4, V5, ID, sep="_")]
+  setkey(gff, ss)
+  gff2 <- gff[!duplicated(gff)]
+  dim(gff)
+  dim(gff2)
+  collapse_fun <- function(start, stop) {
+    #start <- c(1,5); stop<-c(4, 10)
+    length(unique(unlist(apply(cbind(start, stop), 1, function(x) x[1]:x[2]))))
+  }
+  gff.ag <- gff2[V3=="CDS",list(cds=sum(V5-V4 + 1), cds2=collapse_fun(start=V4, stop=V5)), list(chr=V1, id=ID)]
+  gff.ag[,aa:=cds2/3]
+  gff.ag
+  summary(gff.ag)
+  gff.ag[aa!=round(aa)]
+  gff.ag[,gene:=first(tstrsplit(id, "-"))]
+### use this
+  gff.ag.ag <- gff.ag[,list(max_cds=max(cds), max_aa=max(aa)), list(gene)]
+
+### Aggregate SNPs file and then merge with gff aggregate file
+
+  snpsannwpeakNS <- snpsannwpeak[col=="missense_variant" | col=="synonymous_variant"]
+  snpsannwpeakNSgenes <- as.data.table(table(snpsannwpeakNS$gene, snpsannwpeakNS$col))
+  colnames(snpsannwpeakNSgenes) <- c("gene", "type", "N")
+
+  snpsannwpeakgenes <- as.data.table(table(snpsannwpeak$gene, snpsannwpeak$col))
+  colnames(snpsannwpeakgenes) <- c("gene", "type", "N")
+
+
+  setkey(gff.ag.ag, gene)
+  setkey(snpsannwpeakNSgenes, gene)
+  msnpsannwpeak <- merge(snpsannwpeakNSgenes, gff.ag.ag)
+
+  msnpsannwpeak$peraa <- msnpsannwpeak$N/msnpsannwpeak$max_aa
+
+  msnpsannwpeakwide <- dcast(msnpsannwpeak, gene ~ type, value.var=c("N", "peraa"))
+  msnpsannwpeakwide$pN_pS <- msnpsannwpeakwide$peraa_missense_variant/msnpsannwpeakwide$peraa_synonymous_variant
+  msnpsannwpeakwide$totN <- msnpsannwpeakwide$N_missense_variant+msnpsannwpeakwide$N_synonymous_variant
+
+  snpsannwpeakNSsub <- snpsannwpeakNS[, c("gene", "peaknum")]
+  snpsannwpeakNSsubu <- unique(snpsannwpeakNSsub)
+
+  setkey(snpsannwpeakNSsubu, gene)
+  setkey(msnpsannwpeakwide, gene)
+  mmsnpsannwpeakwide <- merge(msnpsannwpeakwide, snpsannwpeakNSsubu, all.x=TRUE)
+
+  ggplot(data=mmsnpsannwpeakwide, aes(x=peraa_synonymous_variant, y=peraa_missense_variant)) + geom_point() +
+    facet_wrap(~peaknum)
+
+  ggplot(data=mmsnpsannwpeakwide, aes(x=pN_pS)) + geom_histogram(binwidth=0.1) +
+    facet_wrap(~peaknum, scales="free_y")
+
+  uniprot <- fread("/scratch/kbb7sh/genomefiles/Daphnia_annotation_uniprot.txt")
+
+  uniprot$gene <- str_replace(uniprot$qseqid, "-RA", "")
+
+  setkey(uniprot, gene)
+  setkey(mmsnpsannwpeakwide, gene)
+  mmmsnpsannwpeakwide <- merge(mmsnpsannwpeakwide, uniprot)
+
 ### Narrow down to SNPs that are heterozygous in A or C.
 
   sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
   scAC <- sc[SC=="A" | SC=="C" & Nonindependent==0]
   scACids <- scAC$clone
+  scfocal <- sc[population=="D8" | population=="DCat" | population=="Dcat" | population=="DBunk"]
+  scfocalsub <- scfocal[Nonindependent==0]
+  scfocalsubids <- scfocalsub$clone
   seqSetFilter(genofile, sample.id=scACids)
 
 # Pull out genotypes
@@ -44,7 +172,7 @@ R
 
   mhet <- merge(snps, het)
 
-  mhetlong <- melt(mhet, measure.vars=scACids, variable.name="clone", value.name="dosage")
+  mhetlong <- melt(mhet, measure.vars=scfocalsubids, variable.name="clone", value.name="dosage")
 
   setkey(scAC, clone)
   setkey(mhetlong, clone)

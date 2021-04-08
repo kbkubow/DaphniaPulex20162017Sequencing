@@ -31,6 +31,12 @@ R
     scsubb$clone, "_finalmap_mdup.bam", sep="")
   #BAMfilesC <- BAMfilesB[1:5]
   #BAMfilesB <- str_replace(BAMfilesB, "May_2017_DBunk_549B", "May_2017_DBunk_549")
+  #scaffolds <- c("Scaffold_1863_HRSCAF_2081", "Scaffold_1931_HRSCAF_2197",
+    "Scaffold_2158_HRSCAF_2565", "Scaffold_2158_HRSCAF_2565",
+    "Scaffold_2373_HRSCAF_2879", "Scaffold_6786_HRSCAF_7541",
+    "Scaffold_7757_HRSCAF_8726", "Scaffold_9197_HRSCAF_10753",
+    "Scaffold_9198_HRSCAF_10754", "Scaffold_9199_HRSCAF_10755",
+    "Scaffold_9200_HRSCAF_10757", "Scaffold_9201_HRSCAF_10758")
   bamDataRangesA <- getReadCountsFromBAM(BAMFiles, refSeqName=varA)
   bamDataRangesB <- getReadCountsFromBAM(BAMFiles, refSeqName=varA, WL=5000)
   bamDataRangesC <- getReadCountsFromBAM(BAMFiles, refSeqName=varA, WL=2500)
@@ -50,6 +56,7 @@ R
   #CNVSb <- as.data.table(cnvs(resB))
   #CNVSc <- as.data.table(cnvs(resC))
   #CNVSd <- as.data.table(cnvs(resD))
+  #CNVSe <- as.data.table(cnvs(resE))
 
   save(bamDataRangesA, file=paste(varA, "_bamDataRangesA.Rdata")
   save(bamDataRangesB, file=paste(varA, "_bamDataRangesB.Rdata")

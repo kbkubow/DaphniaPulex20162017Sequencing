@@ -14,8 +14,8 @@
 
 #### using the ASE read counter data
 ### load data
-  male <- fread("/mnt/sammas_storage/bergland-lab/alan/D8Male.pooledAF.aseReadCounter.allvariant.delim")
-  pe <- fread("/mnt/sammas_storage/bergland-lab/alan/D8PE.pooledAF.aseReadCounter.allvariant.delim")
+  male <- fread("/scratch//kbb7sh/Daphnia/MappingDecember2019/June2020/D8Male.pooledAF.aseReadCounter.allvariant.delim")
+  pe <- fread("/scratch//kbb7sh/Daphnia/MappingDecember2019/June2020/D8PE.pooledAF.aseReadCounter.allvariant.delim")
 
   setnames(male,
            c("contig", "position", "refAllele", "altAllele", "refCount", "altCount"),
@@ -39,7 +39,7 @@
 
   m[,REF_FRQ:=(AD_REF.LOW + AD_REF.HIGH) / (AD_REF.LOW + AD_REF.HIGH + AD_ALT.LOW + AD_ALT.HIGH )]
   m[,DP.LOW:=AD_REF.LOW + AD_ALT.LOW]
-  m[,DP.HIGH:=AD_REF.HIGH + AD_ALT.HIGH]
+  m[,DP.HIGH:=AD_REF.HIGH + AD_ALT.HIGH]/
 
   ### filter?
   df_filt <- filterSNPs(SNPset = as.data.frame(m),

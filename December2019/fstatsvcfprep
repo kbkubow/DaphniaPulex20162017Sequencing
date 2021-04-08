@@ -1,0 +1,41 @@
+module load  gcc/7.1.0  openmpi/3.1.4
+module load R/3.5.3
+
+
+#!/usr/bin/env Rscript
+
+### libraries
+        library(gdsfmt)
+        library(SNPRelate)
+        library(data.table)
+        library(ggplot2)
+        library(foreach)
+        library(lattice)
+        library(tidyr)
+        library(SeqArray)
+        library(dplyr)
+        library(tidyverse)
+
+#Load genotype file
+  genofile <- seqOpen("/scratch/kbb7sh/Daphnia/MappingDecember2019/MapJune2020_ann.seq.gds")
+  load("finalsetsnpset01_20200623.Rdata")
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+
+### Keep only wild caught, independent, pulex samples from D8, DBunk, DCat, and D10
+
+  scB <- sc[Nonindependent==0 & LabGenerated==0 & Species=="pulex"]
+  scC <- scB[population=="D8" | population=="DBunk" | population=="DCat" | population=="Dcat"]
+  scC$population <- str_replace(scC$population, "Dcat", "DCat")
+  scC$SCB <- ifelse(scC$SC=="OO", scC$clone, scC$SC)
+  scs <- unique(scC$SCB)
+
+  subsetsc <- foreach(i=1:length(scs), .combine="c")%do%{
+
+  s=scs[i]
+  tmp <- scC[SCB==s]
+  max <- 
+
+  temp <- snps[J(data.table(chr=c, pos=c(s:p), key="chr,pos")), nomatch=0]
+  temp$variant.ids
+
+  }
