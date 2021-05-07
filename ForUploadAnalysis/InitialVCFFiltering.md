@@ -26,7 +26,7 @@ echo ${varA}
 bcftools filter --SnpGap 10 MapJune2020_${varA}.vcf -o MapJune2020_${varA}_filtsnps10bpindels.vcf
 
 ```
-Line count of original file was 7,653,841. Line count of ouput file was 5,711,782. Assuming this change in line count accurately reflects the number of snps removed, then 1,942,059 snps were removed.
+
 Next remove all indels, so the file has only SNPs.
 
 ```
@@ -57,7 +57,7 @@ java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
     -o MapJune2020_${varA}_filtsnps10bpindels_snps.vcf
 
 ```
-Line count of file after indels are removed is 3,602,072. Assuming this change in line count accurately reflects the number of indels removed, then 2,109,710 indels were removed.
+
 Next hard filter the SNPs based on GATK recommendations for organisms with no reference SNP panel.
 
 First set the filter.
@@ -124,7 +124,7 @@ java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
 	-ef \
     -o MapJune2020_${varA}_filtsnps10bpindels_snps_filter_pass.vcf
 ```
-Filtering out SNPs results in a file with a line count of 2,910,480. Assuming the change in line count reflects the change in SNPs, then 691,592 SNPs were dropped based on filtering.
+
 Now set low GQ (scores less than 10) to zero.
 
 ```
