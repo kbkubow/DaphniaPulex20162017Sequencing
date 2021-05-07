@@ -20,7 +20,7 @@
   seqSetFilter(genofile, variant.id=finalsetsnpset01)
 
 # Set individual filter
-  sc <- fread("/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
+  sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
   scsub <- sc[LabGenerated==0 & Nonindependent==0 & Species=="pulex"]
   scsub$population <- str_replace(scsub$population, "Dcat", "DCat")
   scsub <- scsub[population=="DCat" | population=="D8" | population=="DBunk" | population=="D10"]
