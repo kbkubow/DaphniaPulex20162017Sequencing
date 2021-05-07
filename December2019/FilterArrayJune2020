@@ -1,7 +1,8 @@
-Filtering my vcf that includes individual genome sequences from 2016,2017, 2018, and 2019, pulex individuals only.
-I am removing snps within 10 basepairs of indels, hard filtering according to gatk's recommendations, and setting low quality genotype scores to missing.
-First remove all snps within 10 basepairs of indels.
-```
+#Filtering the vcf that includes individual genome sequences from 2016,2017, 2018, and 2019, pulex individuals only.
+#Removing snps within 10 basepairs of indels, hard filtering according to gatk's recommendations, and setting low quality genotype scores to missing.
+
+#First remove all snps within 10 basepairs of indels.
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -22,10 +23,10 @@ varA=$(sed "${SLURM_ARRAY_TASK_ID}!d" $parameterFile | cut -f 1 )
 echo ${varA}
 
 bcftools filter --SnpGap 10 MapJune2020_${varA}.vcf -o MapJune2020_${varA}_filtsnps10bpindels.vcf
-```
-Line count of original file was 7,653,841. Line count of ouput file was 5,711,782. Assuming this change in line count accurately reflects the number of snps removed, then 1,942,059 snps were removed.
-Next remove all indels, so the file has only SNPs.
-```
+
+#Line count of original file was 7,653,841. Line count of ouput file was 5,711,782. Assuming this change in line count accurately reflects the number of snps removed, then 1,942,059 snps were removed.
+#Next remove all indels, so the file has only SNPs.
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -51,10 +52,10 @@ java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
 	-V /scratch/kbb7sh/Daphnia/MappingDecember2019/MapJune2020_${varA}_filtsnps10bpindels.vcf \
     -selectType SNP \
     -o MapJune2020_${varA}_filtsnps10bpindels_snps.vcf
-```
-Line count of file after indels are removed is 3,602,072. Assuming this change in line count accurately reflects the number of indels removed, then 2,109,710 indels were removed.
-Next hard filter the SNPs based on GATK recommendations for organisms with no reference SNP panel.
-```
+
+#Line count of file after indels are removed is 3,602,072. Assuming this change in line count accurately reflects the number of indels removed, then 2,109,710 indels were removed.
+#Next hard filter the SNPs based on GATK recommendations for organisms with no reference SNP panel.
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -83,8 +84,8 @@ java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
     --filterExpression "QD < 2.0 || FS > 60.0 || MQ < 40.0 || MQRankSum < -12.5 || ReadPosRankSum < -8.0" \
     --filterName "my_snp_filter" \
     -o MapJune2020_${varA}_filtsnps10bpindels_snps_filter.vcf
----
----
+
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -113,10 +114,10 @@ java -Xmx4g -jar /scratch/kbb7sh/Daphnia/GenomeAnalysisTK.jar \
 	-V /scratch/kbb7sh/Daphnia/MappingDecember2019/MapJune2020_${varA}_filtsnps10bpindels_snps_filter.vcf   \
 	-ef \
     -o MapJune2020_${varA}_filtsnps10bpindels_snps_filter_pass.vcf
-```
-Filtering out SNPs results in a file with a line count of 2,910,480. Assuming the change in line count reflects the change in SNPs, then 691,592 SNPs were dropped based on filtering.
-Set low GQ (scores less than 10) to zero.
-```
+
+#Filtering out SNPs results in a file with a line count of 2,910,480. Assuming the change in line count reflects the change in SNPs, then 691,592 SNPs were dropped based on filtering.
+#Set low GQ (scores less than 10) to zero.
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -139,9 +140,9 @@ echo ${varA}
 # Run program
 
 bcftools filter -e "FORMAT/GQ<10" -S "." MapJune2020_${varA}_filtsnps10bpindels_snps_filter_pass.vcf | bcftools view -O v -o MapJune2020_${varA}_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf
-```
-Use gatk check variants to make an index.
-```
+
+#Use gatk check variants to make an index.
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -166,9 +167,9 @@ module load gatk
    -R /scratch/kbb7sh/genomefiles/totalHiCwithallbestgapclosed.fa \
    -V MapJune2020_${varA}_filtsnps10bpindels_snps_filter_pass_lowGQmiss.vcf \
    --validationTypeToExclude ALL
-```
-Next must merge chromosome VCFs into final VCF
-```
+
+#Next merge chromosome VCFs into final VCF
+
 #!/bin/bash
 
 #SBATCH -N 1
@@ -388,7 +389,7 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 
 ### Removing triallelic SNPs resulted in a loss of 81,624 SNPs, with 2,666,392 remaining
 
-### Overall read depth filtering on snps without removing Repeat Masker
+### Overall read depth filtering on snps 
 
 			quantile(snps$dp,probs=c(0.05,0.95))
 
@@ -640,15 +641,15 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 			af=seqAlleleFreq(genofile, .progress=T))
 
 	#pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.975 & af>0.025]
-	pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.99 & af>0.01]
 	pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.98 & af>0.02]
+	pulexD8DCatDBunkD10WPoly <- snps.dt[af < 0.995 & af>0.005]
 
 	pulexD8DCatDBunkD10WPolyids <- pulexD8DCatDBunkD10WPoly$variant.ids
 	seqSetFilter(genofile, variant.id=pulexD8DCatDBunkD10WPolyids)
 
-	save(pulexD8DCatDBunkD10WPolyids, file="pulexD8DCatDBunkD10WPolyids_maf0.01_20210311.Rdata")
+	save(pulexD8DCatDBunkD10WPolyids, file="pulexD8DCatDBunkD10WPolyids_maf0.005_20210311.Rdata")
 
-	seqGDS2VCF(genofile, "polyDorsetD10WMAF001.vcf.gz")
+	seqGDS2VCF(genofile, "polyDorsetall.vcf.gz")
 
 
 	samplestouseB <- sampleidsdtD8DBunkDCat$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
@@ -980,7 +981,7 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 			population=="D10" | population=="DLily" | population=="DMud" | population=="DOil" |
 			population=="Dramp" | population=="W1" | population=="W6"]
 
-		samplestouseB <- sampleidsdtsub$sample.ids[sample.ids!="Spring_2017_DBunk_340" &
+		samplestouseB <- sampleidsdtsub[sample.ids!="Spring_2017_DBunk_340" &
 		sample.ids!="March20_2018_DBunk_39" & sample.ids!="Fall_2016_D10_54" &
 		sample.ids!="March20_2018_D8_19" & sample.ids!="March15_2019_DBunk_MomPE1" &
 		sample.ids!="March15_2019_DBunk_MomPE20" & sample.ids!="April_2017_Dbarb_11" &
@@ -1000,7 +1001,9 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 		sample.ids!="Spring_2016_D8_8.1" & sample.ids!="March_2018_D8_18030" &
 		sample.ids!="March_2018_DCat_18004"]
 
-		seqSetFilter(genofile, sample.id=samplestouseB)
+		samplestouseBids <- samplestouseB$sample.ids
+
+		seqSetFilter(genofile, sample.id=samplestouseBids)
 
 ### set some global parameters
 		maf <- 0.001
@@ -1036,7 +1039,7 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 
 		samplestouseB <- samplestouseB[1:512]
 
-		ibs <- snpgdsIBS(genofile, snp.id=finalsetsnpset01, sample.id=samplestouseB, num.thread=20, maf=maf,
+		ibs <- snpgdsIBS(genofile, snp.id=finalsetsnpset01, sample.id=samplestouseB$sample.ids, num.thread=20, maf=maf,
 					missing.rate=0.15, autosome.only = FALSE)
 
 	### a bit of re-formating of the ibs matrix
@@ -1046,8 +1049,8 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 
 	### make the IBs matrix long form
 		ibs.matdt <- as.data.table(ibs.mat)
-		ibs.matdt$cloneA <- samplestouseB
-		ibs.long<- melt(ibs.matdt, measure.vars=samplestouseB, variable.name="cloneB", value.name="IBS")
+		ibs.matdt$cloneA <- samplestouseB$sample.ids
+		ibs.long<- melt(ibs.matdt, measure.vars=samplestouseB$sample.ids, variable.name="cloneB", value.name="IBS")
 
 		ibs.long <- na.omit(ibs.long)
 
