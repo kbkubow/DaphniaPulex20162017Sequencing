@@ -40,7 +40,10 @@
                                 nMale=sum(geno=="male_pe") + 2*sum(geno=="male_male")),
                            list(clone, gr)]
 
-  f1.val.glm <- glm(propmale~nMale, f1.val, weights=N, family="binomial")
+  summary(glm(propmale~nMale, f1.val, weights=N, family="binomial"))
+  summary(glm(propmale~nMale, f1.val[gr=="AxC"], weights=N, family="binomial"))$coef
+  summary(glm(propmale~nMale, f1.val[gr=="CxC"], weights=N, family="binomial"))$coef
+
   with(summary(f1.val.glm), 1 - deviance/null.deviance)
 
 ### load basic expression data (`DaphniaPulex20162017Sequencing/AlanAnalysis/RNAseq/DESeq2/deseq2_QoRTs.R`)

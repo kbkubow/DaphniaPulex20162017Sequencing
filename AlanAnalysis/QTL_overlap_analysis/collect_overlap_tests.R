@@ -23,3 +23,5 @@
 
 
 ### scp aob2x@rivanna.hpc.virginia.edu:~/overlap_perm.Rdata ~/.
+  library(data.table)
+  overlap.perm[,list(pr=mean(z[perm==0] > z[perm!=0], na.rm=T)), list(pheno, cross)]

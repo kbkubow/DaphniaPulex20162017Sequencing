@@ -47,19 +47,19 @@
   theme(legend.position="none") +
   xlab("Clone or Cross Type") + ylab("Male proportion") +theme_bw()
 
-  varmaleA <- var(male.ag$propmale[male.ag$gr=="A"])
-  varmaleC <- var(male.ag$propmale[male.ag$gr=="C"])
-  sampvarmaleA <- varmaleA/5
-  sampvarmaleC <- varmaleC/2
-  varmaleAxC <- var(male.ag$propmale[male.ag$gr=="AxC"])
-  meanA <- mean(male.ag$propmale[male.ag$gr=="A"])
-  meanC <- mean(male.ag$propmale[male.ag$gr=="C"])
-  nummalelociAxC <- ((meanA-meanC)*(meanA-meanC)-sampvarmaleA-sampvarmaleC)/(8*varmaleAxC)
+#varmaleA <- var(male.ag$propmale[male.ag$gr=="A"])
+#varmaleC <- var(male.ag$propmale[male.ag$gr=="C"])
+#sampvarmaleA <- varmaleA/5
+#sampvarmaleC <- varmaleC/2
+#varmaleAxC <- var(male.ag$propmale[male.ag$gr=="AxC"])
+#meanA <- mean(male.ag$propmale[male.ag$gr=="A"])
+#meanC <- mean(male.ag$propmale[male.ag$gr=="C"])
+#nummalelociAxC <- ((meanA-meanC)*(meanA-meanC)-sampvarmaleA-sampvarmaleC)/(8*varmaleAxC)
 
-  varmaleCxC <- var(male.ag$propmale[male.ag$gr=="CxC"])
-  nummalelociCxC<- ((male.ag$propmale[male.ag$clone=="April_2017_D8_222"]-
-      male.ag$propmale[male.ag$clone=="May_2017_D8_515"])*(male.ag$propmale[male.ag$clone=="April_2017_D8_222"]-
-          male.ag$propmale[male.ag$clone=="May_2017_D8_515"])-envvarmaleC)/(8*varmaleCxC)
+#varmaleCxC <- var(male.ag$propmale[male.ag$gr=="CxC"])
+#nummalelociCxC<- ((male.ag$propmale[male.ag$clone=="April_2017_D8_222"]-
+#    male.ag$propmale[male.ag$clone=="May_2017_D8_515"])*(male.ag$propmale[male.ag$clone=="April_2017_D8_222"]-
+#        male.ag$propmale[male.ag$clone=="May_2017_D8_515"])-envvarmaleC)/(8*varmaleCxC)
 
 ### Fill Rate
   epp$gr <- ifelse(epp$SC=="selfedA", "A", ifelse(epp$SC=="B", "B", epp$gr))

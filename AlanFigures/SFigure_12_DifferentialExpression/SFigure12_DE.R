@@ -5,6 +5,7 @@
   library(tidyverse)
   library(gdata)
   library(patchwork)
+  library(foreach)
 
 ### load general DE objects
   setwd("/Users/alanbergland/Documents/GitHub/")
@@ -18,17 +19,15 @@
       pcaData[,clone:=gsub("d8_", "", clone)]
       pcaData[,rep:=tstrsplit(name, "_")[[3]]%>%gsub(".trim.bam", "", .)]
 
+    ### qtl plots
+      gene_counts <- foreach(i=dec[qLFC.noCN.goodChr>.9 & !is.na(old_QTL_ID)]$GeneID, .combine="rbind")%do%{
+        gene_counts <- as.data.table(plotCounts(dds, gene=which(rownames(dds)==i), returnData=T, intgroup="superclone", transform=T, normalized=T))
+        gene_counts[,gene:=i]
+      }
+      gene_counts <- merge(gene_counts, dec, by.x="gene", by.y="GeneID")
 
-  ### dec
-    dec[,cn.good:=F]
-    dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2) & cnA%in%c(0,1,2) & cnB%in%c(0,1,2), cn.good:=T]
+      table(gene_counts$final_QTL_ID)
 
-    table(dec[cn.good==T]$cnA!=dec[cn.good==T]$cnB,
-          !is.na(dec[cn.good==T]$final_QTL_ID))
-
-    fisher.test(
-          table(dec[cn.good==T]$cnA!=dec[cn.good==T]$cnB,
-          !is.na(dec[cn.good==T]$final_QTL_ID)))
 
 ### plot components
   ### PCA
@@ -37,53 +36,55 @@
       geom_point(size=3) +
       xlab(paste0("PC1: ",percentVar[1],"% variance")) +
       ylab(paste0("PC2: ",percentVar[2],"% variance")) +
-      theme_bw()
+      theme_bw() +
+      theme(strip.text = element_text(size = 14),
+            axis.text=element_text(size=12),
+            axis.title=element_text(size=14))
+
 
   ### pvalue-distribution
     pval.hist <-
     ggplot(dec, aes(pvalue)) +
     geom_histogram() +
-    theme_bw()
-
-### copy number DE plot
-    cn.plot.lfc <- ggplot() +
-    geom_boxplot(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)], aes(x=as.factor(I(cnB-cnA)), y=log2FoldChange)) +
-    geom_point(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)][!is.na(final_QTL_ID)], aes(x=as.factor(I(cnB-cnA)), y=log2FoldChange), color="red") +
     theme_bw() +
-    ylab("log2(Fold Change): C / A") +
-    xlab("(Copy Number C) - (Copy Number A)")
+    theme(strip.text = element_text(size = 14),
+          axis.text=element_text(size=12),
+          axis.title=element_text(size=14))
 
-    cn.plot.p <- ggplot() +
-    geom_boxplot(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)], aes(x=as.factor(I(cnB-cnA)), y=-log10(pvalue))) +
-    geom_point(data=dec[(cnA-cnB)%in%c(-2, -1, 0, 1, 2)][cnA%in%c(0,1,2) & cnB%in%c(0,1,2)][!is.na(final_QTL_ID)], aes(x=as.factor(I(cnB-cnA)), y=-log10(pvalue)), color="red") +
+  ### gene expression plots
+    qtl_12_de <-
+    ggplot(gene_counts[final_QTL_ID==12],
+    aes(x=superclone, y=count)) +
+    geom_point() +
+    ylab("Normalized expression - logscale") +
+    facet_wrap(~gene, scales="free", nrow=1) +
     theme_bw() +
-    ylab("-log10(p-value): C / A") +
-    xlab("(Copy Number C) - (Copy Number A)")
-
-
-layout <- "
-AB
-CD"
-
-de.mega <-
-pcaplot + pval.hist +
-cn.plot.lfc + cn.plot.p +
-plot_layout(design = layout) +
-plot_annotation(tag_levels = 'A')
-
-ggsave(de.mega, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/SFig12.png")
-ggsave(de.mega, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/SFig12.pdf")
-
-
-
-
-
-
-
+    theme(strip.text = element_text(size = 14),
+          axis.text=element_text(size=12),
+          axis.title=element_text(size=14))
 
 
 ### mega plot
-  pcaplot +
+  layout <- "
+  AB
+  CC"
+
+  de.mega <-
+  pcaplot + pval.hist +
+  qtl_12_de +
+  plot_layout(design = layout) +
+  plot_annotation(tag_levels = 'A')
+
+  de.mega
+
+  ggsave(de.mega, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/SFig12.png")
+  ggsave(de.mega, file="/Users/alanbergland/Documents/GitHub/DaphniaPulex20162017Sequencing/AlanFigures/SFigure_12_DifferentialExpression/SFig12.pdf")
+
+
+
+
+
+
 
 
 

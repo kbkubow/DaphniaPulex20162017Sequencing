@@ -117,7 +117,8 @@
   t1 <- lm(nroh~sroh, rl.ag.ag[sroh<2.5e6])
 
 
-  summary(lm(sroh~population, rl.ag.ag[population%in%c("D8", "DBunk", "DCat")]))
+  summary(lm(sroh~population, rl.ag.ag[population%in%c("D8", "DBunk")]))
+  summary(lm(nroh~population, rl.ag.ag[population%in%c("D8", "DBunk")]))
 
   roh_plot <-
   ggplot(data=rl.ag.ag[population%in%c("D8", "DBunk", "DCat")],
