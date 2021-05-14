@@ -411,16 +411,6 @@ cor.test(f1$fillrate, f1$meanEMB)
       theme_bw() + xlab("Genotype") + ylab("Proportion male") + labs(linetype="QTL")
 
 
-    mabundlongrel <- foreach(clone.i=1:length(samples)[1], .combine="rbind")%do%{
-      #clone.i <- 1
-      c <- samples[[clone.i]]
-
-      tmp <- mabundlong[clone==c]
-      s <- sum(tmp$abund)
-      tmp$relabund <- tmp$abund/s
-      tmp
-    }
-
     #### abundance genotype
       ab <- qtl.polar[,list(geno=c("male_male", "male_pe", "pe_pe")[which.max(c(n.male_male, n.male_pe, n.pe_pe))],
                             size=N[1]), list(clone, pond=pond.y, qtl, PA42qtl, sc=SC.uniq, year=year)]

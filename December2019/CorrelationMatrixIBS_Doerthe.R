@@ -20,12 +20,16 @@
   seqSetFilter(genofile, variant.id=finalsetsnpset01)
 
 # Set individual filter
+  Doerthe <- fread("/scratch/kbb7sh/cloneIDs_forKaren.txt")
+  colnames(Doerthe) <- c("clone", "newclone", "SC")
+  Doerthesub <- Doerthe[, c("clone"), with=FALSE]
   sc <- fread("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/Superclones201617182019withObtusaandPulicaria_kingcorr_20200623_wmedrd.txt")
   scsub <- sc[LabGenerated==0 & Nonindependent==0 & Species=="pulex"]
   scsub$population <- str_replace(scsub$population, "Dcat", "DCat")
-  scsub <- scsub[population=="DCat" | population=="D8" | population=="DBunk" | population=="D10"]
-  setkey(scsub, clone)
-  scsubids <- scsub$clone
+
+  Dclones <- merge(Doerthesub, scsub, by="clone")
+
+  scsubids <- Dclones$clone
 
   seqSetFilter(genofile, sample.id=scsubids)
 
@@ -74,6 +78,12 @@
   			ibs.long <- merge(ibs.long, sctmp)
   			setnames(ibs.long, "clone", "cloneB")
   			setnames(ibs.long, "SC", "SC.B")
+
+        AvsA <- ibs.long[SC.A=="A" & SC.B=="A" & cloneA!=cloneB]
+        othervsother <- ibs.long[SC.A!="A" & SC.B!="A" & cloneA!=cloneB]
+        summary(AvsA$IBS)
+        summary(othervsother$IBS)
+        
 
   			ibs.long <- ibs.long[Species.x=="pulex" & Species.y=="pulex"]
   			ibs.long <- ibs.long[population.x!="Dramp" & population.y!="Dramp" & population.x!="DLily" &

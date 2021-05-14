@@ -29,13 +29,22 @@ module load R/3.5.3
   scC$SCB <- ifelse(scC$SC=="OO", scC$clone, scC$SC)
   scs <- unique(scC$SCB)
 
-  subsetsc <- foreach(i=1:length(scs), .combine="c")%do%{
+  subsetsc <- foreach(i=1:length(scs), .combine="rbind")%do%{
 
   s=scs[i]
   tmp <- scC[SCB==s]
-  max <- 
-
-  temp <- snps[J(data.table(chr=c, pos=c(s:p), key="chr,pos")), nomatch=0]
-  temp$variant.ids
+  maxrd <- max(tmp$medrd)
+  tmpsub <- tmp[medrd==maxrd]
+  tmpsubB <- tmpsub[sample(nrow(tmpsub), 1), ]
+  tmpsubB
 
   }
+
+  subsetscids <- subsetsc$clone
+
+### Set filters
+  seqSetFilter(genofile, sample.id=subsetscids)
+  seqSetFilter(genofile, variant.id=finalsetsnpset01)
+
+### Write VCF
+  seqGDS2VCF(genofile, "polyDorsetsubsetsc.vcf.gz")

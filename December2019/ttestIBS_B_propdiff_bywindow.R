@@ -10,7 +10,8 @@
 
 
   ### Load processed IBS by window files
-      inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/", pattern="mscACvsrest.ag")
+      #inputfiles <- list.files(path="/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/", pattern="mscACvsrest.ag")
+      inputfiles <- list.files(path="/project/berglandlab/Karen/MappingDec2019/WithPulicaria/June2020/slidingwindowIBS/", pattern="mscACvsrest.ag")
 
       totalibsag <- foreach(i=1:length(inputfiles), .combine="rbind")%do%{
         f=paste("/scratch/kbb7sh/Daphnia/MappingDecember2019/June2020/", inputfiles[i], sep="")
@@ -57,24 +58,24 @@
 
       ### Read in only G files first to figure out how to make the figure
 
-          #  load("mscACvsrest.ag_G.Rdata")
-          #  totalibsag <- mscACvsrest.ag
+            load("mscACvsrest.ag_G.Rdata")
+            totalibsag <- mscACvsrest.ag
 
-          #  load("mscACvsrest_POBC_G.Rdata")
-          #  totalibsagPO <- mscACvsrest_POBC
+            load("mscACvsrest_POBC_G.Rdata")
+            totalibsagPO <- mscACvsrest_POBC
 
-          #  totalibsagPO$ACvspond <- ifelse(totalibsagPO$ACvspond=="A_obtusa" & totalibsagPO$SCA_C=="C", "C_obtusa", ifelse(
-          #    totalibsagPO$ACvspond=="A_pulicaria" & totalibsagPO$SCA_C=="C", "C_pulicaria", totalibsagPO$ACvspond
-          #  ))
+            totalibsagPO$ACvspond <- ifelse(totalibsagPO$ACvspond=="A_obtusa" & totalibsagPO$SCA_C=="C", "C_obtusa", ifelse(
+              totalibsagPO$ACvspond=="A_pulicaria" & totalibsagPO$SCA_C=="C", "C_pulicaria", totalibsagPO$ACvspond
+            ))
 
-          #  load("D8DBunkDCat.ag_G.Rdata")
-          #  totalibsagD8DBunk <- D8DBunkDCat.ag
+            load("D8DBunkDCat.ag_G.Rdata")
+            totalibsagD8DBunk <- D8DBunkDCat.ag
 
-          #  load("D8DBunkDCatvsD10W.ag_G.Rdata")
-          #  totalibsD10W <- D8DBunkDCatvsD10W.ag
+            load("D8DBunkDCatvsD10W.ag_G.Rdata")
+            totalibsD10W <- D8DBunkDCatvsD10W.ag
 
-          #  load("D8DBunkDCatvsPO.ag_G.Rdata")
-          #  totalibsObPul <- D8DBunkDCatvsPO.ag
+            load("D8DBunkDCatvsPO.ag_G.Rdata")
+            totalibsObPul <- D8DBunkDCatvsPO.ag
 
             total <- rbind(totalibsag, totalibsagPO, totalibsagD8DBunk, totalibsD10W, totalibsObPul)
 
