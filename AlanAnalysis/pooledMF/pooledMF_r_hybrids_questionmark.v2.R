@@ -48,23 +48,3 @@
 
 
   save(m.ag, file="/nv/vol186/bergland-lab/alan/mf_expectation.Rdata")
-
-
-
-  library(ggplot2)
-  library(data.table)
-  library(cowplot)
-
-  load("/mnt/sammas_storage/bergland-lab/alan/mf_expectation.Rdata")
-
-  F1.plot <- ggplot(data=m.ag, aes(x=pool, y=mu)) +
-  geom_hline(aes(yintercept=exp.fq/2), linetype="solid", color="red", size=.75) +
-  geom_errorbar(aes(ymin=mu-sd, ymax=mu+sd), width=.2, size=.75) +
-  geom_point(size=4, fill="white", shape=21, stroke=1) +
-  facet_grid(~A.geno+B.geno) +
-  ylab("Frequencuy") +
-  xlab("Pool") +
-  scale_x_discrete(labels=c("m" = "Male", "f" = "Female")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-  ggsave("~/F1_plot.pdf")
