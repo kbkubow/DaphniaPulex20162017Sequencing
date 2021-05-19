@@ -44,3 +44,5 @@
       geom_point() + geom_line() + facet_wrap(~PA42qtl) +
       xlab("Year") + ylab("Fequency of male+ allele") + theme_bw() +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+      ggsave(good, file="./DaphniaPulex20162017Sequencing/AlanFigures/SFigure12_GenotypeMaleProductionbyQTL/QTLbypond.pdf")

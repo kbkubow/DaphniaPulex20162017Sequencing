@@ -8,8 +8,8 @@
 
 ### Load data files
 
-  load("DaphniaPulex20162017Sequencing/AlanFigures/Figure3/meso7AC.Rdata")
-  load("DaphniaPulex20162017Sequencing/AlanFigures/Figure3/dat.ag.Rdata")
+  load("meso7AC.Rdata")
+  load("dat.ag.Rdata")
   dat.ag$Trmt <- str_replace(dat.ag$Trmt,"C", "control")
 
 
@@ -77,4 +77,4 @@
   totalB <- upper/lower + plot_layout(nrow = 2, byrow = TRUE) +
     plot_annotation(tag_levels = 'A')
 
-  ggsave(total, file="Figure3.pdf")
+  ggsave(totalB, file="Figure3.pdf")

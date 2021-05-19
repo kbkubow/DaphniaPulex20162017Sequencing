@@ -389,7 +389,7 @@ save(goodsnpsnotinNsChrRDtable, file="goodsnpsnotinNsChrRDtable_2020622.Rdata")
 
 ### Removing triallelic SNPs resulted in a loss of 81,624 SNPs, with 2,666,392 remaining
 
-### Overall read depth filtering on snps 
+### Overall read depth filtering on snps
 
 			quantile(snps$dp,probs=c(0.05,0.95))
 

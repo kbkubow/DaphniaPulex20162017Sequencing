@@ -72,12 +72,4 @@ anovas <- foreach(q=1:14, .combine="rbind")%do%{
     geom_errorbar(aes(ymin=lci, ymax=uci), width=0.2) +
     facet_wrap(~PA42qtl)
 
-  F1polar <- ggplot(data=m.agsig[p <= 0.05], aes(x=genoB, y=propmale, group=gr, color=gr)) + geom_line() +
-    theme_bw() + theme(legend.position = "none") + xlab("Genotype") + ylab("Proportion male") +
-    geom_errorbar(aes(ymin=lci, ymax=uci), width=0.2) +
-    facet_wrap(~PA42qtl)
-
-  F1polarall <- ggplot(data=m.agsig, aes(x=genoB, y=propmale, group=gr, color=gr)) + geom_line() +
-    theme_bw() + theme(legend.position = "none") + xlab("Genotype") + ylab("Proportion male") +
-    geom_errorbar(aes(ymin=lci, ymax=uci), width=0.2) +
-    facet_wrap(~PA42qtl)
+  ggsave(F1polarnew, file="./DaphniaPulex20162017Sequencing/AlanFigures/SFigure12_GenotypeMaleProductionbyQTL/F1polarnew.pdf")

@@ -23,4 +23,6 @@ R
 
   IBSplotB <- IBSplot + scale_x_discrete(labels=c("Within D8", "Within DCat/DBunk", "Between DCat/D8/DBunk", "Kilwood vs D10", "Kilwood vs W1", "Kilwood vs W6"))
 
-  IBSplotB + coord_flip()
+  IBSgenomewide <- IBSplotB + coord_flip()
+
+  ggsave(IBSgenomewide, file="IBSgenomewide.pdf")
