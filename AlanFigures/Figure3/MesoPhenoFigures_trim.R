@@ -35,7 +35,7 @@
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
     ylab("Prop Male") +
-    theme(legend.position = "none")
+    theme(legend.position = "bottom") + guides(color = FALSE) + guides(linetype=guide_legend(nrow=2,byrow=TRUE))
 
 
   week7ACEmbWeekB <- ggplot(data=meso7AC, aes(x=Week, y=log10(EstimatedEmbryosTot), color=SC,
@@ -56,7 +56,8 @@
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) +
     xlab("Pre/Post Treatment") + ylab("Prop Male") +
-    guides(color=FALSE) + theme(legend.position = c(0.21, 0.8)) + labs(shape="Treatment") +
+    #guides(color=FALSE) + theme(legend.position = c(0.21, 0.8)) + labs(shape="Treatment") +
+    guides(color=FALSE) + theme(legend.position = "bottom") + labs(shape="Treatment") +
     guides(linetype = FALSE)
 
 
@@ -77,4 +78,4 @@
   totalB <- upper/lower + plot_layout(nrow = 2, byrow = TRUE) +
     plot_annotation(tag_levels = 'A')
 
-  ggsave(totalB, file="Figure3.pdf")
+  ggsave(totalB, file="Figure3D.pdf")
